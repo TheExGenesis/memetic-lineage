@@ -1,0 +1,15 @@
+# Cache directory for UMAP and K-Means results
+cache/
+cluster_reports/
+# Python
+__pycache__/
+
+
+*.pkl 
+*.parquet
+
+# OS
+.DS_Store
+Thumbs.db
+
+
