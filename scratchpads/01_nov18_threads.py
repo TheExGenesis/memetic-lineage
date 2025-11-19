@@ -296,207 +296,193 @@ for _, tweet in top_conversation_tweets.iterrows():
 # %%
 
 # %%
-def print_conversation_tree(
-    tweet_ids, 
-    tweets_df: pd.DataFrame, 
-    depth_up: int | None = None, 
-    depth_down: int | None = None,
-    debug: bool = False,
-    _visited_annexes: set | None = None
-) -> str:
-    """
-    Print a tree of tweets filtered by specific tweet IDs and depth parameters.
-    Handles multiple conversations and appends quoted contexts as annexes.
-    
-    Args:
-        tweet_ids: Single tweet ID or list of tweet IDs to focus on.
-        tweets_df: DataFrame containing tweet data.
-        depth_up: Number of levels up to traverse from seed tweets (None = to root).
-        depth_down: Number of levels down to traverse from seed tweets (None = to leaves).
-        debug: Enable debug logging.
-        _visited_annexes: Internal set to track visited annexes to avoid infinite recursion.
-    """
-    if _visited_annexes is None:
-        _visited_annexes = set()
-
-    if isinstance(tweet_ids, (int, float, str, np.integer)):
-        tweet_ids = [int(tweet_ids)]
-    else:
-        tweet_ids = [int(tid) for tid in tweet_ids]
+class ConversationExplorer:
+    def __init__(self, tweets_df: pd.DataFrame):
+        # 1. Pre-index the dataframe for O(1) lookups (Critical for performance)
+        print("Indexing tweets...")
+        self.df = tweets_df.set_index('tweet_id')
         
-    if not tweet_ids:
-        return "No tweet IDs provided."
-
-    # Create efficient lookup for the full dataset (for quotes)
-    full_tweets_indexed = tweets_df.set_index('tweet_id')
-    
-    valid_seeds = [tid for tid in tweet_ids if tid in full_tweets_indexed.index]
-    if not valid_seeds:
-        return "No valid tweet IDs found in dataframe."
-
-    # Group seeds by conversation
-    seeds_by_conv = defaultdict(list)
-    for tid in valid_seeds:
-        conv_id = full_tweets_indexed.loc[tid].get('conversation_id')
-        if pd.notna(conv_id):
-            seeds_by_conv[int(conv_id)].append(tid)
-        else:
-            seeds_by_conv[tid].append(tid)
-            
-    lines = []
-    annex_ids_to_process = []
-
-    for conv_id, conv_seeds in seeds_by_conv.items():
-        # Handle fallback where conv_id is tweet_id (no conversation_id in data)
-        if conv_id in full_tweets_indexed.index and full_tweets_indexed.loc[conv_id].get('conversation_id') != conv_id:
-             conv_tweets = full_tweets_indexed.loc[conv_seeds]
-             if isinstance(conv_tweets, pd.Series): conv_tweets = conv_tweets.to_frame().T
-        else:
-             conv_tweets = tweets_df[tweets_df['conversation_id'] == conv_id]
-
-        if conv_tweets.empty:
-             continue
+        # 2. Pre-build adjacency list for O(1) child lookup
+        # This avoids filtering the whole DF to find replies
+        print("Building conversation graph...")
+        self.children_map = defaultdict(list)
+        
+        # Vectorized approach is faster than iterating rows
+        if 'reply_to_tweet_id' in tweets_df.columns:
+             # Filter for rows that are replies and not NA
+             # We specifically select columns to avoid overhead
+             replies = tweets_df[tweets_df['reply_to_tweet_id'].notna()][['tweet_id', 'reply_to_tweet_id']]
              
-        conv_indexed = conv_tweets.set_index('tweet_id')
-        
-        # Build graph
-        parent_map = {} 
-        children_map = defaultdict(list)
-        
-        for tid, row in conv_indexed.iterrows():
-            parent_id = row.get('reply_to_tweet_id')
-            if pd.notna(parent_id):
-                parent_id = int(parent_id)
-                parent_map[tid] = parent_id
-                children_map[parent_id].append(tid)
-        
-        # Determine visible set
-        visible_ids = set()
-        
-        def traverse_up(curr_id, steps_left):
-            visible_ids.add(curr_id)
-            if steps_left is not None and steps_left <= 0: return
-            parent = parent_map.get(curr_id)
-            if parent and parent in conv_indexed.index:
-                traverse_up(parent, None if steps_left is None else steps_left - 1)
-                
-        def traverse_down(curr_id, steps_left):
-            visible_ids.add(curr_id)
-            if steps_left is not None and steps_left <= 0: return
-            for child in children_map.get(curr_id, []):
-                traverse_down(child, None if steps_left is None else steps_left - 1)
+             # Iterate over the filtered DataFrame (much smaller than 300k if not all are replies)
+             for tid, parent_id in zip(replies['tweet_id'], replies['reply_to_tweet_id']):
+                 self.children_map[int(parent_id)].append(tid)
 
-        for seed in conv_seeds:
-            traverse_up(seed, depth_up)
-            traverse_down(seed, depth_down)
-            
-        # Identify roots
-        print_roots = []
-        for vid in visible_ids:
-            parent = parent_map.get(vid)
-            if not parent or parent not in visible_ids:
-                print_roots.append(vid)
-        print_roots.sort()
+    def print_tree(self, 
+                   tweet_ids, 
+                   depth_up: int | None = None, 
+                   depth_down: int | None = None, 
+                   debug: bool = False,
+                   _visited_annexes: set | None = None,
+                   _printed_ids: set | None = None) -> str:
         
-        lines.append(f"\n{'='*80}")
-        lines.append(f"Conversation: {conv_id}")
-        lines.append(f"Focus Tweets: {conv_seeds}")
-        if depth_up is not None: lines.append(f"Depth Up: {depth_up}")
-        if depth_down is not None: lines.append(f"Depth Down: {depth_down}")
-        lines.append(f"{'='*80}\n")
+        if _visited_annexes is None: _visited_annexes = set()
+        if _printed_ids is None: _printed_ids = set()
         
-        def print_quote(q_id, indent):
-            if q_id not in full_tweets_indexed.index:
-                lines.append(f"{indent}[Quoted tweet {q_id} not found]")
-                return
-                
-            row = full_tweets_indexed.loc[q_id]
-            username = row.get('username') or "unknown"
-            text = row.get('full_text') or ""
-            created_at = row.get('created_at')
-            date = pd.Timestamp(created_at).strftime('%Y-%m-%d') if pd.notna(created_at) else "?"
+        # Normalize input
+        if isinstance(tweet_ids, (int, float, str, np.integer)):
+            tweet_ids = [int(tweet_ids)]
+        else:
+            tweet_ids = [int(tid) for tid in tweet_ids]
             
-            lines.append(f"{indent}@{username} ({date}) [Quoted]:")
-            for line in text.split('\n'):
-                lines.append(f"{indent}  {line}")
-            
-            need_annex = True
-            if depth_up == 0 and depth_down == 0:
-                need_annex = False
-                
-            if need_annex:
-                lines.append(f"{indent}(See Annex below for full context)")
-                if q_id not in _visited_annexes:
-                     annex_ids_to_process.append(q_id)
-                     _visited_annexes.add(q_id)
-            
-            # Recursive quote check
-            next_q = row.get('quoted_tweet_id')
-            if pd.notna(next_q):
-                print_quote(int(next_q), indent + "    ┃ ")
+        valid_seeds = [tid for tid in tweet_ids if tid in self.df.index]
+        if not valid_seeds: return "No valid tweet IDs found."
 
-        def format_node(tid, depth, prefix, is_last_child):
-            row = full_tweets_indexed.loc[tid]
-            created_at = row.get('created_at')
-            pretty_date = pd.Timestamp(created_at).strftime('%Y-%m-%d %H:%M') if pd.notna(created_at) else "unknown"
-            username = row.get('username') or "unknown"
-            full_text = row.get('full_text') or ""
-            
-            metrics = f"❤️ {row.get('favorite_count', 0)} 🔁 {row.get('retweet_count', 0)}"
-            quoted_cnt = row.get('quoted_count', 0)
-            if pd.notna(quoted_cnt) and quoted_cnt > 0:
-                 metrics += f" 💬 {int(quoted_cnt)}"
-                 
-            if depth == 0:
-                curr_prefix = ""
-                child_prefix = "" 
+        # Group seeds by conversation ID
+        seeds_by_conv = defaultdict(list)
+        for tid in valid_seeds:
+            conv_id = self.df.loc[tid].get('conversation_id')
+            if pd.notna(conv_id):
+                seeds_by_conv[int(conv_id)].append(tid)
             else:
-                curr_prefix = prefix + ("└── " if is_last_child else "├── ")
-                child_prefix = prefix + ("    " if is_last_child else "│   ")
-                
-            lines.append(f"{curr_prefix}@{username} ({pretty_date}) {metrics} [id:{tid}]")
-            
-            text_indent = child_prefix + ("    " if depth == 0 else "") 
-            if depth == 0: text_indent = "    "
-            
-            for line in full_text.split('\n'):
-                lines.append(f"{text_indent}{line}")
-                
-            quoted_id = row.get('quoted_tweet_id')
-            if pd.notna(quoted_id):
-                quoted_id = int(quoted_id)
-                print_quote(quoted_id, text_indent + "    ┃ ")
-                
-            children = [c for c in children_map.get(tid, []) if c in visible_ids]
-            children.sort()
-            
-            for i, child in enumerate(children):
-                is_last = (i == len(children) - 1)
-                next_prefix = prefix + ("    " if is_last_child else "│   ")
-                if depth == 0: next_prefix = "" 
-                format_node(child, depth + 1, next_prefix, is_last)
+                seeds_by_conv[tid].append(tid)
 
-        if not print_roots:
-            lines.append("No visible tweets found.")
+        lines = []
+        annex_ids_to_process = []
 
-        for root in print_roots:
-            format_node(root, 0, "", True)
-            lines.append("") 
+        for conv_id, conv_seeds in seeds_by_conv.items():
+            # Determine visible set using graph traversal (BFS/DFS) with pre-computed maps
+            visible_ids = set()
+            
+            def traverse_up(curr_id, steps_left):
+                if curr_id not in self.df.index: return
+                visible_ids.add(curr_id)
+                if steps_left is not None and steps_left <= 0: return
+                
+                parent_id = self.df.loc[curr_id].get('reply_to_tweet_id')
+                if pd.notna(parent_id):
+                    traverse_up(int(parent_id), None if steps_left is None else steps_left - 1)
 
-    # Process Annexes
-    for annex_id in annex_ids_to_process:
-        lines.append(f"\n>>> Annex: Context for Quoted Tweet {annex_id} <<<")
-        annex_text = print_conversation_tree(
-            [annex_id], 
-            tweets_df, 
-            depth_up=depth_up, 
-            depth_down=depth_down, 
-            debug=debug,
-            _visited_annexes=_visited_annexes
-        )
-        lines.append(annex_text)
-        
-    return "\n".join(lines)
+            def traverse_down(curr_id, steps_left):
+                visible_ids.add(curr_id)
+                if steps_left is not None and steps_left <= 0: return
+                
+                # O(1) lookup instead of filtering
+                children = self.children_map.get(curr_id, [])
+                for child_id in children:
+                    if child_id in self.df.index: # Ensure child exists in data
+                         traverse_down(child_id, None if steps_left is None else steps_left - 1)
+
+            for seed in conv_seeds:
+                traverse_up(seed, depth_up)
+                traverse_down(seed, depth_down)
+
+            _printed_ids.update(visible_ids)
+
+            # Identify roots of the *visible* forest
+            print_roots = []
+            for vid in visible_ids:
+                parent = self.df.loc[vid].get('reply_to_tweet_id')
+                # If parent is missing or parent is not in the visible set, this is a root
+                if pd.isna(parent) or int(parent) not in visible_ids:
+                    print_roots.append(vid)
+            print_roots.sort()
+
+            def print_quote(q_id, indent):
+                if q_id not in self.df.index:
+                    lines.append(f"{indent}[Quoted tweet {q_id} not found]")
+                    return
+                    
+                row = self.df.loc[q_id]
+                username = row.get('username') or "unknown"
+                text = row.get('full_text') or ""
+                created_at = row.get('created_at')
+                date = pd.Timestamp(created_at).strftime('%Y-%m-%d') if pd.notna(created_at) else "?"
+                
+                lines.append(f"{indent}@{username} ({date}) [Quoted id:{q_id}]:")
+                for line in text.split('\n'):
+                    lines.append(f"{indent}  {line}")
+                
+                need_annex = True
+                if depth_up == 0 and depth_down == 0:
+                    need_annex = False
+                
+                if q_id in _printed_ids:
+                    need_annex = False
+                    
+                if need_annex:
+                    lines.append(f"{indent}(See Annex below for full context)")
+                    if q_id not in _visited_annexes:
+                         annex_ids_to_process.append(q_id)
+                         _visited_annexes.add(q_id)
+                
+                next_q = row.get('quoted_tweet_id')
+                if pd.notna(next_q):
+                    print_quote(int(next_q), indent + "    ┃ ")
+
+            def format_node(tid, depth, prefix, is_last_child):
+                row = self.df.loc[tid]
+                created_at = row.get('created_at')
+                pretty_date = pd.Timestamp(created_at).strftime('%Y-%m-%d %H:%M') if pd.notna(created_at) else "unknown"
+                username = row.get('username') or "unknown"
+                full_text = row.get('full_text') or ""
+                
+                metrics = f"❤️ {row.get('favorite_count', 0)} 🔁 {row.get('retweet_count', 0)}"
+                quoted_cnt = row.get('quoted_count', 0)
+                if pd.notna(quoted_cnt) and quoted_cnt > 0:
+                     metrics += f" 💬 {int(quoted_cnt)}"
+                     
+                if depth == 0:
+                    curr_prefix = ""
+                    child_prefix = "" 
+                else:
+                    curr_prefix = prefix + ("└── " if is_last_child else "├── ")
+                    child_prefix = prefix + ("    " if is_last_child else "│   ")
+                    
+                lines.append(f"{curr_prefix}@{username} ({pretty_date}) {metrics} [id:{tid}]")
+                
+                text_indent = child_prefix + ("    " if depth == 0 else "") 
+                if depth == 0: text_indent = "    "
+                
+                for line in full_text.split('\n'):
+                    lines.append(f"{text_indent}{line}")
+                    
+                quoted_id = row.get('quoted_tweet_id')
+                if pd.notna(quoted_id):
+                    quoted_id = int(quoted_id)
+                    print_quote(quoted_id, text_indent + "    ┃ ")
+                    
+                # Use pre-built children map
+                children = [c for c in self.children_map.get(tid, []) if c in visible_ids]
+                children.sort()
+                
+                for i, child in enumerate(children):
+                    is_last = (i == len(children) - 1)
+                    next_prefix = prefix + ("    " if is_last_child else "│   ")
+                    if depth == 0: next_prefix = "" 
+                    format_node(child, depth + 1, next_prefix, is_last)
+
+            if not print_roots:
+                lines.append("No visible tweets found.")
+
+            for root in print_roots:
+                format_node(root, 0, "", True)
+                lines.append("") 
+
+        # Process Annexes (Recursive call to method)
+        for annex_id in annex_ids_to_process:
+            lines.append(f"\n>>> Annex: Context for Quoted Tweet {annex_id} <<<")
+            # Call the method on self
+            annex_text = self.print_tree(
+                [annex_id], 
+                depth_up=depth_up, 
+                depth_down=depth_down, 
+                debug=debug,
+                _visited_annexes=_visited_annexes,
+                _printed_ids=_printed_ids
+            )
+            lines.append(annex_text)
+
+        return "\n".join(lines)
 
 # %%
 # Tests with synthetic data
@@ -577,19 +563,48 @@ def run_synthetic_tests():
                 
     df_synth = pd.DataFrame(data)
     
-    print("\n--- Test 1: Full Conversation Tree (Seed: Root) ---")
-    print(print_conversation_tree(1, df_synth))
+    # Initialize Explorer
+    explorer = ConversationExplorer(df_synth)
     
-    print("\n--- Test 2: Subtree (Seed: Bob's reply ID 2, Depth Down=1) ---")
-    print(print_conversation_tree(2, df_synth, depth_down=1))
-    
-    print("\n--- Test 3: Depth Up/Down (Seed: Alice's reply ID 4, Up=1, Down=0) ---")
-    # Should show ID 4 and its parent ID 2. ID 1 (Root) is 2 steps up, so hidden.
-    print(print_conversation_tree(4, df_synth, depth_up=1, depth_down=0))
-    
-    print("\n--- Test 4: Quotes and Nested Quotes (Seed: Dave's reply ID 5) ---")
-    # Should show ID 5 in tree, and recursively print quote 900 and 901
-    print(print_conversation_tree(5, df_synth))
+    print("\n--- Test 1: Full Tree with Cross-Thread Quotes (Seed: 1) ---")
+    print(explorer.print_tree(1))
+    print("\nEXPECTED: Tree 1 with children 2, 3, 5. 5 quotes 900. 1 quotes 10.")
+    print("          Annex 10 (root). 10 quotes 2. 2 is ALREADY printed in Main Tree 1, so NO Annex 2.")
+    print("          Annex 900. 900 quotes 901. Annex 901.")
 
-run_synthetic_tests()
+    print("\n--- Test 2: Multiple Focus Tweets (Seeds: 1, 10) ---")
+    print(explorer.print_tree([1, 10]))
+    print("\nEXPECTED: Two main conversation blocks (1 and 10).")
+    
+    print("\n--- Test 3: Subtree with Quote (Seed: 5) ---")
+    print(explorer.print_tree(5))
+    print("\nEXPECTED: Tree starting at 5 (reply to 1). 5 quotes 900. Annex 900.")
+
+run_synthetic_tests()  
+
+# %%
+# Test with real data from the loaded dataframe
+print("\n==========================================")
+print("--- Test with Real Data from 'tweets' DF ---")
+# Using a known ID from earlier in the file
+
+real_explorer = ConversationExplorer(tweets)
+
+# %%
+
+target_real_id = 1322462839622291463
+if 'tweets' in locals() and not tweets.empty:
+
+    
+    if target_real_id in tweets['tweet_id'].values:
+        print(f"Printing tree for specific real tweet {target_real_id}")
+        print(real_explorer.print_tree(target_real_id))
+    else:
+        # Fallback to first tweet
+        fallback_id = tweets.iloc[0]['tweet_id']
+        print(f"Specific ID not found. Printing tree for first available tweet {fallback_id}")
+        print(real_explorer.print_tree(fallback_id))
+else:
+    print("Tweets dataframe not available or empty.")
+
 # %%
