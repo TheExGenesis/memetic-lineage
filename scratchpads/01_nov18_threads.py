@@ -5,6 +5,7 @@
 import supabase
 
 import pandas as pd
+import numpy as np
 from supabase import create_client, Client
 from datetime import datetime, timedelta, timezone  
 import os
@@ -20,6 +21,11 @@ load_dotenv()
 id_columns = ['tweet_id', 'reply_to_tweet_id', 'reply_to_user_id', 'quoted_tweet_id', 'conversation_id',]
 tweets = pd.read_parquet('../data/2025-09-03_enriched_tweets.parquet', dtype_backend='pyarrow')
 tweets
+
+# %%
+tweets = pd.read_parquet('enriched_tweets.parquet', dtype_backend='pyarrow')
+tweets.head()
+
 # %%
 # print types of columns
 print(tweets.dtypes)
@@ -238,23 +244,23 @@ top_quoted_by_year = []
 with open('top_quoted_tweets_by_year.txt', 'w', encoding='utf-8') as f:
     for year in sorted(tweets['year'].unique()):
         year_tweets = tweets[tweets['year'] == year]
-        year_top_quoted = get_top_quoted_tweets(year_tweets, min_quote_count=1)
-        year_top_quoted = year_top_quoted.head(20)
-        year_top_quoted['year'] = year
-        top_quoted_by_year.append(year_top_quoted)
+        # year_top_quoted = get_top_quoted_tweets(year_tweets, min_quote_count=1)
+        # year_top_quoted = year_top_quoted.head(20)
+        # year_top_quoted['year'] = year
+        # top_quoted_by_year.append(year_top_quoted)
         
         f.write(f"\n\n{'#'*80}\n")
         f.write(f"### Top 20 quoted tweets for {year} ###\n")
         f.write(f"{'#'*80}\n")
         
-        for _, tweet in year_top_quoted.iterrows():
-            f.write(format_tweet(tweet))
-            f.write('\n')
+        # for _, tweet in year_top_quoted.iterrows():
+        #     f.write(format_tweet(tweet))
+        #     f.write('\n')
 
 # Combine all years
-all_top_quoted_by_year = pd.concat(top_quoted_by_year, ignore_index=True)
+# all_top_quoted_by_year = pd.concat(top_quoted_by_year, ignore_index=True)
 # %%
-all_top_quoted_by_year
+# all_top_quoted_by_year
 # %%
 # let's count how many tweets have the same conversation_id, get a dict of conversation_id to count. then let's implement a function that prints a thread with all its children as a tree (cli tree style) given a conversation_id which corresponds to the tweet_id of the root. Also prints the time-span of the thread (date of original post and date of most recent leaf). Find leaves via reply_to_tweet_id. Probably good to make a dict of reply_to_tweet_id to tweet_id[]
 # %%
@@ -290,116 +296,300 @@ for _, tweet in top_conversation_tweets.iterrows():
 # %%
 
 # %%
-def print_conversation_tree(conversation_id, tweets_df, debug=False):
+def print_conversation_tree(
+    tweet_ids, 
+    tweets_df: pd.DataFrame, 
+    depth_up: int | None = None, 
+    depth_down: int | None = None,
+    debug: bool = False,
+    _visited_annexes: set | None = None
+) -> str:
     """
-    Print a conversation thread as a tree, given the conversation_id (which is the root tweet_id).
-    Shows all replies in a tree structure and prints the time-span of the thread.
+    Print a tree of tweets filtered by specific tweet IDs and depth parameters.
+    Handles multiple conversations and appends quoted contexts as annexes.
     
     Args:
-        conversation_id: The tweet_id of the root tweet (conversation_id)
-        tweets_df: DataFrame with tweet data
-        debug: Enable debug logging
-    
-    Returns:
-        String representation of the conversation tree
+        tweet_ids: Single tweet ID or list of tweet IDs to focus on.
+        tweets_df: DataFrame containing tweet data.
+        depth_up: Number of levels up to traverse from seed tweets (None = to root).
+        depth_down: Number of levels down to traverse from seed tweets (None = to leaves).
+        debug: Enable debug logging.
+        _visited_annexes: Internal set to track visited annexes to avoid infinite recursion.
     """
-    # Filter tweets in this conversation
-    conversation_tweets = tweets_df[tweets_df['conversation_id'] == conversation_id]
-    
-    if conversation_tweets.empty:
-        return f"No tweets found for conversation_id {conversation_id}"
-    
-    # Build children mapping for this conversation
-    children_map = defaultdict(list)
-    tweets_indexed = conversation_tweets.set_index('tweet_id')
-    
-    for tweet_id, row in tweets_indexed.iterrows():
-        parent_id = row.get('reply_to_tweet_id')
-        if pd.notna(parent_id) and parent_id in tweets_indexed.index:
-            children_map[parent_id].append(tweet_id)
-    
-    # Find root tweet (should be the conversation_id itself)
-    root_tweet_id = conversation_id
-    if root_tweet_id not in tweets_indexed.index:
-        return f"Root tweet {root_tweet_id} not found in conversation"
-    
-    # Calculate time span
-    dates = conversation_tweets['created_at'].dropna()
-    if not dates.empty:
-        earliest = dates.min()
-        latest = dates.max()
-        time_span = f"{earliest.strftime('%Y-%m-%d %H:%M')} to {latest.strftime('%Y-%m-%d %H:%M')}"
-        duration = latest - earliest
+    if _visited_annexes is None:
+        _visited_annexes = set()
+
+    if isinstance(tweet_ids, (int, float, str, np.integer)):
+        tweet_ids = [int(tweet_ids)]
     else:
-        time_span = "unknown"
-        duration = timedelta(0)
+        tweet_ids = [int(tid) for tid in tweet_ids]
+        
+    if not tweet_ids:
+        return "No tweet IDs provided."
+
+    # Create efficient lookup for the full dataset (for quotes)
+    full_tweets_indexed = tweets_df.set_index('tweet_id')
     
+    valid_seeds = [tid for tid in tweet_ids if tid in full_tweets_indexed.index]
+    if not valid_seeds:
+        return "No valid tweet IDs found in dataframe."
+
+    # Group seeds by conversation
+    seeds_by_conv = defaultdict(list)
+    for tid in valid_seeds:
+        conv_id = full_tweets_indexed.loc[tid].get('conversation_id')
+        if pd.notna(conv_id):
+            seeds_by_conv[int(conv_id)].append(tid)
+        else:
+            seeds_by_conv[tid].append(tid)
+            
     lines = []
-    lines.append(f"\n{'='*80}")
-    lines.append(f"Conversation: {conversation_id}")
-    lines.append(f"Time span: {time_span}")
-    lines.append(f"Duration: {duration}")
-    lines.append(f"Total tweets: {len(conversation_tweets)}")
-    lines.append(f"{'='*80}\n")
-    
-    # Recursive function to print tree
-    def print_tweet_tree(tweet_id, depth=0, prefix="", is_last=True):
-        if tweet_id not in tweets_indexed.index:
-            return
-        
-        row = tweets_indexed.loc[tweet_id]
-        created_at = row.get('created_at')
-        if pd.notna(created_at):
-            pretty_date = pd.Timestamp(created_at).strftime('%Y-%m-%d %H:%M')
+    annex_ids_to_process = []
+
+    for conv_id, conv_seeds in seeds_by_conv.items():
+        # Handle fallback where conv_id is tweet_id (no conversation_id in data)
+        if conv_id in full_tweets_indexed.index and full_tweets_indexed.loc[conv_id].get('conversation_id') != conv_id:
+             conv_tweets = full_tweets_indexed.loc[conv_seeds]
+             if isinstance(conv_tweets, pd.Series): conv_tweets = conv_tweets.to_frame().T
         else:
-            pretty_date = "unknown"
+             conv_tweets = tweets_df[tweets_df['conversation_id'] == conv_id]
+
+        if conv_tweets.empty:
+             continue
+             
+        conv_indexed = conv_tweets.set_index('tweet_id')
         
-        username = row.get('username') or "unknown"
-        full_text = row.get('full_text') or ""
+        # Build graph
+        parent_map = {} 
+        children_map = defaultdict(list)
         
-        # Get metrics
-        favorite_count = row.get('favorite_count', 0)
-        retweet_count = row.get('retweet_count', 0)
-        quoted_count = row.get('quoted_count', 0) if pd.notna(row.get('quoted_count')) else 0
+        for tid, row in conv_indexed.iterrows():
+            parent_id = row.get('reply_to_tweet_id')
+            if pd.notna(parent_id):
+                parent_id = int(parent_id)
+                parent_map[tid] = parent_id
+                children_map[parent_id].append(tid)
         
-        # Build metrics string with icons
-        metrics = f"❤️ {favorite_count} 🔁 {retweet_count}"
-        if quoted_count > 0:
-            metrics += f" 💬 {quoted_count}"
+        # Determine visible set
+        visible_ids = set()
         
-        # Tree formatting
-        if depth == 0:
-            tree_prefix = ""
-        else:
-            tree_prefix = prefix + ("└── " if is_last else "├── ")
+        def traverse_up(curr_id, steps_left):
+            visible_ids.add(curr_id)
+            if steps_left is not None and steps_left <= 0: return
+            parent = parent_map.get(curr_id)
+            if parent and parent in conv_indexed.index:
+                traverse_up(parent, None if steps_left is None else steps_left - 1)
+                
+        def traverse_down(curr_id, steps_left):
+            visible_ids.add(curr_id)
+            if steps_left is not None and steps_left <= 0: return
+            for child in children_map.get(curr_id, []):
+                traverse_down(child, None if steps_left is None else steps_left - 1)
+
+        for seed in conv_seeds:
+            traverse_up(seed, depth_up)
+            traverse_down(seed, depth_down)
+            
+        # Identify roots
+        print_roots = []
+        for vid in visible_ids:
+            parent = parent_map.get(vid)
+            if not parent or parent not in visible_ids:
+                print_roots.append(vid)
+        print_roots.sort()
         
-        # Calculate the indentation for text continuation lines
-        text_indent = prefix + ('    ' if is_last else '│   ')
+        lines.append(f"\n{'='*80}")
+        lines.append(f"Conversation: {conv_id}")
+        lines.append(f"Focus Tweets: {conv_seeds}")
+        if depth_up is not None: lines.append(f"Depth Up: {depth_up}")
+        if depth_down is not None: lines.append(f"Depth Down: {depth_down}")
+        lines.append(f"{'='*80}\n")
         
-        # Format the header line with username, date, and metrics
-        lines.append(f"{tree_prefix}@{username} ({pretty_date}) {metrics}")
+        def print_quote(q_id, indent):
+            if q_id not in full_tweets_indexed.index:
+                lines.append(f"{indent}[Quoted tweet {q_id} not found]")
+                return
+                
+            row = full_tweets_indexed.loc[q_id]
+            username = row.get('username') or "unknown"
+            text = row.get('full_text') or ""
+            created_at = row.get('created_at')
+            date = pd.Timestamp(created_at).strftime('%Y-%m-%d') if pd.notna(created_at) else "?"
+            
+            lines.append(f"{indent}@{username} ({date}) [Quoted]:")
+            for line in text.split('\n'):
+                lines.append(f"{indent}  {line}")
+            
+            need_annex = True
+            if depth_up == 0 and depth_down == 0:
+                need_annex = False
+                
+            if need_annex:
+                lines.append(f"{indent}(See Annex below for full context)")
+                if q_id not in _visited_annexes:
+                     annex_ids_to_process.append(q_id)
+                     _visited_annexes.add(q_id)
+            
+            # Recursive quote check
+            next_q = row.get('quoted_tweet_id')
+            if pd.notna(next_q):
+                print_quote(int(next_q), indent + "    ┃ ")
+
+        def format_node(tid, depth, prefix, is_last_child):
+            row = full_tweets_indexed.loc[tid]
+            created_at = row.get('created_at')
+            pretty_date = pd.Timestamp(created_at).strftime('%Y-%m-%d %H:%M') if pd.notna(created_at) else "unknown"
+            username = row.get('username') or "unknown"
+            full_text = row.get('full_text') or ""
+            
+            metrics = f"❤️ {row.get('favorite_count', 0)} 🔁 {row.get('retweet_count', 0)}"
+            quoted_cnt = row.get('quoted_count', 0)
+            if pd.notna(quoted_cnt) and quoted_cnt > 0:
+                 metrics += f" 💬 {int(quoted_cnt)}"
+                 
+            if depth == 0:
+                curr_prefix = ""
+                child_prefix = "" 
+            else:
+                curr_prefix = prefix + ("└── " if is_last_child else "├── ")
+                child_prefix = prefix + ("    " if is_last_child else "│   ")
+                
+            lines.append(f"{curr_prefix}@{username} ({pretty_date}) {metrics} [id:{tid}]")
+            
+            text_indent = child_prefix + ("    " if depth == 0 else "") 
+            if depth == 0: text_indent = "    "
+            
+            for line in full_text.split('\n'):
+                lines.append(f"{text_indent}{line}")
+                
+            quoted_id = row.get('quoted_tweet_id')
+            if pd.notna(quoted_id):
+                quoted_id = int(quoted_id)
+                print_quote(quoted_id, text_indent + "    ┃ ")
+                
+            children = [c for c in children_map.get(tid, []) if c in visible_ids]
+            children.sort()
+            
+            for i, child in enumerate(children):
+                is_last = (i == len(children) - 1)
+                next_prefix = prefix + ("    " if is_last_child else "│   ")
+                if depth == 0: next_prefix = "" 
+                format_node(child, depth + 1, next_prefix, is_last)
+
+        if not print_roots:
+            lines.append("No visible tweets found.")
+
+        for root in print_roots:
+            format_node(root, 0, "", True)
+            lines.append("") 
+
+    # Process Annexes
+    for annex_id in annex_ids_to_process:
+        lines.append(f"\n>>> Annex: Context for Quoted Tweet {annex_id} <<<")
+        annex_text = print_conversation_tree(
+            [annex_id], 
+            tweets_df, 
+            depth_up=depth_up, 
+            depth_down=depth_down, 
+            debug=debug,
+            _visited_annexes=_visited_annexes
+        )
+        lines.append(annex_text)
         
-        # Handle multi-line text with proper indentation
-        text_lines = full_text.split('\n')
-        for text_line in text_lines:
-            lines.append(f"{text_indent}{text_line}")
-        
-        lines.append(f"{text_indent}[tweet_id: {tweet_id}]")
-        
-        # Print children
-        children = children_map.get(tweet_id, [])
-        for i, child_id in enumerate(children):
-            is_last_child = (i == len(children) - 1)
-            child_prefix = prefix + ("    " if is_last else "│   ")
-            print_tweet_tree(child_id, depth + 1, child_prefix, is_last_child)
-    
-    # Start from root
-    print_tweet_tree(root_tweet_id)
-    
     return "\n".join(lines)
 
 # %%
-tree_output = print_conversation_tree(int(1919772733724098716), tweets, debug=True)
-print(tree_output)  
+# Tests with synthetic data
+def run_synthetic_tests():
+    print("Running tests with synthetic data...")
+    
+    # Create synthetic dataframe matching schema
+    base_time = pd.Timestamp("2025-01-01 12:00:00+00:00")
+    
+    data = [
+        # Root tweet (ID 1) - Quotes Tweet 10
+        {
+            "tweet_id": 1, "account_id": 101, "username": "alice", "account_display_name": "Alice",
+            "created_at": base_time, "full_text": "Root tweet about AI.",
+            "reply_to_tweet_id": None, "conversation_id": 1, "quoted_tweet_id": 10
+        },
+        # Reply to Root (ID 2)
+        {
+            "tweet_id": 2, "account_id": 102, "username": "bob", "account_display_name": "Bob",
+            "created_at": base_time + timedelta(minutes=5), "full_text": "Interesting point, Alice.",
+            "reply_to_tweet_id": 1, "conversation_id": 1, "quoted_tweet_id": None
+        },
+        # Reply to Root (ID 3) - Another branch
+        {
+            "tweet_id": 3, "account_id": 103, "username": "charlie", "account_display_name": "Charlie",
+            "created_at": base_time + timedelta(minutes=10), "full_text": "I disagree completely.",
+            "reply_to_tweet_id": 1, "conversation_id": 1, "quoted_tweet_id": None
+        },
+        # Reply to Bob (ID 4) - Depth 2
+        {
+            "tweet_id": 4, "account_id": 101, "username": "alice", "account_display_name": "Alice",
+            "created_at": base_time + timedelta(minutes=15), "full_text": "Thanks Bob!",
+            "reply_to_tweet_id": 2, "conversation_id": 1, "quoted_tweet_id": None
+        },
+        # Reply to Root that quotes an external tweet (ID 5)
+        {
+            "tweet_id": 5, "account_id": 104, "username": "dave", "account_display_name": "Dave",
+            "created_at": base_time + timedelta(minutes=20), "full_text": "Look at this external context.",
+            "reply_to_tweet_id": 1, "conversation_id": 1, "quoted_tweet_id": 900
+        },
+        # Reply to Dave (ID 6)
+        {
+            "tweet_id": 6, "account_id": 102, "username": "bob", "account_display_name": "Bob",
+            "created_at": base_time + timedelta(minutes=25), "full_text": "I see the external context.",
+            "reply_to_tweet_id": 5, "conversation_id": 1, "quoted_tweet_id": None
+        },
+        # Tweet 10: Separate Root - Quotes Tweet 2 (Cross-thread)
+        {
+            "tweet_id": 10, "account_id": 107, "username": "grace", "account_display_name": "Grace",
+            "created_at": base_time + timedelta(minutes=30), "full_text": "Another separate thread.",
+            "reply_to_tweet_id": None, "conversation_id": 10, "quoted_tweet_id": 2
+        },
+        # External Tweet (ID 900) - Quoted by 5
+        {
+            "tweet_id": 900, "account_id": 105, "username": "eve", "account_display_name": "Eve",
+            "created_at": base_time - timedelta(days=1), "full_text": "External tweet being quoted.",
+            "reply_to_tweet_id": None, "conversation_id": 900, "quoted_tweet_id": 901
+        },
+        # Nested Quote (ID 901) - Quoted by 900
+        {
+            "tweet_id": 901, "account_id": 106, "username": "frank", "account_display_name": "Frank",
+            "created_at": base_time - timedelta(days=2), "full_text": "Deep nested wisdom.",
+            "reply_to_tweet_id": None, "conversation_id": 901, "quoted_tweet_id": None
+        }
+    ]
+    
+    # Fill missing columns with defaults
+    default_cols = {
+        "retweet_count": 0, "favorite_count": 0, "reply_to_user_id": None, 
+        "reply_to_username": None, "avatar_media_url": "", "archive_upload_id": 0, 
+        "quoted_count": 0, "account_id": 0
+    }
+    
+    for row in data:
+        for k, v in default_cols.items():
+            if k not in row:
+                row[k] = v
+                
+    df_synth = pd.DataFrame(data)
+    
+    print("\n--- Test 1: Full Conversation Tree (Seed: Root) ---")
+    print(print_conversation_tree(1, df_synth))
+    
+    print("\n--- Test 2: Subtree (Seed: Bob's reply ID 2, Depth Down=1) ---")
+    print(print_conversation_tree(2, df_synth, depth_down=1))
+    
+    print("\n--- Test 3: Depth Up/Down (Seed: Alice's reply ID 4, Up=1, Down=0) ---")
+    # Should show ID 4 and its parent ID 2. ID 1 (Root) is 2 steps up, so hidden.
+    print(print_conversation_tree(4, df_synth, depth_up=1, depth_down=0))
+    
+    print("\n--- Test 4: Quotes and Nested Quotes (Seed: Dave's reply ID 5) ---")
+    # Should show ID 5 in tree, and recursively print quote 900 and 901
+    print(print_conversation_tree(5, df_synth))
 
+run_synthetic_tests()
 # %%

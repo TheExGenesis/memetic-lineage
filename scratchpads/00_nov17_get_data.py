@@ -103,11 +103,11 @@ if os.path.exists(kmeans_cache_file):
     print(f"Loaded K-Means clustering with {n_clusters} clusters")
 else:
     print(f"Computing K-Means clustering with {n_clusters} clusters...")
-kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-kmeans.fit(X)
+    kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+    kmeans.fit(X)
 
-# Assign cluster labels to each row
-X['cluster'] = kmeans.labels_
+    # Assign cluster labels to each row
+    X['cluster'] = kmeans.labels_
     
     # Save to cache
     print(f"Saving K-Means results to {kmeans_cache_file}...")
@@ -1147,6 +1147,17 @@ plt.show()
 print("\nPlot saved as 'cluster_volume_evolution.png'")
 
 
-
-
 # %%
+
+# Create a mapping from index to cluster_id
+df_all_with_clusters_indexed = df_all_with_clusters.set_index('key')
+index_to_cluster = df_all_with_clusters_indexed['cluster'].to_dict()
+
+# Save the mapping to a JSON file
+with open('index_to_cluster_mapping.json', 'w') as f:
+    json.dump(index_to_cluster, f, indent=2)
+
+print(f"Created mapping for {len(index_to_cluster)} indices to clusters")
+print("Mapping saved to 'index_to_cluster_mapping.json'")
+
+
