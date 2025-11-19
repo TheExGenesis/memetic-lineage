@@ -185,38 +185,6 @@ def count_quotes(tweets_df):
     return quoted_counts
 
 
-def get_top_quoted_tweets(tweets_df, min_quote_count=2):
-    """
-    Find tweets that are most quoted by others (excluding self-quotes).
-    
-    Args:
-        tweets_df: DataFrame with columns 'quoted_tweet_id', 'tweet_id', 'account_id'
-        min_quote_count: Minimum number of quotes to include (default 2)
-    
-    Returns:
-        DataFrame of top quoted tweets with their quote counts, sorted by count descending
-    """
-    # Get quote counts
-    quoted_counts = count_quotes(tweets_df)
-    
-    # Filter out rows where quoted_count is below threshold
-    quoted_counts = quoted_counts[quoted_counts['quoted_count'] >= min_quote_count]
-    
-    # Print the top 10 quoted tweets
-    print(quoted_counts.head(10))
-    
-    # Select from tweets based on top quoted ids
-    top_quoted_tweets = tweets_df[tweets_df['tweet_id'].isin(quoted_counts['quoted_tweet_id'])]
-    
-    # Merge with quoted_counts to get the count and sort by it
-    top_quoted_tweets = top_quoted_tweets.merge(
-        quoted_counts, 
-        left_on='tweet_id', 
-        right_on='quoted_tweet_id'
-    ).sort_values(by='quoted_count', ascending=False)
-    
-    return top_quoted_tweets
-
 # %%
 # Patch tweets with quote counts
 quoted_counts = count_quotes(tweets)
@@ -232,10 +200,7 @@ tweets = tweets.drop(columns=['quoted_tweet_id_drop'], errors='ignore')
 # Fill NaN values with 0 for tweets that were never quoted
 tweets['quoted_count'] = tweets['quoted_count'].fillna(0).astype(int)
 
-# %%
-top_quoted_tweets = get_top_quoted_tweets(tweets)
-# %%
-top_quoted_tweets.head(50)
+
 # quotes are high signal
 # but visa qts himself a lot
 # %%
