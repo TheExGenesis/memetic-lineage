@@ -2,9 +2,8 @@
 #%% mapping tweet_id => cluster_ID or cluster_ID => tweet_ids
 
 import json
-
 # Load the mapping from tweet_id to cluster_id
-with open('index_to_cluster_mapping.json', 'r') as f:
+with open('../index_to_cluster_mapping.json', 'r') as f:
     index_to_cluster = json.load(f)
 
 # Convert keys and values to integers
@@ -14,7 +13,7 @@ print(f"Loaded mapping for {len(index_to_cluster)} tweet IDs to clusters")
 
 # %%
 
-from scratchpads.conversation_explorer import ConversationExplorer, count_quotes
+from conversation_explorer import ConversationExplorer, count_quotes
 
 
 # %%
@@ -35,50 +34,55 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 # %%
-# Load columns with names containing "_id" as str to preserve full precision
+ENRICHED_TWEETS_PATH = '/Users/frsc/Documents/Projects/data/2025-09-03_enriched_tweets.parquet'
+tweets = pd.read_parquet(ENRICHED_TWEETS_PATH, dtype_backend='pyarrow')
 
-# %%
-tweets = pd.read_parquet('enriched_tweets.parquet', dtype_backend='pyarrow')
+# Set tweet_id as index for efficient selection
+tweets = tweets.set_index('tweet_id', drop=False)
+
+# Filter tweets to only those whose tweet_ids are in index_to_cluster
+# clustered_tweet_ids = list(index_to_cluster.keys())
+# tweets = tweets.loc[tweets.index.intersection(clustered_tweet_ids)]
+# print(f"Filtered to {len(tweets)} tweets that are in clusters")
+
 tweets.head()
 
 
 # %%
-
-quoted_counts = count_quotes(tweets)
-tweets = tweets.merge(
-    quoted_counts,
-    left_on='tweet_id',
-    right_on='quoted_tweet_id',
-    how='left',
-    suffixes=('', '_drop')
-)
-# Drop the duplicate quoted_tweet_id column from the merge
-tweets = tweets.drop(columns=['quoted_tweet_id_drop'], errors='ignore')
-# Fill NaN values with 0 for tweets that were never quoted
-tweets['quoted_count'] = tweets['quoted_count'].fillna(0).astype(int)
+# TODO make ConversationExplorer print quote_counts
+# quoted_counts = count_quotes(tweets)
+# tweets = tweets.merge(
+#     quoted_counts,
+#     left_on='tweet_id',
+#     right_on='quoted_tweet_id',
+#     how='left',
+#     suffixes=('', '_drop')
+# )
+# # Drop the duplicate quoted_tweet_id column from the merge
+# tweets = tweets.drop(columns=['quoted_tweet_id_drop'], errors='ignore')
+# # Fill NaN values with 0 for tweets that were never quoted
+# tweets['quoted_count'] = tweets['quoted_count'].fillna(0).astype(int)
 
 
 
 # %%
+import time
 
+start_time = time.time()
 real_explorer = ConversationExplorer(tweets)
+explorer_init_time = time.time() - start_time
+print(f"ConversationExplorer initialization took {explorer_init_time:.2f} seconds")
 
 # %%
 
 target_real_id = 1322462839622291463
-if 'tweets' in locals() and not tweets.empty:
+# Fallback to first tweet
+start_time = time.time()
+tree_output = real_explorer.print_tree(target_real_id)
+tree_time = time.time() - start_time
+print(f"print_tree took {tree_time:.2f} seconds")
 
-    
-    if target_real_id in tweets['tweet_id'].values:
-        print(f"Printing tree for specific real tweet {target_real_id}")
-        print(real_explorer.print_tree(target_real_id))
-    else:
-        # Fallback to first tweet
-        fallback_id = tweets.iloc[0]['tweet_id']
-        print(f"Specific ID not found. Printing tree for first available tweet {fallback_id}")
-        print(real_explorer.print_tree(fallback_id))
-else:
-    print("Tweets dataframe not available or empty.")
+print(tree_output)
 # %%
 
 # for later
@@ -93,33 +97,15 @@ print(f"Finding items for cluster {target_cluster}...")
 # Filter keys for this cluster
 cluster_keys = [int(k) for k, v in index_to_cluster.items() if int(v) == target_cluster]
 print(f"Found {len(cluster_keys)} items in cluster {target_cluster}")
+# %%
+output = real_explorer.print_tree(cluster_keys[816])
+# %%
 
 if cluster_keys:
-    # Determine if keys are indices or tweet_ids
-    first_key = cluster_keys[0]
-    is_tweet_id = (first_key > 1_000_000_000)
-
-    target_tweet_ids = []
-    if is_tweet_id:
-        print("Keys detected as Tweet IDs.")
-        target_tweet_ids = cluster_keys
-    else:
-        print("Keys detected as DataFrame Indices.")
-        # Filter valid indices
-        valid_indices = [i for i in cluster_keys if i < len(tweets)]
-        target_tweet_ids = tweets.iloc[valid_indices]['tweet_id'].tolist()
-
+    target_tweet_ids = cluster_keys
     print(f"Identified {len(target_tweet_ids)} tweet IDs for processing.")
-    
-    # Use the existing explorer
-    print("Generating output tree...")
-    # Reuse real_explorer if available, else create one
-    if 'real_explorer' in locals():
-        explorer = real_explorer
-    else:
-        explorer = ConversationExplorer(tweets)
         
-    output = explorer.print_tree(target_tweet_ids)
+    output = real_explorer.print_tree(target_tweet_ids)
 
     # Write to file
     output_file = f"cluster_{target_cluster}_tweets.txt"
@@ -131,3 +117,14 @@ else:
     print("No tweets found for this cluster.")
 
 # %%
+# make tweets into a list of tweets as a dict where each key is a column name
+tweets_list = tweets.to_dict(orient='records')
+# %%
+from conversation_explorer import build_conversation_trees, build_incomplete_conversation_trees
+conversation_tweet_list = [tweet for tweet in tweets_list if tweet['conversation_id'] is not None]
+trees =  build_conversation_trees(conversation_tweet_list)
+# %%
+non_conversation_tweet_list = [tweet for tweet in tweets_list if tweet['conversation_id'] is None]
+
+# %%
+incomplete_trees =  build_incomplete_conversation_trees(non_conversation_tweet_list)
