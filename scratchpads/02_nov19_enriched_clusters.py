@@ -102,7 +102,7 @@ with open('printed_threads.txt', 'w') as f:
 
 # %%
 
-# One root and a few leaves
+# One root and a few leaves. Should print one thread
 print(print_conversation_threads([1796457722940162500, 1796556282339443189, 1796580473625518379], complete_reply_trees, tweet_dict, depth=10))
 
 
@@ -111,7 +111,7 @@ print(print_conversation_threads([1796457722940162500, 1796556282339443189, 1796
 # A few leaves  from the same thread with some partial overlap in path
 
 
-# One root and a few leaves
+# One root and a few leaves. Should print two path to root
 print(print_conversation_threads([1796556282339443189, 1796580473625518379, 1796572316425662603], complete_reply_trees, tweet_dict, depth=5))
 
 
