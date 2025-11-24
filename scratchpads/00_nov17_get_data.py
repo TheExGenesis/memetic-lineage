@@ -1153,6 +1153,7 @@ print("\nPlot saved as 'cluster_volume_evolution.png'")
 df_all_with_clusters_indexed = df_all_with_clusters.set_index('key')
 index_to_cluster = df_all_with_clusters_indexed['cluster'].to_dict()
 
+# %%
 # Save the mapping to a JSON file
 with open('index_to_cluster_mapping.json', 'w') as f:
     json.dump(index_to_cluster, f, indent=2)
@@ -1161,3 +1162,5 @@ print(f"Created mapping for {len(index_to_cluster)} indices to clusters")
 print("Mapping saved to 'index_to_cluster_mapping.json'")
 
 
+
+# %%

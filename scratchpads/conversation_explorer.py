@@ -381,6 +381,16 @@ def _render_tree_node(
     stats_str = " ".join(stats_parts)
     username = tweet.get("username", "unknown")
     
+    # Format date
+    date_str = ""
+    created_at = tweet.get("created_at")
+    if created_at:
+        if hasattr(created_at, 'strftime'):
+            date_str = created_at.strftime("%Y-%m-%d")
+        else:
+            # Fallback for string or other types
+            date_str = str(created_at)[:10]
+
     # Handle quoted text
     quoted_text_block = []
     q_id = tweet.get("quoted_tweet_id")
@@ -400,7 +410,7 @@ def _render_tree_node(
     if not is_root_of_view:
         connector = "└── " if is_last_child else "├── "
     
-    header = f"{connector}{node_id} @{username} {stats_str}"
+    header = f"{connector}{node_id} [{date_str}] @{username} {stats_str}"
     lines.append(prefix + header)
     
     # Determine indentation for content and children

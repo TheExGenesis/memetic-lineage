@@ -56,7 +56,6 @@ tweets = tweets.merge(
 tweets = tweets.drop(columns=['quoted_tweet_id_drop'], errors='ignore')
 # Fill NaN values with 0 for tweets that were never quoted
 tweets['quoted_count'] = tweets['quoted_count'].fillna(0).astype(int)
-
 tweets = tweets.set_index('tweet_id', drop=False)
 
 # %%
@@ -80,14 +79,19 @@ complete_reply_trees = {**trees, **incomplete_trees}
 
 # quote_trees = build_quote_trees(tweets_list) # not used for now but it runs without errors
 
-# %%
-
-# get all the values in index_to_cluster with value 418
-cluster_tweet_ids = [k for k, v in index_to_cluster.items() if v == 418]
 
 # %%
-
 tweet_dict = {tweet['tweet_id']: tweet for tweet in tweets_list}
+
+# %%
+
+# get all the values in index_to_cluster with value 
+
+cluster_id = 528
+cluster_tweet_ids = [k for k, v in index_to_cluster.items() if v == cluster_id]
+
+# %%
+
 
 # %%
 
@@ -97,7 +101,7 @@ printed_threads = print_conversation_threads(cluster_tweet_ids, complete_reply_t
 end_time = time.time()
 print(f"Time taken: {end_time - start_time} seconds")
 # save printed_threads to a file
-with open('printed_threads.txt', 'w') as f:
+with open(f'printed_threads_{cluster_id}.txt', 'w') as f:
     f.write(printed_threads)
 
 # %%
