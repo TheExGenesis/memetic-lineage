@@ -66,6 +66,38 @@ export const TweetCard = ({ tweet }: { tweet: Tweet }) => {
           {expanded ? 'Show less' : 'Read more'}
         </button>
       )}
+
+      {/* Render Images */}
+      {tweet.media_urls && tweet.media_urls.length > 0 && (
+          <div className={`grid gap-2 mb-3 ${tweet.media_urls.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              {tweet.media_urls.map((url, i) => (
+                  <div key={i} className="rounded-lg overflow-hidden border border-gray-200">
+                      <img src={url} alt="Tweet media" className="w-full h-auto object-cover max-h-96" />
+                  </div>
+              ))}
+          </div>
+      )}
+
+      {/* Render Quoted Tweet */}
+      {tweet.quoted_tweet && (
+        <div className="border border-gray-300 rounded-lg p-3 mb-3 hover:bg-gray-50 transition-colors">
+           <div className="flex items-center gap-2 mb-1">
+              <div className="w-5 h-5 bg-gray-200 rounded-full overflow-hidden flex-shrink-0">
+                 {tweet.quoted_tweet.avatar_media_url && (
+                   <img src={tweet.quoted_tweet.avatar_media_url} alt={tweet.quoted_tweet.username} className="w-full h-full object-cover" />
+                 )}
+              </div>
+              <span className="font-bold text-xs">@{tweet.quoted_tweet.username}</span>
+              <span className="text-xs text-gray-500">{formatDate(tweet.quoted_tweet.created_at)}</span>
+           </div>
+           <div className="text-sm mb-2">{tweet.quoted_tweet.full_text}</div>
+           {tweet.quoted_tweet.media_urls && tweet.quoted_tweet.media_urls.length > 0 && (
+              <div className="rounded overflow-hidden border border-gray-200">
+                 <img src={tweet.quoted_tweet.media_urls[0]} alt="Quoted media" className="w-full h-32 object-cover" />
+              </div>
+           )}
+        </div>
+      )}
       
       <div className="flex gap-4 text-xs text-gray-500 font-mono">
         <span>♥ {tweet.favorite_count}</span>

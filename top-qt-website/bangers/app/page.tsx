@@ -1,13 +1,3 @@
-// TODO
-/* 
-- scroll columns independently DONE
-- render images
-- columns for last month and last week DONE
-- link previews
-- about tab explaining what's the CA, what we did (sort by QTs not from the OP), tease next research?, call to action (upload to the CA, install browser extension)
-- render QTs by looking quoted tweet from CA 
-- inspect tweets quoting any given tweet by hovering (get the from the CA)
-*/
 import { supabaseTopQt, supabaseCa } from '@/lib/supabase';
 import { HomePageClient } from './HomePageClient';
 import { Tweet } from '@/lib/types';
@@ -60,10 +50,10 @@ async function fetchTweetsByPeriod() {
   });
 
   const tweetsByYear = await Promise.all(tweetsByYearPromises);
-  const tweets = tweetsByYear.flat();
+  const yearTweets = tweetsByYear.flat();
   
   // Add column field to year-based tweets
-  tweets.forEach((tweet: any) => {
+  yearTweets.forEach((tweet: any) => {
     tweet.column = String(tweet.year);
   });
   
@@ -99,35 +89,161 @@ async function fetchTweetsByPeriod() {
   });
   
   // Combine all tweets
-  const allTweets = [...tweets, ...(lastMonthTweets || []), ...(lastWeekTweets || [])];
+  const allTweets = [...yearTweets, ...(lastMonthTweets || []), ...(lastWeekTweets || [])];
 
-  // Fetch media for all tweets from Community Archive
   if (allTweets.length > 0) {
-    const tweetIds = allTweets.map((t: any) => String(t.tweet_id));
-    const { data: mediaData } = await supabaseCa
-      .from('tweet_media')
-      .select('tweet_id, media_url')
-      .in('tweet_id', tweetIds);
-
-    // Create a map of tweet_id to first media_url
-    const mediaMap = new Map<string, string>();
-    mediaData?.forEach((m: { tweet_id: string; media_url: string }) => {
-      if (!mediaMap.has(m.tweet_id)) {
-        mediaMap.set(m.tweet_id, m.media_url);
-      }
-    });
-
-    // Add media_url to ALL tweet arrays
+    // Convert IDs to string first to ensure compatibility
     allTweets.forEach((tweet: any) => {
-      // Convert IDs to string
       tweet.tweet_id = String(tweet.tweet_id);
       if (tweet.quoted_tweet_id) tweet.quoted_tweet_id = String(tweet.quoted_tweet_id);
       if (tweet.conversation_id) tweet.conversation_id = String(tweet.conversation_id);
-      
-      const mediaUrl = mediaMap.get(tweet.tweet_id);
-      if (mediaUrl) {
-         if (!tweet.media_urls) tweet.media_urls = [];
-         tweet.media_urls.push(mediaUrl);
+    });
+
+    const tweetIds = allTweets.map((t: any) => t.tweet_id);
+
+    // Chunk tweet IDs to respect Supabase's 1000 item limit
+    const chunkSize = 500;
+    const tweetIdChunks = [];
+    for (let i = 0; i < tweetIds.length; i += chunkSize) {
+      tweetIdChunks.push(tweetIds.slice(i, i + chunkSize));
+    }
+
+    // Fetch media using joined query in chunks
+    const mediaMap = new Map<string, string[]>();
+    for (let i = 0; i < tweetIdChunks.length; i++) {
+      const chunk = tweetIdChunks[i];
+      const { data: tweetsWithMedia, error: mediaError } = await supabaseCa
+        .from('tweet_media')
+        .select('tweet_id, media_url, media_type')
+        .in('tweet_id', chunk);
+
+      if (mediaError) {
+        console.error('Error fetching media:', mediaError);
+      } else {
+        // Add to media map - group all media URLs by tweet_id
+        tweetsWithMedia?.forEach((mediaItem: { tweet_id: string; media_url: string; media_type: string }) => {
+          if (!mediaMap.has(mediaItem.tweet_id)) {
+            mediaMap.set(mediaItem.tweet_id, []);
+          }
+          mediaMap.get(mediaItem.tweet_id)!.push(mediaItem.media_url);
+        });
+      }
+    }
+
+    // Get quote tweet relationships in chunks
+    const quoteMap = new Map<string, string>();
+    for (const chunk of tweetIdChunks) {
+      const { data: quoteTweetRels } = await supabaseCa
+        .from('quote_tweets')
+        .select('tweet_id, quoted_tweet_id')
+        .in('tweet_id', chunk);
+
+      quoteTweetRels?.forEach((qt: { tweet_id: string; quoted_tweet_id: string }) => 
+        quoteMap.set(qt.tweet_id, qt.quoted_tweet_id));
+    }
+
+    // Fetch quoted tweets
+    const quotedTweetIds = Array.from(new Set(Array.from(quoteMap.values()).filter(Boolean)));
+
+    const quotedTweetsMap = new Map<string, any>();
+    
+    if (quotedTweetIds.length > 0) {
+      // Chunk quoted tweet IDs
+      const quotedIdChunks = [];
+      for (let i = 0; i < quotedTweetIds.length; i += chunkSize) {
+        quotedIdChunks.push(quotedTweetIds.slice(i, i + chunkSize));
+      }
+
+      type QuotedTweetData = {
+        tweet_id: string;
+        account_id: string;
+        created_at: string;
+        full_text: string;
+        favorite_count: number;
+        retweet_count: number;
+        tweet_media: { media_url: string; media_type: string }[];
+      };
+      const allQuotedData: QuotedTweetData[] = [];
+      for (const chunk of quotedIdChunks) {
+        const { data: quotedData, error: quotedError } = await supabaseCa
+          .from('tweets')
+          .select(`
+            tweet_id,
+            account_id,
+            created_at,
+            full_text,
+            favorite_count,
+            retweet_count,
+            tweet_media (
+              media_url,
+              media_type
+            )
+          `)
+          .in('tweet_id', chunk);
+
+        if (quotedError) {
+          console.error('Error fetching quoted tweets:', quotedError);
+        } else {
+          if (quotedData) {
+            allQuotedData.push(...quotedData as any);
+          }
+        }
+      }
+
+      if (allQuotedData.length > 0) {
+        // Fetch account data for quoted tweets in chunks
+        const accountIds = allQuotedData.map((t: { account_id: string }) => t.account_id).filter(Boolean);
+        const accountIdChunks = [];
+        for (let i = 0; i < accountIds.length; i += chunkSize) {
+          accountIdChunks.push(accountIds.slice(i, i + chunkSize));
+        }
+
+        const accountMap = new Map<string, { username: string; account_display_name: string }>();
+        for (const chunk of accountIdChunks) {
+          const { data: accountData } = await supabaseCa
+            .from('all_account')
+            .select('account_id, username, account_display_name')
+            .in('account_id', chunk);
+
+          accountData?.forEach((a: { account_id: string; username: string; account_display_name: string }) => 
+            accountMap.set(a.account_id, a));
+        }
+
+        // Fetch profile/avatar data for quoted tweets in chunks
+        const profileMap = new Map<string, string>();
+        for (const chunk of accountIdChunks) {
+          const { data: profileData } = await supabaseCa
+            .from('all_profile')
+            .select('account_id, avatar_media_url')
+            .in('account_id', chunk);
+
+          profileData?.forEach((p: { account_id: string; avatar_media_url: string }) =>   
+            profileMap.set(p.account_id, p.avatar_media_url));
+        }
+
+        allQuotedData.forEach((qt) => {
+          const account = accountMap.get(qt.account_id);
+          quotedTweetsMap.set(qt.tweet_id, {
+            tweet_id: qt.tweet_id,
+            created_at: qt.created_at,
+            full_text: qt.full_text,
+            username: account?.username || '',
+            favorite_count: qt.favorite_count,
+            retweet_count: qt.retweet_count,
+            avatar_media_url: profileMap.get(qt.account_id),
+            media_urls: qt.tweet_media && qt.tweet_media.length > 0 ? qt.tweet_media.map(m => m.media_url) : undefined
+          });
+        });
+      }
+    }
+
+    // Add media_urls and quoted_tweet to tweets
+    allTweets.forEach((tweet: any) => {
+      tweet.media_urls = mediaMap.get(tweet.tweet_id);
+      const quotedId = quoteMap.get(tweet.tweet_id);
+      if (quotedId) {
+        tweet.quoted_tweet_id = quotedId;
+        tweet.quoted_tweet = quotedTweetsMap.get(quotedId);
       }
     });
   }
