@@ -1,8 +1,8 @@
 // TODO
 /* 
-- scroll columns independently
+- scroll columns independently DONE
 - render images
-- columns for last month and last week
+- columns for last month and last week DONE
 - link previews
 - about tab explaining what's the CA, what we did (sort by QTs not from the OP), tease next research?, call to action (upload to the CA, install browser extension)
 - render QTs by looking quoted tweet from CA 
