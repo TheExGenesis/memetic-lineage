@@ -1,14 +1,11 @@
 // TODO
 /* 
-- bug: pretty sure ids are wrong, 0s at the end [FIXED: tweet_id now string to preserve int8 precision]
-- columns for last month and last week
-- link previews
-- about tab explaining what's the CA, what we did (sort by QTs not from the OP), tease next research?, call to action (upload to the CA, install browser extension)
-- render QTs by looking quoted tweet from CA 
 - inspect tweets quoting any given tweet by hovering (get the from the CA)
+- about tab explaining what's the CA, what we did (sort by QTs not from the OP), tease next research?, call to action (upload to the CA, install browser extension)
+- link previews
 */
 import { supabaseTopQt, supabaseCa } from '@/lib/supabase';
-import { TweetCard } from './TweetCard';
+import { HomePageClient } from './HomePageClient';
 
 interface Tweet {
   tweet_id: string;
@@ -23,6 +20,7 @@ interface Tweet {
   avatar_media_url?: string;
   conversation_id?: string;
   media_urls?: string[];
+  column: string;
   quoted_tweet?: {
     tweet_id: string;
     created_at: string;
@@ -35,54 +33,7 @@ interface Tweet {
   };
 }
 
-
-const HomePage = ({ tweets }: { tweets: Tweet[] }) => {
-  // Group tweets by year
-  const groups: Record<number, Tweet[]> = {};
-  tweets.forEach((tweet: Tweet) => {
-    if (!groups[tweet.year]) {
-      groups[tweet.year] = [];
-    }
-    groups[tweet.year].push(tweet);
-  });
-  // print random sample of tweets
-
-  // Sort years descending
-  const tweetsByYear = Object.keys(groups).sort((a, b) => Number(b) - Number(a)).map(year => ({
-    year: Number(year),
-    tweets: groups[Number(year)]
-  }));
-
-  console.log(`tweetsByYear: ${tweetsByYear.map(year => year.year).join(', ')}`);
-  return (
-    <div className="min-h-screen p-8 bg-white text-black">
-      <header className="mb-12 border-b-4 border-black pb-4">
-        <h1 className="text-6xl font-bold tracking-tighter">bangers</h1>
-        <p className="text-xl italic mt-2">of the Community Archive</p>
-      </header>
-
-      <main className="grid gap-8" style={{ gridTemplateColumns: `repeat(${tweetsByYear.length}, minmax(320px, 1fr))` }}>
-        {tweetsByYear.map(({ year, tweets }) => (
-          <section key={year} className="flex flex-col">
-            <h2 className="text-4xl font-bold mb-6 border-b-2 border-black pb-2 sticky top-0 bg-white z-10">
-              {year}
-            </h2>
-            <div className="flex flex-col gap-2">
-              {tweets.map(tweet => (
-                <TweetCard key={tweet.tweet_id} tweet={tweet} />
-              ))}
-            </div>
-          </section>
-        ))}
-      </main>
-      
-      <footer className="mt-20 py-8 border-t border-black text-center text-sm">
-        <p>© 2025 Bangers Archive. All rights reserved.</p>
-      </footer>
-    </div>
-  );
-};
-async function fetchTweetsByYear() {
+async function fetchTweetsByPeriod() {
   // Get min and max year
   const { data: minYearData, error: yearError } = await supabaseTopQt
     .from('community_archive_tweets')
@@ -130,9 +81,53 @@ async function fetchTweetsByYear() {
   });
 
   const tweetsByYear = await Promise.all(tweetsByYearPromises);
-  const tweets = tweetsByYear.flat();
-  console.log(`tweets: ${tweets.length}`);
-  console.log(`sample 3 tweets: ${JSON.stringify(tweets.slice(0, 3), null, 2)}`);
+  const yearTweets = tweetsByYear.flat();
+  
+  // Add column field to year-based tweets
+  yearTweets.forEach((tweet: Tweet) => {
+    tweet.column = String(tweet.year);
+  });
+  
+  console.log(`year tweets: ${yearTweets.length}`);
+  console.log(`sample 3 year tweets: ${JSON.stringify(yearTweets.slice(0, 3), null, 2)}`);
+  
+  // Calculate date ranges
+  const now = new Date();
+  const lastWeekDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const lastMonthDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  
+  // Fetch last month tweets
+  const { data: lastMonthTweets } = await supabaseTopQt
+    .from('community_archive_tweets')
+    .select('*')
+    .gte('created_at', lastMonthDate.toISOString())
+    .order('quote_count', { ascending: false })
+    .limit(100);
+  
+  // Add column field to last month tweets
+  (lastMonthTweets || []).forEach((tweet: Tweet) => {
+    tweet.column = 'Last Month';
+  });
+  
+  // Fetch last week tweets
+  const { data: lastWeekTweets } = await supabaseTopQt
+    .from('community_archive_tweets')
+    .select('*')
+    .gte('created_at', lastWeekDate.toISOString())
+    .order('quote_count', { ascending: false })
+    .limit(100);
+  
+  // Add column field to last week tweets
+  (lastWeekTweets || []).forEach((tweet: Tweet) => {
+    tweet.column = 'Last Week';
+  });
+  
+  console.log(`last week tweets: ${(lastWeekTweets || []).length}`);
+  console.log(`last month tweets: ${(lastMonthTweets || []).length}`);
+  
+  // Combine all tweets
+  const tweets = [...yearTweets, ...(lastMonthTweets || []), ...(lastWeekTweets || [])];
+  console.log(`total tweets: ${tweets.length}`);
 
   // Enrich tweets with media and quoted tweets from Community Archive
   if (tweets.length > 0) {
@@ -265,7 +260,7 @@ async function fetchTweetsByYear() {
             .select('account_id, avatar_media_url')
             .in('account_id', chunk);
 
-          profileData?.forEach((p: { account_id: string; avatar_media_url: string }) => 
+          profileData?.forEach((p: { account_id: string; avatar_media_url: string }) =>   
             profileMap.set(p.account_id, p.avatar_media_url));
         }
 
@@ -299,6 +294,110 @@ async function fetchTweetsByYear() {
   return tweets;
 }
 
+async function fetchQuotingTweets(tweetIds: string[]) {
+  if (tweetIds.length === 0) return [];
+
+  const chunkSize = 500;
+  const tweetIdChunks = [];
+  for (let i = 0; i < tweetIds.length; i += chunkSize) {
+    tweetIdChunks.push(tweetIds.slice(i, i + chunkSize));
+  }
+
+  const quotingTweetIds: string[] = [];
+  for (const chunk of tweetIdChunks) {
+    const { data: quoteRels } = await supabaseCa
+      .from('quote_tweets')
+      .select('tweet_id')
+      .in('quoted_tweet_id', chunk);
+
+    if (quoteRels) {
+      quotingTweetIds.push(...quoteRels.map(q => q.tweet_id));
+    }
+  }
+
+  if (quotingTweetIds.length === 0) return [];
+
+  const quotingIdChunks = [];
+  for (let i = 0; i < quotingTweetIds.length; i += chunkSize) {
+    quotingIdChunks.push(quotingTweetIds.slice(i, i + chunkSize));
+  }
+
+  type TweetData = {
+    tweet_id: string;
+    account_id: string;
+    created_at: string;
+    full_text: string;
+    favorite_count: number;
+    retweet_count: number;
+    tweet_media: { media_url: string; media_type: string }[];
+  };
+
+  const allTweets: TweetData[] = [];
+  for (const chunk of quotingIdChunks) {
+    const { data: tweetsData } = await supabaseCa
+      .from('tweets')
+      .select(`
+        tweet_id,
+        account_id,
+        created_at,
+        full_text,
+        favorite_count,
+        retweet_count,
+        tweet_media (
+          media_url,
+          media_type
+        )
+      `)
+      .in('tweet_id', chunk);
+
+    if (tweetsData) {
+      allTweets.push(...tweetsData);
+    }
+  }
+
+  if (allTweets.length === 0) return [];
+
+  const accountIds = allTweets.map(t => t.account_id).filter(Boolean);
+  const accountIdChunks = [];
+  for (let i = 0; i < accountIds.length; i += chunkSize) {
+    accountIdChunks.push(accountIds.slice(i, i + chunkSize));
+  }
+
+  const accountMap = new Map<string, { username: string; account_display_name: string }>();
+  for (const chunk of accountIdChunks) {
+    const { data: accountData } = await supabaseCa
+      .from('all_account')
+      .select('account_id, username, account_display_name')
+      .in('account_id', chunk);
+
+    accountData?.forEach(a => accountMap.set(a.account_id, a));
+  }
+
+  const profileMap = new Map<string, string>();
+  for (const chunk of accountIdChunks) {
+    const { data: profileData } = await supabaseCa
+      .from('all_profile')
+      .select('account_id, avatar_media_url')
+      .in('account_id', chunk);
+
+    profileData?.forEach(p => profileMap.set(p.account_id, p.avatar_media_url));
+  }
+
+  return allTweets.map(t => {
+    const account = accountMap.get(t.account_id);
+    return {
+      tweet_id: t.tweet_id,
+      created_at: t.created_at,
+      full_text: t.full_text,
+      username: account?.username || '',
+      favorite_count: t.favorite_count,
+      retweet_count: t.retweet_count,
+      avatar_media_url: profileMap.get(t.account_id),
+      media_urls: t.tweet_media && t.tweet_media.length > 0 ? t.tweet_media.map(m => m.media_url) : undefined
+    };
+  });
+}
+
 export default async function Home() {
   // Test CA database connection - fetch a single tweet
   const { data: testTweet, error } = await supabaseCa
@@ -319,7 +418,7 @@ export default async function Home() {
   console.log('Error:', error);
   console.log('Tweet:', testTweet);
 
-  const tweets = await fetchTweetsByYear();
+  const tweets = await fetchTweetsByPeriod();
   console.log(`tweets: ${tweets.length}`);
       if (tweets.length > 0) {
         const tweetsWithMedia = tweets.filter((tweet) => tweet.media_urls !== undefined);
@@ -338,6 +437,6 @@ export default async function Home() {
   console.log(`tweets: ${tweets.length}`);
   // sample 5 tweets print fully
   // console.log(`sample 3 tweets: ${JSON.stringify(tweets.slice(0,  3), null, 2)}`);
-  return <HomePage tweets={tweets} />;
+  return <HomePageClient tweets={tweets} />;
 }
 
