@@ -28,18 +28,67 @@ load_dotenv(dotenv_path=ENV_PATH)
 # ../../../data/ca_dump_nov_15.parquet relative to py/ folder
 DATA_PATH = SCRIPT_DIR.parent.parent.parent / "data/ca_dump_nov_15.parquet"
 
+# table in the top qt app supabase db
+"""create table public.community_archive_tweets (
+  tweet_id bigint primary key,
+  created_at timestamptz not null,
+  full_text text,
+  username text,
+  favorite_count int default 0,
+  retweet_count int default 0,
+  quote_count int default 0,
+  year int,
+  quoted_tweet_id bigint,
+  avatar_media_url text,
+  conversation_id bigint,
+  media_urls text[]
+);
 
-def get_uploaded_account_ids(supabase):
-  """Fetch account_ids from archive_upload table."""
-  print("Fetching uploaded account IDs from Supabase...")
-  try:
-    response = supabase.table('archive_upload').select('account_id').execute()
-    account_ids = set(row['account_id'] for row in response.data)
-    print(f"Found {len(account_ids)} accounts with uploads")
-    return account_ids
-  except Exception as e:
-    print(f"Error fetching account IDs: {e}")
+-- Index for fast querying of top QTs
+create index tweets_quote_count_idx on public.community_archive_tweets (quote_count desc);
+create index tweets_year_idx on public.community_archive_tweets (year);
+
+    """
+
+def get_uploaded_account_ids():
+  """Fetch account_ids from archive_upload and optin tables in Community Archive DB."""
+  print("Fetching uploaded account IDs from Community Archive Supabase...")
+  
+  ca_url = os.getenv("CA_SUPABASE_URL")
+  ca_key = os.getenv("CA_SUPABASE_ANON_KEY")
+  
+  if not ca_url or not ca_key:
+    print("Error: CA_SUPABASE_URL and CA_SUPABASE_ANON_KEY must be set in .env")
     return set()
+  
+  ca_supabase = create_client(ca_url, ca_key)
+  
+  account_ids = set()
+  
+  # Get account_ids from archive_upload table
+  try:
+    response = ca_supabase.table('archive_upload').select('account_id').execute()
+    archive_account_ids = set(row['account_id'] for row in response.data)
+    account_ids.update(archive_account_ids)
+    print(f"Found {len(archive_account_ids)} accounts with uploads")
+  except Exception as e:
+    print(f"Error fetching account IDs from archive_upload: {e}")
+  
+  # Get twitter_user_id from optin table (where twitter_user_id is not null)
+  try:
+    response = ca_supabase.table('optin').select('twitter_user_id').execute()
+    optin_account_ids = set(
+      row['twitter_user_id'] 
+      for row in response.data 
+      if row['twitter_user_id'] is not None
+    )
+    account_ids.update(optin_account_ids)
+    print(f"Found {len(optin_account_ids)} accounts from optin table")
+  except Exception as e:
+    print(f"Error fetching account IDs from optin: {e}")
+  
+  print(f"Total unique account IDs: {len(account_ids)}")
+  return account_ids
 
 
 def count_quotes(tweets_df, uploaded_account_ids):
@@ -131,6 +180,7 @@ def prepare_for_upload(tweets_with_counts):
   tweets_with_counts['retweet_count'] = tweets_with_counts['retweet_count'].fillna(0)
   
   # Select and rename columns to match Supabase schema
+  # Note: 'quoted_count' is renamed to 'quote_count' to match the DB schema
   df_to_upload = tweets_with_counts[[
     'tweet_id', 
     'created_at', 
@@ -145,8 +195,11 @@ def prepare_for_upload(tweets_with_counts):
     'conversation_id'
   ]].copy()
   
+  # Rename quoted_count to quote_count to match DB schema
+  df_to_upload = df_to_upload.rename(columns={'quoted_count': 'quote_count'})
+  
   # Sort by quote count to ensure top tweets are processed first/logged
-  df_to_upload = df_to_upload.sort_values('quoted_count', ascending=False)
+  df_to_upload = df_to_upload.sort_values('quote_count', ascending=False)
   
   # Convert datetime to string for JSON
   df_to_upload['created_at'] = df_to_upload['created_at'].dt.strftime('%Y-%m-%d %H:%M:%S%z')
@@ -154,6 +207,12 @@ def prepare_for_upload(tweets_with_counts):
   # Replace NaN with None (null in JSON/DB)
   df_to_upload = df_to_upload.replace({np.nan: None})
   
+  # Deduplicate by tweet_id to prevent batch upload errors
+  initial_count = len(df_to_upload)
+  df_to_upload = df_to_upload.drop_duplicates(subset=['tweet_id'])
+  if len(df_to_upload) < initial_count:
+    print(f"Dropped {initial_count - len(df_to_upload)} duplicate tweet records")
+
   return df_to_upload
 
 def validate_data(df_to_upload):
@@ -161,7 +220,7 @@ def validate_data(df_to_upload):
   print("\n=== Data Validation ===")
   
   # Check for required columns
-  required_cols = ['tweet_id', 'created_at', 'full_text', 'username', 'quoted_count']
+  required_cols = ['tweet_id', 'created_at', 'full_text', 'username', 'quote_count']
   missing_cols = [col for col in required_cols if col not in df_to_upload.columns]
   if missing_cols:
     print(f"❌ Missing required columns: {missing_cols}")
@@ -176,7 +235,7 @@ def validate_data(df_to_upload):
   print(f"✓ No null tweet_ids")
   
   # Check quote counts are positive
-  if (df_to_upload['quoted_count'] <= 0).any():
+  if (df_to_upload['quote_count'] <= 0).any():
     print(f"❌ Found non-positive quote counts")
     return False
   print(f"✓ All quote counts are positive")
@@ -185,7 +244,7 @@ def validate_data(df_to_upload):
   print(f"\n=== Summary Statistics ===")
   print(f"Total records: {len(df_to_upload)}")
   print(f"Date range: {df_to_upload['created_at'].min()} to {df_to_upload['created_at'].max()}")
-  print(f"Quote count range: {df_to_upload['quoted_count'].min()} to {df_to_upload['quoted_count'].max()}")
+  print(f"Quote count range: {df_to_upload['quote_count'].min()} to {df_to_upload['quote_count'].max()}")
   print(f"Unique users: {df_to_upload['username'].nunique()}")
   print(f"Years covered: {sorted(df_to_upload['year'].unique())}")
   
@@ -193,7 +252,7 @@ def validate_data(df_to_upload):
   print(f"\n=== Top 10 Most Quoted Tweets ===")
   top_10 = df_to_upload.head(10)
   for idx, row in top_10.iterrows():
-    print(f"\n{row['quoted_count']} quotes - @{row['username']} ({row['created_at']})")
+    print(f"\n{row['quote_count']} quotes - @{row['username']} ({row['created_at']})")
     text_preview = row['full_text'][:100] + "..." if len(row['full_text']) > 100 else row['full_text']
     print(f"  {text_preview}")
   
@@ -235,8 +294,8 @@ def process_and_upload():
 
   supabase = create_client(url, key)
 
-  # Step 0: Get uploaded account IDs
-  uploaded_account_ids = get_uploaded_account_ids(supabase)
+  # Step 0: Get uploaded account IDs from Community Archive DB
+  uploaded_account_ids = get_uploaded_account_ids()
   if not uploaded_account_ids:
     print("No uploaded accounts found. Aborting.")
     return
@@ -279,7 +338,8 @@ load_dotenv()
 url = os.getenv("SUPABASE_URL")
 key = os.getenv("SUPABASE_KEY")
 supabase = create_client(url, key)
-uploaded_account_ids = get_uploaded_account_ids(supabase)
+uploaded_account_ids = get_uploaded_account_ids()
+# %%
 tweets = load_tweets_data()
 
 # %%
@@ -291,3 +351,19 @@ tweets_with_counts = merge_quote_counts(tweets, quoted_counts, uploaded_account_
 # Step 4: Prepare for upload
 df_to_upload = prepare_for_upload(tweets_with_counts)
 # %%
+  # Step 5: Validate data
+if not validate_data(df_to_upload):
+    print("\n❌ Validation failed. Aborting upload.")
+  
+  # Step 6: Confirm before upload
+print("\n" + "="*50)
+response = input("Proceed with upload? (yes/no): ")
+if response.lower() != 'yes':
+    print("Upload cancelled.")
+
+# Step 7: Upload
+upload_to_supabase(df_to_upload, supabase)
+
+# %%
+# max col width
+pd.set_option('display.max_colwidth', None)

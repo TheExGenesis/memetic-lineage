@@ -1,13 +1,22 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_SECRET;
+// Top QT tweets database
+const topQtUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const topQtKey = process.env.NEXT_PUBLIC_SUPABASE_SECRET;
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Missing Supabase environment variables: NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_SECRET');
+// Community Archive database
+const caUrl = process.env.NEXT_PUBLIC_CA_SUPABASE_URL;
+const caKey = process.env.NEXT_PUBLIC_CA_SUPABASE_SECRET;
+
+if (!topQtUrl || !topQtKey) {
+  throw new Error('Missing Top QT Supabase environment variables');
 }
 
-export const supabase = createClient(
-  supabaseUrl,
-  supabaseKey
-);
+if (!caUrl || !caKey) {
+  throw new Error('Missing Community Archive Supabase environment variables');
+}
+
+export const supabaseTopQt = createClient(topQtUrl, topQtKey);
+export const supabaseCa = createClient(caUrl, caKey);
+
+
