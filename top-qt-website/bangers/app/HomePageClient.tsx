@@ -1,94 +1,215 @@
 'use client';
 
+import { useState, useRef, useEffect } from 'react';
 import { TweetCard } from './TweetCard';
-
-interface Tweet {
-  tweet_id: number;
-  created_at: string;
-  full_text: string;
-  username: string;
-  favorite_count: number;
-  retweet_count: number;
-  quote_count: number;
-  year: number;
-  quoted_tweet_id?: number;
-  avatar_media_url?: string;
-  conversation_id?: number;
-  media_url?: string;
-  column: string; 
-}
+import { TweetPane } from './TweetPane';
+import { VerticalSpine } from './VerticalSpine';
+import { Tweet } from '@/lib/types';
 
 export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
-  // Group tweets by year
+  const [selectedTweets, setSelectedTweets] = useState<Tweet[]>([]);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Group tweets by column
   const groups: Record<string, Tweet[]> = {};
   tweets.forEach((tweet: Tweet) => {
-    if (!groups[tweet.column]) {
-      groups[tweet.column] = [];
+    const col = tweet.column || 'Unknown';
+    if (!groups[col]) {
+      groups[col] = [];
     }
-    groups[tweet.column].push(tweet);
+    groups[col].push(tweet);
   });
-  // print random sample of tweets
-  console.log(`random sample of tweets: ${tweets.slice(0, 25).map(tweet => tweet.created_at).join('\n')}`);
 
-  // Custom sort function that handles both numeric years and string labels
   const sortColumns = (a: string, b: string) => {
-    // Check if both are numeric years
     const aNum = Number(a);
     const bNum = Number(b);
     
     if (!isNaN(aNum) && !isNaN(bNum)) {
-      return bNum - aNum; // Descending order for years
+      return bNum - aNum;
     }
     
-    // Handle special string columns
     const order = ['Last Week', 'Last Month'];
     const aIndex = order.indexOf(a);
     const bIndex = order.indexOf(b);
     
-    // If both are in the order array, sort by their position
     if (aIndex !== -1 && bIndex !== -1) {
       return aIndex - bIndex;
     }
     
-    // If only one is in the order array, it comes first
     if (aIndex !== -1) return -1;
     if (bIndex !== -1) return 1;
     
-    // Otherwise, alphabetical sort
     return a.localeCompare(b);
   };
-  // Sort years descending
-  const tweetsByYear = Object.keys(groups).sort(sortColumns).map(column => ({
+
+  const tweetsByColumn = Object.keys(groups).sort(sortColumns).map(column => ({
     column: column,
     tweets: groups[column]
   }));
-  // Reverse the order to show oldest tweets on the left
 
-  console.log(`tweetsByYear: ${tweetsByYear.map(year => year.column).join(', ')}`);
+  const handleTweetClick = (tweet: Tweet, depth: number) => {
+     const newStack = depth === -1 ? [] : selectedTweets.slice(0, depth + 1);
+     newStack.push(tweet);
+     setSelectedTweets(newStack);
+  };
+
+  const handleClosePane = (index: number) => {
+    setSelectedTweets(selectedTweets.slice(0, index));
+  };
+
+  const handleSpineClick = (index: number) => {
+      // Navigate back to this pane being the active one
+      // index -1 means home
+      if (index === -1) {
+          setSelectedTweets([]);
+      } else {
+          setSelectedTweets(selectedTweets.slice(0, index + 1));
+      }
+  };
+
+  useEffect(() => {
+    // Scroll to the right when a new pane is added
+    if (scrollContainerRef.current && selectedTweets.length > 0) {
+        setTimeout(() => {
+            scrollContainerRef.current?.scrollTo({
+                left: scrollContainerRef.current.scrollWidth,
+                behavior: 'smooth'
+            });
+        }, 100);
+    }
+  }, [selectedTweets.length]);
+
+  const isHomeCollapsed = selectedTweets.length > 0;
+  
+  // Calculate width for the active pane to take available space
+  // Standard spine width is w-12 (48px/3rem)
+  const spineWidthPx = 48;
+  const totalSpines = selectedTweets.length; // The home spine is effectively 1 unit, plus previous tweets
+  
+  // If we have selected tweets, we have:
+  // 1 Home Spine + (N-1) Tweet Spines
+  // Total spines = N (if N > 0)
+  const collapsedWidth = isHomeCollapsed ? (selectedTweets.length * spineWidthPx) : 0;
+  
+  // We want the active pane to fill the rest of the screen width, but min 500px
+  // We can use calc(100vw - collapsedWidth)
+  const activePaneStyle = isHomeCollapsed 
+    ? { width: `calc(100vw - ${collapsedWidth}px)`, minWidth: '500px' }
+    : { width: '500px' }; // Should not happen for active pane in collapsed mode but typescript safety
+
   return (
-    <div className="h-screen flex flex-col p-8 bg-white text-black overflow-hidden">
-      <header className="mb-8 border-b-4 border-black pb-4 flex-shrink-0">
-        <h1 className="text-6xl font-bold tracking-tighter">bangers</h1>
-        <p className="text-xl italic mt-2">from the Community Archive</p>
-      </header>
-
-
-      <main className="flex gap-8 overflow-x-auto flex-1 scrollbar-hide">
-        {tweetsByYear.map(({ column, tweets }) => (
-          <section key={column} className="flex flex-col flex-shrink-0 w-[360px]">
-            <h2 className="text-4xl font-bold mb-6 border-b-2 border-black pb-2 flex-shrink-0">
-              {column}
-            </h2>
-            <div className="flex flex-col gap-2 overflow-y-auto flex-1 scrollbar-hide">
-              {tweets.map(tweet => (
-                <TweetCard key={tweet.tweet_id} tweet={tweet} />
-              ))}
-            </div>
-          </section>
-        ))}
-      </main>
+    <div className="h-screen flex flex-col bg-white text-black overflow-hidden">
       
-      <style jsx>{`
+      <div 
+        ref={scrollContainerRef}
+        className="flex flex-1 overflow-x-auto overflow-y-hidden scrollbar-hide"
+      >
+        {/* Root Pane / Home Spine */}
+        {isHomeCollapsed ? (
+            <VerticalSpine 
+                label="Bangers Home" 
+                onClick={() => handleSpineClick(-1)} 
+            />
+        ) : (
+            <div 
+                className={`flex flex-col flex-shrink-0 h-full border-r border-black transition-all duration-500 ease-in-out bg-gray-50`}
+                style={{ 
+                    width: '100vw',
+                    minWidth: '500px' 
+                }}
+            >
+                <div className="p-8 h-full flex flex-col overflow-hidden">
+                    <header className="mb-8 border-b-4 border-black pb-4 flex-shrink-0">
+                        <h1 className="text-6xl font-bold tracking-tighter">bangers</h1>
+                        <p className="text-xl italic mt-2">from the Community Archive</p>
+                    </header>
+                    
+                    <main className="flex gap-8 overflow-x-auto flex-1 scrollbar-hide">
+                        {tweetsByColumn.map(({ column, tweets }) => (
+                        <section key={column} className="flex flex-col flex-shrink-0 w-[360px]">
+                            <h2 className="text-4xl font-bold mb-6 border-b-2 border-black pb-2 flex-shrink-0">
+                            {column}
+                            </h2>
+                            <div className="flex flex-col gap-2 overflow-y-auto flex-1 scrollbar-hide pb-20">
+                            {tweets.map(tweet => (
+                                <div key={tweet.tweet_id} onClick={() => handleTweetClick(tweet, -1)} className="cursor-pointer hover:opacity-80 transition-opacity">
+                                    <TweetCard tweet={tweet} />
+                                </div>
+                            ))}
+                            </div>
+                        </section>
+                        ))}
+                        
+                        <section className="flex flex-col flex-shrink-0 w-[360px]">
+                            <h2 className="text-4xl font-bold mb-6 border-b-2 border-black pb-2 flex-shrink-0">
+                                About
+                            </h2>
+                            <div className="flex flex-col gap-6 overflow-y-auto flex-1 scrollbar-hide text-base leading-relaxed pb-20">
+                                <div>
+                                <h3 className="font-bold text-lg mb-2">The Community Archive</h3>
+                                <p>
+                                    The Community Archive is a crowdsourced database of Twitter history. 
+                                    Over 1 billion tweets from 2006-2024, preserved by the community, for the community.
+                                </p>
+                                </div>
+                                
+                                <div>
+                                <h3 className="font-bold text-lg mb-2">Help Preserve Twitter</h3>
+                                <p className="mb-3">
+                                    <strong>Upload your archive:</strong> Visit{' '}
+                                    <a 
+                                    href="https://communityarchive.org" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="underline font-semibold hover:opacity-70"
+                                    >
+                                    communityarchive.org
+                                    </a>
+                                    {' '}to contribute.
+                                </p>
+                                </div>
+                            </div>
+                        </section>
+                    </main>
+                </div>
+            </div>
+        )}
+
+        {/* Stacked Panes */}
+        {selectedTweets.map((tweet, index) => {
+            // Only the last selected tweet is expanded
+            const isLast = index === selectedTweets.length - 1;
+
+            if (!isLast) {
+                // Render Spine for non-active panes
+                return (
+                    <VerticalSpine 
+                        key={`${tweet.tweet_id}-${index}`}
+                        label={`@${tweet.username}: ${tweet.full_text.slice(0, 50)}...`}
+                        onClick={() => handleSpineClick(index)}
+                    />
+                );
+            }
+
+            // Render Full Pane for active pane
+            return (
+                <div 
+                  key={`${tweet.tweet_id}-${index}`} 
+                  className="flex-shrink-0 h-full"
+                  style={activePaneStyle}
+                >
+                    <TweetPane 
+                        tweet={tweet}
+                        onClose={() => handleClosePane(index)}
+                        onSelectTweet={(t) => handleTweetClick(t, index)}
+                    />
+                </div>
+            );
+        })}
+
+      </div>
+      
+      <style jsx global>{`
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
         }
@@ -100,4 +221,3 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
     </div>
   );
 };
-

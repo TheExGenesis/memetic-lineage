@@ -1,32 +1,36 @@
 'use client';
 
 import { useState } from 'react';
-
-interface Tweet {
-  tweet_id: number;
-  created_at: string;
-  full_text: string;
-  username: string;
-  favorite_count: number;
-  retweet_count: number;
-  quote_count: number;
-  year: number;
-  quoted_tweet_id?: number;
-  avatar_media_url?: string;
-  conversation_id?: number;
-}
+import { Tweet } from '@/lib/types';
 
 export const TweetCard = ({ tweet }: { tweet: Tweet }) => {
   const [expanded, setExpanded] = useState(false);
   const tweetUrl = `https://twitter.com/${tweet.username}/status/${tweet.tweet_id}`;
   
-  const shouldTruncate = tweet.full_text.length > 280;
-  const displayText = expanded || !shouldTruncate 
-    ? tweet.full_text 
-    : tweet.full_text.slice(0, 280) + '...';
+  // Only truncate if significantly longer to avoid close calls
+  const TRUNCATE_LENGTH = 280;
+  const shouldTruncate = tweet.full_text.length > TRUNCATE_LENGTH;
+  
+  // Use a fixed truncation for initial render to avoid hydration mismatch
+  // Then let React take over state
+  const getDisplayText = (text: string, isExpanded: boolean) => {
+      if (!shouldTruncate || isExpanded) return text;
+      return text.slice(0, TRUNCATE_LENGTH) + '...';
+  };
+
+  const displayText = getDisplayText(tweet.full_text, expanded);
+
+  // Handle fallback for formatted date if created_at is invalid (though it should be valid)
+  const formatDate = (dateStr: string) => {
+    try {
+        return new Date(dateStr).toISOString().split('T')[0];
+    } catch (e) {
+        return dateStr;
+    }
+  };
 
   return (
-    <div className="border-b border-black pb-4 mb-4 last:border-b-0 break-inside-avoid">
+    <div className="border-b border-black pb-4 mb-4 last:border-b-0 break-inside-avoid bg-white">
       <div className="flex items-start gap-3 mb-2">
         <div className="w-8 h-8 bg-gray-200 rounded-full overflow-hidden flex-shrink-0 border border-black">
           {tweet.avatar_media_url && (
@@ -40,8 +44,9 @@ export const TweetCard = ({ tweet }: { tweet: Tweet }) => {
             target="_blank" 
             rel="noopener noreferrer"
             className="text-xs text-gray-600 hover:underline"
+            onClick={(e) => e.stopPropagation()} 
           >
-            {new Date(tweet.created_at).toISOString().split('T')[0]}
+            {formatDate(tweet.created_at)}
           </a>
         </div>
       </div>
@@ -52,7 +57,10 @@ export const TweetCard = ({ tweet }: { tweet: Tweet }) => {
       
       {shouldTruncate && (
         <button 
-          onClick={() => setExpanded(!expanded)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setExpanded(!expanded);
+          }}
           className="text-xs text-blue-600 hover:underline mb-2"
         >
           {expanded ? 'Show less' : 'Read more'}
@@ -62,9 +70,8 @@ export const TweetCard = ({ tweet }: { tweet: Tweet }) => {
       <div className="flex gap-4 text-xs text-gray-500 font-mono">
         <span>♥ {tweet.favorite_count}</span>
         <span>↻ {tweet.retweet_count}</span>
-        <span>❝ {tweet.quote_count}</span>
+        {tweet.quote_count !== undefined && <span>❝ {tweet.quote_count}</span>}
       </div>
     </div>
   );
 };
-

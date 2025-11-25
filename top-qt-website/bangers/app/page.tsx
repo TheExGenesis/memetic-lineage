@@ -10,23 +10,7 @@
 */
 import { supabaseTopQt, supabaseCa } from '@/lib/supabase';
 import { HomePageClient } from './HomePageClient';
-
-interface Tweet {
-  tweet_id: number;
-  created_at: string;
-  full_text: string;
-  username: string;
-  favorite_count: number;
-  retweet_count: number;
-  quote_count: number;
-  year: number;
-  quoted_tweet_id?: number;
-  avatar_media_url?: string;
-  conversation_id?: number;
-  media_url?: string;
-  column: string;  // NEW: identifies which column this tweet belongs to
-}
-
+import { Tweet } from '@/lib/types';
 
 async function fetchTweetsByPeriod() {
   // Get min and max year
@@ -79,7 +63,7 @@ async function fetchTweetsByPeriod() {
   const tweets = tweetsByYear.flat();
   
   // Add column field to year-based tweets
-  tweets.forEach((tweet: Tweet) => {
+  tweets.forEach((tweet: any) => {
     tweet.column = String(tweet.year);
   });
   
@@ -97,7 +81,7 @@ async function fetchTweetsByPeriod() {
     .limit(100);
   
   // Add column field to last month tweets
-  (lastMonthTweets || []).forEach((tweet: Tweet) => {
+  (lastMonthTweets || []).forEach((tweet: any) => {
     tweet.column = 'Last Month';
   });
   
@@ -110,7 +94,7 @@ async function fetchTweetsByPeriod() {
     .limit(100);
   
   // Add column field to last week tweets
-  (lastWeekTweets || []).forEach((tweet: Tweet) => {
+  (lastWeekTweets || []).forEach((tweet: any) => {
     tweet.column = 'Last Week';
   });
   
@@ -119,7 +103,7 @@ async function fetchTweetsByPeriod() {
 
   // Fetch media for all tweets from Community Archive
   if (allTweets.length > 0) {
-    const tweetIds = allTweets.map((t: Tweet) => String(t.tweet_id));
+    const tweetIds = allTweets.map((t: any) => String(t.tweet_id));
     const { data: mediaData } = await supabaseCa
       .from('tweet_media')
       .select('tweet_id, media_url')
@@ -134,12 +118,21 @@ async function fetchTweetsByPeriod() {
     });
 
     // Add media_url to ALL tweet arrays
-    allTweets.forEach((tweet: Tweet) => {
-      tweet.media_url = mediaMap.get(String(tweet.tweet_id));
+    allTweets.forEach((tweet: any) => {
+      // Convert IDs to string
+      tweet.tweet_id = String(tweet.tweet_id);
+      if (tweet.quoted_tweet_id) tweet.quoted_tweet_id = String(tweet.quoted_tweet_id);
+      if (tweet.conversation_id) tweet.conversation_id = String(tweet.conversation_id);
+      
+      const mediaUrl = mediaMap.get(tweet.tweet_id);
+      if (mediaUrl) {
+         if (!tweet.media_urls) tweet.media_urls = [];
+         tweet.media_urls.push(mediaUrl);
+      }
     });
   }
 
-  return allTweets;
+  return allTweets as Tweet[];
 }
 
 export default async function Home() {
@@ -155,4 +148,3 @@ export default async function Home() {
 
   return <HomePageClient tweets={tweets} />;
 }
-

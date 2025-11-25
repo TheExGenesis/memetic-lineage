@@ -1,0 +1,128 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Tweet } from '@/lib/types';
+import { TweetCard } from './TweetCard';
+import { ThreadView } from './ThreadView';
+import { getThread, getQuotes, getConversationId } from '@/lib/api';
+
+interface TweetPaneProps {
+  tweet: Tweet;
+  onClose: () => void;
+  onSelectTweet: (tweet: Tweet) => void;
+}
+
+export const TweetPane = ({ tweet, onClose, onSelectTweet }: TweetPaneProps) => {
+  const [activeTab, setActiveTab] = useState<'qts' | 'thread' | 'vector search'>('thread');
+  const [threadTweets, setThreadTweets] = useState<Tweet[]>([]);
+  const [quoteTweets, setQuoteTweets] = useState<Tweet[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      if (activeTab === 'thread') {
+        let convId = tweet.conversation_id;
+        
+        if (!convId) {
+           convId = await getConversationId(tweet.tweet_id);
+        }
+        
+        if (convId) {
+            const data = await getThread(convId);
+            setThreadTweets(data);
+        } else {
+            // Fallback: just show this tweet as thread if no conversation found
+            setThreadTweets([tweet]);
+        }
+      } else if (activeTab === 'qts') {
+        const data = await getQuotes(tweet.tweet_id);
+        setQuoteTweets(data);
+      }
+      setLoading(false);
+    };
+
+    loadData();
+  }, [activeTab, tweet]);
+
+  return (
+    // Removed fixed width w-[500px], added w-full h-full to fill parent container
+    <div className="flex flex-col w-full h-full border-r border-black bg-white flex-shrink-0 shadow-xl">
+      {/* Header / Tabs */}
+      <div className="flex border-b border-black sticky top-0 bg-white z-10">
+        {['qts', 'thread', 'vector search'].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab as any)}
+            className={`flex-1 py-3 text-sm font-bold text-center uppercase border-r last:border-r-0 border-black transition-colors ${
+              activeTab === tab ? 'bg-black text-white' : 'hover:bg-gray-100'
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+        <button 
+          onClick={onClose} 
+          className="px-4 border-l border-black hover:bg-red-500 hover:text-white transition-colors"
+          aria-label="Close pane"
+        >
+           ✕
+        </button>
+      </div>
+      
+      <div className="flex-1 overflow-y-auto p-4">
+         <div className="mb-6 border-b-4 border-black pb-6">
+            {/* Main tweet should also be width-constrained? The user said "tweets in the thread view" and "Same in qt view".
+                The main tweet is "header" context, usually spans full. 
+                But to be safe and consistent with the "column width" idea, let's constrain it too if it feels too wide.
+                However, usually the header tweet is fine to be wider. 
+                The user specifically mentioned "qt view" (the tab). 
+                I will focus on the tab content first.
+            */}
+            <div style={{ maxWidth: '360px' }}>
+               <TweetCard tweet={tweet} />
+            </div>
+         </div>
+
+         {loading ? (
+           <div className="p-8 text-center text-gray-500 animate-pulse">Loading...</div>
+         ) : (
+           <>
+             {activeTab === 'thread' && (
+               <ThreadView 
+                 tweets={threadTweets} 
+                 focusedTweetId={tweet.tweet_id} 
+                 onSelectTweet={onSelectTweet} 
+               />
+             )}
+             
+             {activeTab === 'qts' && (
+               <div className="flex flex-col gap-4">
+                 {quoteTweets.length === 0 ? (
+                   <div className="text-gray-500 italic text-center mt-4">No quote tweets found.</div>
+                 ) : (
+                   quoteTweets.map(qt => (
+                     <div 
+                        key={qt.tweet_id} 
+                        onClick={() => onSelectTweet(qt)} 
+                        className="cursor-pointer transition-opacity hover:opacity-80"
+                        style={{ maxWidth: '360px' }}
+                     >
+                        <TweetCard tweet={qt} />
+                     </div>
+                   ))
+                 )}
+               </div>
+             )}
+
+             {activeTab === 'vector search' && (
+               <div className="p-4 text-gray-500 text-center mt-10">
+                 Semantic search coming soon...
+               </div>
+             )}
+           </>
+         )}
+      </div>
+    </div>
+  );
+};
