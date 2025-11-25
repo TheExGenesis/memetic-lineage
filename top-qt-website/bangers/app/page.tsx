@@ -24,10 +24,11 @@ interface Tweet {
   avatar_media_url?: string;
   conversation_id?: number;
   media_url?: string;
+  column: string;  // NEW: identifies which column this tweet belongs to
 }
 
 
-async function fetchTweetsByYear() {
+async function fetchTweetsByPeriod() {
   // Get min and max year
   const { data: minYearData, error: yearError } = await supabaseTopQt
     .from('community_archive_tweets')
@@ -76,10 +77,49 @@ async function fetchTweetsByYear() {
 
   const tweetsByYear = await Promise.all(tweetsByYearPromises);
   const tweets = tweetsByYear.flat();
+  
+  // Add column field to year-based tweets
+  tweets.forEach((tweet: Tweet) => {
+    tweet.column = String(tweet.year);
+  });
+  
+  // Calculate date ranges
+  const now = new Date();
+  const lastWeekDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const lastMonthDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  
+  // Fetch last month tweets
+  const { data: lastMonthTweets } = await supabaseTopQt
+    .from('community_archive_tweets')
+    .select('*')
+    .gte('created_at', lastMonthDate.toISOString())
+    .order('quote_count', { ascending: false })
+    .limit(100);
+  
+  // Add column field to last month tweets
+  (lastMonthTweets || []).forEach((tweet: Tweet) => {
+    tweet.column = 'Last Month';
+  });
+  
+  // Fetch last week tweets
+  const { data: lastWeekTweets } = await supabaseTopQt
+    .from('community_archive_tweets')
+    .select('*')
+    .gte('created_at', lastWeekDate.toISOString())
+    .order('quote_count', { ascending: false })
+    .limit(100);
+  
+  // Add column field to last week tweets
+  (lastWeekTweets || []).forEach((tweet: Tweet) => {
+    tweet.column = 'Last Week';
+  });
+  
+  // Combine all tweets
+  const allTweets = [...tweets, ...(lastMonthTweets || []), ...(lastWeekTweets || [])];
 
   // Fetch media for all tweets from Community Archive
-  if (tweets.length > 0) {
-    const tweetIds = tweets.map((t: Tweet) => String(t.tweet_id));
+  if (allTweets.length > 0) {
+    const tweetIds = allTweets.map((t: Tweet) => String(t.tweet_id));
     const { data: mediaData } = await supabaseCa
       .from('tweet_media')
       .select('tweet_id, media_url')
@@ -93,17 +133,17 @@ async function fetchTweetsByYear() {
       }
     });
 
-    // Add media_url to tweets
-    tweets.forEach((tweet: Tweet) => {
+    // Add media_url to ALL tweet arrays
+    allTweets.forEach((tweet: Tweet) => {
       tweet.media_url = mediaMap.get(String(tweet.tweet_id));
     });
   }
 
-  return tweets;
+  return allTweets;
 }
 
 export default async function Home() {
-  const tweets = await fetchTweetsByYear();
+  const tweets = await fetchTweetsByPeriod();
 
   if (tweets.length === 0) {
     return (
