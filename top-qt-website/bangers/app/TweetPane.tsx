@@ -5,6 +5,7 @@ import { Tweet } from '@/lib/types';
 import { TweetCard } from './TweetCard';
 import { ThreadView } from './ThreadView';
 import { getThread, getQuotes, getConversationId } from '@/lib/api';
+import { searchEmbeddings } from '@/app/actions/search';
 
 interface TweetPaneProps {
   tweet: Tweet;
@@ -12,10 +13,25 @@ interface TweetPaneProps {
   onSelectTweet: (tweet: Tweet) => void;
 }
 
+interface SearchResult {
+  key: string;
+  distance: number;
+  metadata: {
+    text: string;
+    username?: string;
+    tweet_id?: string;
+    created_at?: string;
+    favorite_count?: number;
+    retweet_count?: number;
+    avatar_media_url?: string;
+  };
+}
+
 export const TweetPane = ({ tweet, onClose, onSelectTweet }: TweetPaneProps) => {
   const [activeTab, setActiveTab] = useState<'qts' | 'thread' | 'vector search'>('thread');
   const [threadTweets, setThreadTweets] = useState<Tweet[]>([]);
   const [quoteTweets, setQuoteTweets] = useState<Tweet[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -25,7 +41,9 @@ export const TweetPane = ({ tweet, onClose, onSelectTweet }: TweetPaneProps) => 
         let convId = tweet.conversation_id;
         
         if (!convId) {
-           convId = await getConversationId(tweet.tweet_id);
+           // Fix type mismatch: getConversationId returns string | null, but convId expects string | undefined
+           const id = await getConversationId(tweet.tweet_id);
+           convId = id || undefined;
         }
         
         if (convId) {
@@ -38,6 +56,10 @@ export const TweetPane = ({ tweet, onClose, onSelectTweet }: TweetPaneProps) => 
       } else if (activeTab === 'qts') {
         const data = await getQuotes(tweet.tweet_id);
         setQuoteTweets(data);
+      } else if (activeTab === 'vector search') {
+        // Perform vector search using the tweet's text
+        const results = await searchEmbeddings(tweet.full_text);
+        setSearchResults(results);
       }
       setLoading(false);
     };
@@ -72,13 +94,6 @@ export const TweetPane = ({ tweet, onClose, onSelectTweet }: TweetPaneProps) => 
       
       <div className="flex-1 overflow-y-auto p-4">
          <div className="mb-6 border-b-4 border-black pb-6">
-            {/* Main tweet should also be width-constrained? The user said "tweets in the thread view" and "Same in qt view".
-                The main tweet is "header" context, usually spans full. 
-                But to be safe and consistent with the "column width" idea, let's constrain it too if it feels too wide.
-                However, usually the header tweet is fine to be wider. 
-                The user specifically mentioned "qt view" (the tab). 
-                I will focus on the tab content first.
-            */}
             <div style={{ maxWidth: '360px' }}>
                <TweetCard tweet={tweet} />
             </div>
@@ -116,8 +131,39 @@ export const TweetPane = ({ tweet, onClose, onSelectTweet }: TweetPaneProps) => 
              )}
 
              {activeTab === 'vector search' && (
-               <div className="p-4 text-gray-500 text-center mt-10">
-                 Semantic search coming soon...
+               <div className="flex flex-col gap-4">
+                 {searchResults.length === 0 ? (
+                   <div className="text-gray-500 italic text-center mt-4">No similar tweets found.</div>
+                 ) : (
+                   searchResults.map((result) => {
+                     // Map search result metadata to Tweet-like object for display
+                     // Note: The search API might return minimal metadata, so we adapt best we can
+                     const searchTweet: Tweet = {
+                        tweet_id: result.metadata.tweet_id || result.key,
+                        created_at: result.metadata.created_at || new Date().toISOString(),
+                        full_text: result.metadata.text,
+                        username: result.metadata.username || 'unknown',
+                        favorite_count: result.metadata.favorite_count || 0,
+                        retweet_count: result.metadata.retweet_count || 0,
+                        avatar_media_url: result.metadata.avatar_media_url
+                     };
+
+                     return (
+                       <div 
+                          key={result.key} 
+                          // If we have a valid tweet ID, we can navigate to it. Otherwise, just show card.
+                          onClick={() => result.metadata.tweet_id && onSelectTweet(searchTweet)} 
+                          className="cursor-pointer transition-opacity hover:opacity-80"
+                          style={{ maxWidth: '360px' }}
+                       >
+                          <div className="text-xs text-gray-400 mb-1 text-right">
+                            Similarity: {(result.distance * 100).toFixed(1)}%
+                          </div>
+                          <TweetCard tweet={searchTweet} />
+                       </div>
+                     );
+                   })
+                 )}
                </div>
              )}
            </>
