@@ -6,7 +6,7 @@ const topQtKey = process.env.NEXT_PUBLIC_SUPABASE_SECRET;
 
 // Community Archive database
 const caUrl = process.env.NEXT_PUBLIC_CA_SUPABASE_URL;
-const caKey = process.env.NEXT_PUBLIC_CA_SUPABASE_SECRET;
+const caKey = process.env.NEXT_PUBLIC_CA_SUPABASE_ANON_KEY;
 
 if (!topQtUrl || !topQtKey) {
   throw new Error('Missing Top QT Supabase environment variables');
