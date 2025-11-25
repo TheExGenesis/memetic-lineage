@@ -30,7 +30,7 @@ DATA_PATH = SCRIPT_DIR.parent.parent.parent / "data/ca_dump_nov_15.parquet"
 
 # table in the top qt app supabase db
 """create table public.community_archive_tweets (
-  tweet_id bigint primary key,
+  tweet_id text primary key,
   created_at timestamptz not null,
   full_text text,
   username text,
@@ -38,9 +38,9 @@ DATA_PATH = SCRIPT_DIR.parent.parent.parent / "data/ca_dump_nov_15.parquet"
   retweet_count int default 0,
   quote_count int default 0,
   year int,
-  quoted_tweet_id bigint,
+  quoted_tweet_id text,
   avatar_media_url text,
-  conversation_id bigint,
+  conversation_id text,
   media_urls text[]
 );
 
