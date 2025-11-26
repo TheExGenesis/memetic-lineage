@@ -113,7 +113,7 @@ async function fetchTweetsByPeriod() {
     for (let i = 0; i < tweetIdChunks.length; i++) {
       const chunk = tweetIdChunks[i];
       const { data: tweetsWithMedia, error: mediaError } = await supabaseCa
-        .from('tweet_media')
+      .from('tweet_media')
         .select('tweet_id, media_url, media_type')
         .in('tweet_id', chunk);
 

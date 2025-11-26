@@ -185,7 +185,7 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
                 return (
                     <VerticalSpine 
                         key={`${tweet.tweet_id}-${index}`}
-                        label={`@${tweet.username}: ${tweet.full_text.slice(0, 50)}...`}
+                        tweet={tweet}
                         onClick={() => handleSpineClick(index)}
                     />
                 );
