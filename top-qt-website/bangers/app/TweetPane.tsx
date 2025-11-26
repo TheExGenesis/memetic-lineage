@@ -40,31 +40,49 @@ export const TweetPane = ({ tweet, onClose, onSelectTweet }: TweetPaneProps) => 
   const [quoteTweets, setQuoteTweets] = useState<Tweet[]>([]);
   const [searchResults, setSearchResults] = useState<SemanticSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
+  const [initialTabSet, setInitialTabSet] = useState(false);
 
+  // Load thread data on mount to determine default tab
   useEffect(() => {
+    const loadInitialThread = async () => {
+      let convId = tweet.conversation_id;
+      
+      if (!convId) {
+        const id = await getConversationId(tweet.tweet_id);
+        convId = id || undefined;
+      }
+      
+      let data: Tweet[] = [];
+      if (convId) {
+        data = await getThread(convId);
+      } else {
+        data = [tweet];
+      }
+      
+      setThreadTweets(data);
+      
+      // If thread is empty or only contains the focused tweet, default to QTs
+      if (data.length <= 1) {
+        setActiveTab('qts');
+      }
+      setInitialTabSet(true);
+    };
+
+    loadInitialThread();
+  }, [tweet]);
+
+  // Load data when tab changes
+  useEffect(() => {
+    if (!initialTabSet) return;
+
     const loadData = async () => {
       setLoading(true);
       if (activeTab === 'thread') {
-        let convId = tweet.conversation_id;
-        
-        if (!convId) {
-           // Fix type mismatch: getConversationId returns string | null, but convId expects string | undefined
-           const id = await getConversationId(tweet.tweet_id);
-           convId = id || undefined;
-        }
-        
-        if (convId) {
-            const data = await getThread(convId);
-            setThreadTweets(data);
-        } else {
-            // Fallback: just show this tweet as thread if no conversation found
-            setThreadTweets([tweet]);
-        }
+        // Thread already loaded in initial effect
       } else if (activeTab === 'qts') {
         const data = await getQuotes(tweet.tweet_id);
         setQuoteTweets(data);
       } else if (activeTab === 'vector search') {
-        // Perform vector search using the tweet's text
         const results = await searchEmbeddings(tweet.full_text, tweet.tweet_id);
         setSearchResults(results);
       }
@@ -72,7 +90,7 @@ export const TweetPane = ({ tweet, onClose, onSelectTweet }: TweetPaneProps) => 
     };
 
     loadData();
-  }, [activeTab, tweet]);
+  }, [activeTab, tweet, initialTabSet]);
 
   return (
     // Removed fixed width w-[500px], added w-full h-full to fill parent container
@@ -109,7 +127,7 @@ export const TweetPane = ({ tweet, onClose, onSelectTweet }: TweetPaneProps) => 
             </div>
          </div>
 
-         {loading ? (
+         {!initialTabSet || loading ? (
            <div className="p-8 text-center text-gray-500 animate-pulse">Loading...</div>
          ) : (
            <>
