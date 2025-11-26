@@ -35,6 +35,7 @@ export const TweetPane = ({ tweet, onClose, onSelectTweet }: TweetPaneProps) => 
     }
   };
   const [activeTab, setActiveTab] = useState<'qts' | 'thread' | 'vector search'>('thread');
+  const [quoteSort, setQuoteSort] = useState<'likes' | 'retweets' | 'date_desc' | 'date_asc'>('likes');
   const [threadTweets, setThreadTweets] = useState<Tweet[]>([]);
   const [quoteTweets, setQuoteTweets] = useState<Tweet[]>([]);
   const [searchResults, setSearchResults] = useState<SemanticSearchResult[]>([]);
@@ -123,22 +124,50 @@ export const TweetPane = ({ tweet, onClose, onSelectTweet }: TweetPaneProps) => 
              
              {activeTab === 'qts' && (
                <div className="flex flex-col gap-4">
+                 <div className="flex flex-col gap-2 max-w-[360px]">
+                   <label className="text-xs uppercase font-semibold text-gray-500">Order quotes</label>
+                   <select
+                     value={quoteSort}
+                     onChange={(e) => setQuoteSort(e.target.value as typeof quoteSort)}
+                     className="border border-black px-3 py-2 text-sm uppercase font-semibold focus:outline-none focus:ring-2 focus:ring-black"
+                   >
+                     <option value="likes">Likes (desc)</option>
+                     <option value="retweets">Retweets (desc)</option>
+                     <option value="date_desc">Date (newest first)</option>
+                     <option value="date_asc">Date (oldest first)</option>
+                   </select>
+                 </div>
                  {quoteTweets.length === 0 ? (
                    <div className="text-gray-500 italic text-center mt-4">No quote tweets found.</div>
                  ) : (
-                   quoteTweets.map(qt => (
-                     <div 
-                        key={qt.tweet_id} 
-                        onClick={() => onSelectTweet(qt)} 
-                        className="cursor-pointer transition-opacity hover:opacity-80"
-                        style={{ maxWidth: '360px' }}
-                     >
-                        <TweetCard 
-                          tweet={qt} 
-                          onQuotedTweetClick={handleQuotedTweetSelect}
-                        />
-                     </div>
-                   ))
+                   [...quoteTweets]
+                     .sort((a, b) => {
+                       switch (quoteSort) {
+                         case 'likes':
+                           return (b.favorite_count ?? 0) - (a.favorite_count ?? 0);
+                         case 'retweets':
+                           return (b.retweet_count ?? 0) - (a.retweet_count ?? 0);
+                         case 'date_desc':
+                           return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+                         case 'date_asc':
+                           return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+                         default:
+                           return 0;
+                       }
+                     })
+                     .map((qt) => (
+                       <div 
+                          key={qt.tweet_id} 
+                          onClick={() => onSelectTweet(qt)} 
+                          className="cursor-pointer transition-opacity hover:opacity-80"
+                          style={{ maxWidth: '360px' }}
+                       >
+                          <TweetCard 
+                            tweet={qt} 
+                            onQuotedTweetClick={handleQuotedTweetSelect}
+                          />
+                       </div>
+                     ))
                  )}
                </div>
              )}
