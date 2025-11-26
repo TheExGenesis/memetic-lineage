@@ -23,12 +23,15 @@ export const TweetCard = ({ tweet, onQuotedTweetClick }: TweetCardProps) => {
   }
 
   const displayText = getDisplayText(tweet.full_text, expanded)
-  // Decode HTML entities (safe for SSR)
+  
+  // Decode HTML entities - use a library approach that works on both server and client
   const decodeHtmlEntities = (text: string) => {
-    if (typeof window === 'undefined') return text
-    const textarea = document.createElement('textarea')
-    textarea.innerHTML = text
-    return textarea.value
+    return text
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
   }
 
   // Handle fallback for formatted date if created_at is invalid (though it should be valid)
@@ -53,16 +56,37 @@ export const TweetCard = ({ tweet, onQuotedTweetClick }: TweetCardProps) => {
           )}
         </div>
         <div className="flex-1">
+          <div className="flex items-center justify-between">
+            <div>
           <div className="font-bold text-sm">@{tweet.username}</div>
-          <a
-            href={tweetUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-gray-600 hover:underline"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {formatDate(tweet.created_at)}
-          </a>
+              <div className="text-xs text-gray-600">
+                {formatDate(tweet.created_at)}
+              </div>
+            </div>
+            <a
+              href={tweetUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-400 hover:text-blue-600 transition-colors opacity-60 hover:opacity-100"
+              onClick={(e) => e.stopPropagation()}
+              title="View on Twitter"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+            </a>
+          </div>
         </div>
       </div>
 
