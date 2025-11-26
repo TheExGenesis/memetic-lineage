@@ -120,8 +120,8 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
             >
                 <div className="p-8 h-full flex flex-col overflow-hidden">
                     <header className="mb-8 border-b-4 border-black pb-4 flex-shrink-0">
-                        <h1 className="text-6xl font-bold tracking-tighter">bangers</h1>
-                        <p className="text-xl italic mt-2">from the Community Archive</p>
+                        <h1 className="text-4xl font-bold tracking-tighter">bangers</h1>
+                        <div className="text-sm italic mt-2">from the Community Archive</div>
                     </header>
                     
                     <main className="flex gap-8 overflow-x-auto flex-1 scrollbar-hide">
