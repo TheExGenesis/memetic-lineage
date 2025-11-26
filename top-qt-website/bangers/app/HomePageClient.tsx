@@ -84,11 +84,6 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
   // Calculate width for the active pane to take available space
   // Standard spine width is w-12 (48px/3rem)
   const spineWidthPx = 48;
-  const totalSpines = selectedTweets.length; // The home spine is effectively 1 unit, plus previous tweets
-  
-  // If we have selected tweets, we have:
-  // 1 Home Spine + (N-1) Tweet Spines
-  // Total spines = N (if N > 0)
   const collapsedWidth = isHomeCollapsed ? (selectedTweets.length * spineWidthPx) : 0;
   
   // We want the active pane to fill the rest of the screen width, but min 500px
@@ -120,14 +115,22 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
             >
                 <div className="p-8 h-full flex flex-col overflow-hidden">
                     <header className="mb-8 border-b-4 border-black pb-4 flex-shrink-0">
-                        <h1 className="text-4xl font-bold tracking-tighter">bangers</h1>
-                        <div className="text-sm italic mt-2">from the Community Archive</div>
+                        <div className="flex items-center justify-between mb-2">
+                            <h1 className="text-4xl font-bold tracking-tighter">bangers</h1>
+                            <a 
+                                href="/about"
+                                className="text-base font-bold underline hover:opacity-70 transition-opacity"
+                            >
+                                About
+                            </a>
+                        </div>
+                        <div className="text-sm italic">from the Community Archive</div>
                     </header>
                     
                     <main className="flex gap-8 overflow-x-auto flex-1 scrollbar-hide">
                         {tweetsByColumn.map(({ column, tweets }) => (
                         <section key={column} className="flex flex-col flex-shrink-0 w-[360px]">
-                            <h2 className="text-4xl font-bold mb-6 border-b-2 border-black pb-2 flex-shrink-0">
+                            <h2 className="text-2xl font-bold mb-6 border-b-2 border-black pb-2 flex-shrink-0">
                             {column}
                             </h2>
                             <div className="flex flex-col gap-2 overflow-y-auto flex-1 scrollbar-hide pb-20">
@@ -141,7 +144,7 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
                         ))}
                         
                         <section className="flex flex-col flex-shrink-0 w-[360px]">
-                            <h2 className="text-4xl font-bold mb-6 border-b-2 border-black pb-2 flex-shrink-0">
+                            <h2 className="text-2xl font-bold mb-6 border-b-2 border-black pb-2 flex-shrink-0">
                                 About
                             </h2>
                             <div className="flex flex-col gap-6 overflow-y-auto flex-1 scrollbar-hide text-base leading-relaxed pb-20">
@@ -150,6 +153,14 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
                                 <p>
                                     The Community Archive is a crowdsourced database of Twitter history. 
                                     Over 1 billion tweets from 2006-2024, preserved by the community, for the community.
+                                </p>
+                                </div>
+                                
+                                <div>
+                                <h3 className="font-bold text-lg mb-2">What are Bangers?</h3>
+                                <p className="mb-3">
+                                    Tweets that resonated so deeply they were quoted extensively—specifically 
+                                    by people other than the OP. We rank by quote count from third parties.
                                 </p>
                                 </div>
                                 
@@ -165,8 +176,36 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
                                     >
                                     communityarchive.org
                                     </a>
-                                    {' '}to contribute.
                                 </p>
+                                <p className="mb-3">
+                                    <strong>Browser extension:</strong> Save tweets as you browse. Available for{' '}
+                                    <a 
+                                    href="https://chromewebstore.google.com/detail/community-archive/hphgcnankimmomjiakdpcdjeiknbobmo" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="underline font-semibold hover:opacity-70"
+                                    >
+                                    Chrome
+                                    </a>
+                                    {' '}and{' '}
+                                    <a 
+                                    href="https://addons.mozilla.org/en-US/firefox/addon/community-archive/" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="underline font-semibold hover:opacity-70"
+                                    >
+                                    Firefox
+                                    </a>.
+                                </p>
+                                </div>
+
+                                <div className="border-t-2 border-black pt-6 mt-4">
+                                <a 
+                                    href="/about"
+                                    className="block text-center bg-black text-white font-bold py-3 px-6 hover:bg-gray-800 transition-colors"
+                                >
+                                    Read More →
+                                </a>
                                 </div>
                             </div>
                         </section>
