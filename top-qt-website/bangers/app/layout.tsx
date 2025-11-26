@@ -11,6 +11,9 @@ const libreBaskerville = Libre_Baskerville({
 export const metadata: Metadata = {
   title: "Bangers",
   description: "Top quoted tweets archive",
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({
