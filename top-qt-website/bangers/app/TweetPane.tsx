@@ -5,7 +5,7 @@ import { Tweet } from '@/lib/types';
 import { TweetCard } from './TweetCard';
 import { ThreadView } from './ThreadView';
 import { getThread, getQuotes, getConversationId } from '@/lib/api';
-import { searchEmbeddings } from '@/app/actions/search';
+import { searchEmbeddings, SemanticSearchResult } from '@/app/actions/search';
 
 interface TweetPaneProps {
   tweet: Tweet;
@@ -13,25 +13,11 @@ interface TweetPaneProps {
   onSelectTweet: (tweet: Tweet) => void;
 }
 
-interface SearchResult {
-  key: string;
-  distance: number;
-  metadata: {
-    text: string;
-    username?: string;
-    tweet_id?: string;
-    created_at?: string;
-    favorite_count?: number;
-    retweet_count?: number;
-    avatar_media_url?: string;
-  };
-}
-
 export const TweetPane = ({ tweet, onClose, onSelectTweet }: TweetPaneProps) => {
   const [activeTab, setActiveTab] = useState<'qts' | 'thread' | 'vector search'>('thread');
   const [threadTweets, setThreadTweets] = useState<Tweet[]>([]);
   const [quoteTweets, setQuoteTweets] = useState<Tweet[]>([]);
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searchResults, setSearchResults] = useState<SemanticSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -136,30 +122,17 @@ export const TweetPane = ({ tweet, onClose, onSelectTweet }: TweetPaneProps) => 
                    <div className="text-gray-500 italic text-center mt-4">No similar tweets found.</div>
                  ) : (
                    searchResults.map((result) => {
-                     // Map search result metadata to Tweet-like object for display
-                     // Note: The search API might return minimal metadata, so we adapt best we can
-                     const searchTweet: Tweet = {
-                        tweet_id: result.metadata.tweet_id || result.key,
-                        created_at: result.metadata.created_at || new Date().toISOString(),
-                        full_text: result.metadata.text,
-                        username: result.metadata.username || 'unknown',
-                        favorite_count: result.metadata.favorite_count || 0,
-                        retweet_count: result.metadata.retweet_count || 0,
-                        avatar_media_url: result.metadata.avatar_media_url
-                     };
-
                      return (
                        <div 
                           key={result.key} 
-                          // If we have a valid tweet ID, we can navigate to it. Otherwise, just show card.
-                          onClick={() => result.metadata.tweet_id && onSelectTweet(searchTweet)} 
+                          onClick={() => onSelectTweet(result.tweet)} 
                           className="cursor-pointer transition-opacity hover:opacity-80"
                           style={{ maxWidth: '360px' }}
                        >
                           <div className="text-xs text-gray-400 mb-1 text-right">
                             Similarity: {(result.distance * 100).toFixed(1)}%
                           </div>
-                          <TweetCard tweet={searchTweet} />
+                          <TweetCard tweet={result.tweet} />
                        </div>
                      );
                    })

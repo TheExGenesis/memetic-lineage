@@ -26,7 +26,7 @@ async function fetchUserDetails(accountIds: string[]) {
   return { usernameMap, avatarMap };
 }
 
-async function fetchTweetDetails(tweetIds: string[]): Promise<Tweet[]> {
+export async function fetchTweetDetails(tweetIds: string[]): Promise<Tweet[]> {
   if (tweetIds.length === 0) return [];
 
   // Fetch tweets in batches
