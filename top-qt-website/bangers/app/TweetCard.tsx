@@ -3,7 +3,12 @@
 import { useState } from 'react';
 import { Tweet } from '@/lib/types';
 
-export const TweetCard = ({ tweet }: { tweet: Tweet }) => {
+type TweetCardProps = {
+  tweet: Tweet;
+  onQuotedTweetClick?: (quotedTweetId: string) => void;
+};
+
+export const TweetCard = ({ tweet, onQuotedTweetClick }: TweetCardProps) => {
   const [expanded, setExpanded] = useState(false);
   const tweetUrl = `https://twitter.com/${tweet.username}/status/${tweet.tweet_id}`;
   
@@ -79,8 +84,15 @@ export const TweetCard = ({ tweet }: { tweet: Tweet }) => {
       )}
 
       {/* Render Quoted Tweet */}
-      {tweet.quoted_tweet && (
-        <div className="border border-gray-300 rounded-lg p-3 mb-3 hover:bg-gray-50 transition-colors">
+      {tweet.quoted_tweet && tweet.quoted_tweet_id && (
+        <div
+          className="border border-gray-300 rounded-lg p-3 mb-3 hover:bg-gray-50 transition-colors"
+          onClick={(e) => {
+            if (!onQuotedTweetClick) return;
+            e.stopPropagation();
+            onQuotedTweetClick(tweet.quoted_tweet_id!);
+          }}
+        >
            <div className="flex items-center gap-2 mb-1">
               <div className="w-5 h-5 bg-gray-200 rounded-full overflow-hidden flex-shrink-0">
                  {tweet.quoted_tweet.avatar_media_url && (

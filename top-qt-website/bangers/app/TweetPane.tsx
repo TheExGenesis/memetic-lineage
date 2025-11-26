@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Tweet } from '@/lib/types';
 import { TweetCard } from './TweetCard';
 import { ThreadView } from './ThreadView';
-import { getThread, getQuotes, getConversationId } from '@/lib/api';
+import { getThread, getQuotes, getConversationId, fetchTweetDetails } from '@/lib/api';
 import { searchEmbeddings, SemanticSearchResult } from '@/app/actions/search';
 
 interface TweetPaneProps {
@@ -14,6 +14,26 @@ interface TweetPaneProps {
 }
 
 export const TweetPane = ({ tweet, onClose, onSelectTweet }: TweetPaneProps) => {
+  const findTweetById = (id: string): Tweet | undefined => {
+    return (
+      threadTweets.find((t) => t.tweet_id === id) ||
+      quoteTweets.find((t) => t.tweet_id === id) ||
+      searchResults.find((r) => r.tweet.tweet_id === id)?.tweet
+    );
+  };
+
+  const handleQuotedTweetSelect = async (quotedId: string) => {
+    const existing = findTweetById(quotedId);
+    if (existing) {
+      onSelectTweet(existing);
+      return;
+    }
+
+    const fetched = await fetchTweetDetails([quotedId]);
+    if (fetched.length > 0) {
+      onSelectTweet(fetched[0]);
+    }
+  };
   const [activeTab, setActiveTab] = useState<'qts' | 'thread' | 'vector search'>('thread');
   const [threadTweets, setThreadTweets] = useState<Tweet[]>([]);
   const [quoteTweets, setQuoteTweets] = useState<Tweet[]>([]);
@@ -81,7 +101,10 @@ export const TweetPane = ({ tweet, onClose, onSelectTweet }: TweetPaneProps) => 
       <div className="flex-1 overflow-y-auto p-4">
          <div className="mb-6 border-b-4 border-black pb-6">
             <div style={{ maxWidth: '360px' }}>
-               <TweetCard tweet={tweet} />
+               <TweetCard 
+                 tweet={tweet} 
+                 onQuotedTweetClick={handleQuotedTweetSelect}
+               />
             </div>
          </div>
 
@@ -94,6 +117,7 @@ export const TweetPane = ({ tweet, onClose, onSelectTweet }: TweetPaneProps) => 
                  tweets={threadTweets} 
                  focusedTweetId={tweet.tweet_id} 
                  onSelectTweet={onSelectTweet} 
+                 onSelectQuotedTweet={handleQuotedTweetSelect}
                />
              )}
              
@@ -109,7 +133,10 @@ export const TweetPane = ({ tweet, onClose, onSelectTweet }: TweetPaneProps) => 
                         className="cursor-pointer transition-opacity hover:opacity-80"
                         style={{ maxWidth: '360px' }}
                      >
-                        <TweetCard tweet={qt} />
+                        <TweetCard 
+                          tweet={qt} 
+                          onQuotedTweetClick={handleQuotedTweetSelect}
+                        />
                      </div>
                    ))
                  )}
@@ -132,7 +159,10 @@ export const TweetPane = ({ tweet, onClose, onSelectTweet }: TweetPaneProps) => 
                           <div className="text-xs text-gray-400 mb-1 text-right">
                             Similarity: {(result.distance * 100).toFixed(1)}%
                           </div>
-                          <TweetCard tweet={result.tweet} />
+                          <TweetCard 
+                            tweet={result.tweet} 
+                            onQuotedTweetClick={handleQuotedTweetSelect}
+                          />
                        </div>
                      );
                    })

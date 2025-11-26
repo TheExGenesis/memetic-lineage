@@ -6,9 +6,10 @@ interface ThreadViewProps {
   tweets: Tweet[];
   focusedTweetId: string;
   onSelectTweet: (tweet: Tweet) => void;
+  onSelectQuotedTweet?: (quotedTweetId: string) => void;
 }
 
-export const ThreadView = ({ tweets, focusedTweetId, onSelectTweet }: ThreadViewProps) => {
+export const ThreadView = ({ tweets, focusedTweetId, onSelectTweet, onSelectQuotedTweet }: ThreadViewProps) => {
   const { rootIds, childrenMap } = useMemo(() => {
     const childrenMap = new Map<string, string[]>();
     const tweetIds = new Set(tweets.map(t => t.tweet_id));
@@ -67,7 +68,10 @@ export const ThreadView = ({ tweets, focusedTweetId, onSelectTweet }: ThreadView
                  onSelectTweet(tweet);
                }}
              >
-                <TweetCard tweet={tweet} />
+                <TweetCard 
+                  tweet={tweet} 
+                  onQuotedTweetClick={onSelectQuotedTweet}
+                />
              </div>
         </div>
 
