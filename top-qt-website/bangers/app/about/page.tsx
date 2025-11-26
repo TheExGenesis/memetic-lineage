@@ -49,11 +49,12 @@ export default function AboutPage() {
               Why This Matters
             </h2>
             <p>
-              We&apos;re building community-owned infrastructure to increase agency over cultural production. Quote counts by the community are a strong signal that a tweet is valuable—these tweets get referenced many times.
+              We&apos;re building community-owned infrastructure to increase agency over cultural production. 
             </p>
             <p className="mt-4">
-              There are more elaborate metrics we could use, but this one is simple and effective. These highly-quoted tweets serve as starting points for research on how ideas spread, helping us trace influences and impacts across the network.
+            Quote counts by the community are a strong signal that a tweet is valuable—these tweets get referenced many times. There are more elaborate metrics we could use, but this one is simple and effective. 
             </p>
+            <p className="mt-4">These highly-quoted tweets serve as starting points for research on how ideas spread, helping us trace influences and impacts across the network.</p>
           </section>
 
           <section className="bg-black text-white p-8 -mx-4 sm:-mx-6 lg:-mx-8">
