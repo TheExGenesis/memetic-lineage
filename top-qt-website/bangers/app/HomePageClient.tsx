@@ -8,6 +8,7 @@ import { Tweet } from '@/lib/types';
 
 export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
   const [selectedTweets, setSelectedTweets] = useState<Tweet[]>([]);
+  const [showTip, setShowTip] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Group tweets by column
@@ -124,7 +125,21 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
                                 About
                             </a>
                         </div>
-                        <div className="text-sm italic">from the Community Archive</div>
+                        <div className="text-sm italic mb-3">from the Community Archive</div>
+                        {showTip && (
+                            <div className="text-sm bg-yellow-50 border-2 border-yellow-400 px-3 py-2 rounded flex items-center justify-between gap-3">
+                                <div>
+                                    💡 <span className="font-semibold">Tip:</span> Click any tweet to open an explorer with quotes, replies, and context
+                                </div>
+                                <button 
+                                    onClick={() => setShowTip(false)}
+                                    className="text-yellow-700 hover:text-yellow-900 font-bold text-lg leading-none"
+                                    aria-label="Close tip"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        )}
                     </header>
                     
                     <main className="flex gap-8 overflow-x-auto flex-1 scrollbar-hide">
