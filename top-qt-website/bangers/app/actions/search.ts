@@ -1,6 +1,7 @@
 'use server';
 
 import { fetchTweetDetails } from '@/lib/api';
+import { supabaseCa } from '@/lib/supabase';
 import { Tweet } from '@/lib/types';
 
 interface RawSearchResult {
@@ -23,7 +24,7 @@ export interface SemanticSearchResult {
   tweet: Tweet;
 }
 
-export async function searchEmbeddings(searchTerm: string): Promise<SemanticSearchResult[]> {
+export async function searchEmbeddings(searchTerm: string, baseTweetId?: string): Promise<SemanticSearchResult[]> {
   try {
     const response = await fetch('http://embed.tweetstack.app/embeddings/search', {
       method: 'POST',
@@ -32,7 +33,7 @@ export async function searchEmbeddings(searchTerm: string): Promise<SemanticSear
       },
       body: JSON.stringify({
         searchTerm,
-        k: 20,
+        k: 100,
         threshold: 0.5
       }),
       next: { revalidate: 0 }
@@ -49,11 +50,30 @@ export async function searchEmbeddings(searchTerm: string): Promise<SemanticSear
     }
 
     const rawResults: RawSearchResult[] = data.results;
-    const tweetIds = rawResults
+    let tweetIds = rawResults
       .map((result) => result.metadata?.tweet_id ?? result.key) // Fallback to key as the tweet_id
       .filter((id): id is string => Boolean(id));
+    
+    const retweetIds = new Set<string>();
+    if (baseTweetId) {
+      tweetIds = tweetIds.filter((id) => id !== baseTweetId);
 
-    console.log('tweetIds', tweetIds);
+      const { data: retweetRows, error: retweetError } = await supabaseCa
+        .from('retweets')
+        .select('tweet_id')
+        .eq('retweeted_tweet_id', baseTweetId);
+
+      if (retweetError) {
+        console.error('Error fetching retweets for semantic search:', retweetError);
+      } else {
+        retweetRows?.forEach((row) => {
+          if (row?.tweet_id) {
+            retweetIds.add(row.tweet_id);
+          }
+        });
+        tweetIds = tweetIds.filter((id) => !retweetIds.has(id));
+      }
+    }
 
     const enrichedTweets = tweetIds.length > 0 ? await fetchTweetDetails(tweetIds) : [];
     const tweetMap = new Map(enrichedTweets.map((t) => [t.tweet_id, t]));
@@ -65,6 +85,12 @@ export async function searchEmbeddings(searchTerm: string): Promise<SemanticSear
         const tweetId = result.metadata?.tweet_id ?? result.key;
         const enriched = tweetMap.get(tweetId);
         if (!enriched) return null;
+        if (retweetIds.has(tweetId)) return null;
+        if (baseTweetId) {
+          if (tweetId === baseTweetId) return null;
+          if (enriched.quoted_tweet_id === baseTweetId) return null;
+        }
+        if (enriched.full_text.startsWith('RT @')) return null;
 
         return {
           key: result.key,

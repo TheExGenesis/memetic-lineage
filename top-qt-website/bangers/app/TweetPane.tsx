@@ -44,7 +44,7 @@ export const TweetPane = ({ tweet, onClose, onSelectTweet }: TweetPaneProps) => 
         setQuoteTweets(data);
       } else if (activeTab === 'vector search') {
         // Perform vector search using the tweet's text
-        const results = await searchEmbeddings(tweet.full_text);
+        const results = await searchEmbeddings(tweet.full_text, tweet.tweet_id);
         setSearchResults(results);
       }
       setLoading(false);
