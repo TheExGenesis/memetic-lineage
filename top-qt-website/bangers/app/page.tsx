@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { supabaseTopQt, supabaseCa } from '@/lib/supabase';
 import { HomePageClient } from './HomePageClient';
 import { Tweet } from '@/lib/types';
@@ -262,5 +263,9 @@ export default async function Home() {
     );
   }
 
-  return <HomePageClient tweets={tweets} />;
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <HomePageClient tweets={tweets} />
+    </Suspense>
+  );
 }
