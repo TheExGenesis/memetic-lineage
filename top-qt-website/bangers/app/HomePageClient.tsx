@@ -1,14 +1,19 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { TweetCard } from './TweetCard';
 import { TweetPane } from './TweetPane';
 import { VerticalSpine } from './VerticalSpine';
 import { Tweet } from '@/lib/types';
 
 export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedTweets, setSelectedTweets] = useState<Tweet[]>([]);
+  const [showTip, setShowTip] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const tweetMapRef = useRef<Map<string, Tweet>>(new Map());
 
   // Group tweets by column
   const groups: Record<string, Tweet[]> = {};
@@ -47,24 +52,86 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
     tweets: groups[column]
   }));
 
+  // Build tweet map for URL -> tweet lookup
+  useEffect(() => {
+    const map = new Map<string, Tweet>();
+    tweets.forEach(t => map.set(t.tweet_id, t));
+    tweetMapRef.current = map;
+  }, [tweets]);
+
+  // Initialize from URL on mount
+  useEffect(() => {
+    const loadFromUrl = async () => {
+      const ids = searchParams.get('tweets');
+      if (!ids) return;
+
+      const tweetIds = ids.split(',').filter(Boolean);
+      const foundTweets: Tweet[] = [];
+      const missingIds: string[] = [];
+
+      // Check which tweets we already have
+      for (const id of tweetIds) {
+        const tweet = tweetMapRef.current.get(id);
+        if (tweet) {
+          foundTweets.push(tweet);
+        } else {
+          missingIds.push(id);
+        }
+      }
+
+      // Fetch missing tweets
+      if (missingIds.length > 0) {
+        const { fetchTweetDetails } = await import('@/lib/api');
+        const fetchedTweets = await fetchTweetDetails(missingIds);
+        
+        // Add to map for future lookups
+        fetchedTweets.forEach(t => tweetMapRef.current.set(t.tweet_id, t));
+        
+        // Reconstruct in correct order
+        const allTweets = tweetIds
+          .map(id => tweetMapRef.current.get(id))
+          .filter((t): t is Tweet => t !== undefined);
+        
+        if (allTweets.length > 0) {
+          setSelectedTweets(allTweets);
+        }
+      } else if (foundTweets.length > 0) {
+        setSelectedTweets(foundTweets);
+      }
+    };
+
+    loadFromUrl();
+  }, [searchParams]);
+
+  // Sync state to URL
+  const updateUrl = (tweets: Tweet[]) => {
+    const ids = tweets.map(t => t.tweet_id).join(',');
+    const params = new URLSearchParams();
+    if (ids) {
+      params.set('tweets', ids);
+    }
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
+
   const handleTweetClick = (tweet: Tweet, depth: number) => {
      const newStack = depth === -1 ? [] : selectedTweets.slice(0, depth + 1);
      newStack.push(tweet);
      setSelectedTweets(newStack);
+     updateUrl(newStack);
   };
 
   const handleClosePane = (index: number) => {
-    setSelectedTweets(selectedTweets.slice(0, index));
+    const newStack = selectedTweets.slice(0, index);
+    setSelectedTweets(newStack);
+    updateUrl(newStack);
   };
 
   const handleSpineClick = (index: number) => {
       // Navigate back to this pane being the active one
       // index -1 means home
-      if (index === -1) {
-          setSelectedTweets([]);
-      } else {
-          setSelectedTweets(selectedTweets.slice(0, index + 1));
-      }
+      const newStack = index === -1 ? [] : selectedTweets.slice(0, index + 1);
+      setSelectedTweets(newStack);
+      updateUrl(newStack);
   };
 
   useEffect(() => {
@@ -124,7 +191,21 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
                                 About
                             </a>
                         </div>
-                        <div className="text-sm italic">from the Community Archive</div>
+                        <div className="text-sm italic mb-3">from the Community Archive</div>
+                        {showTip && (
+                            <div className="text-sm bg-yellow-50 border-2 border-yellow-400 px-3 py-2 rounded flex items-center justify-between gap-3">
+                                <div>
+                                    💡 <span className="font-semibold">Tip:</span> Click any tweet to open an explorer with quotes, replies, and context
+                                </div>
+                                <button 
+                                    onClick={() => setShowTip(false)}
+                                    className="text-yellow-700 hover:text-yellow-900 font-bold text-lg leading-none"
+                                    aria-label="Close tip"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        )}
                     </header>
                     
                     <main className="flex gap-8 overflow-x-auto flex-1 scrollbar-hide">

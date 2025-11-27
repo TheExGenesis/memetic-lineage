@@ -6,18 +6,15 @@ interface ThreadViewProps {
   tweets: Tweet[];
   focusedTweetId: string;
   onSelectTweet: (tweet: Tweet) => void;
-  onSelectQuotedTweet?: (quotedTweetId: string) => void;
 }
 
-export const ThreadView = ({ tweets, focusedTweetId, onSelectTweet, onSelectQuotedTweet }: ThreadViewProps) => {
+export const ThreadView = ({ tweets, focusedTweetId, onSelectTweet }: ThreadViewProps) => {
   const { rootIds, childrenMap } = useMemo(() => {
-    // Filter out the focused tweet to avoid duplication
-    const filteredTweets = tweets.filter(t => t.tweet_id !== focusedTweetId);
     const childrenMap = new Map<string, string[]>();
-    const tweetIds = new Set(filteredTweets.map(t => t.tweet_id));
+    const tweetIds = new Set(tweets.map(t => t.tweet_id));
     const rootIds: string[] = [];
 
-    filteredTweets.forEach(t => {
+    tweets.forEach(t => {
       const parentId = t.reply_to_tweet_id;
       if (parentId && tweetIds.has(parentId)) {
         const children = childrenMap.get(parentId) || [];
@@ -30,17 +27,17 @@ export const ThreadView = ({ tweets, focusedTweetId, onSelectTweet, onSelectQuot
     
     // Sort roots by date
     rootIds.sort((a, b) => {
-       const ta = filteredTweets.find(t => t.tweet_id === a);
-       const tb = filteredTweets.find(t => t.tweet_id === b);
+       const ta = tweets.find(t => t.tweet_id === a);
+       const tb = tweets.find(t => t.tweet_id === b);
        return new Date(ta?.created_at || 0).getTime() - new Date(tb?.created_at || 0).getTime();
     });
 
     return { rootIds, childrenMap };
-  }, [tweets, focusedTweetId]);
+  }, [tweets]);
 
   const renderNode = (tweetId: string, depth: number = 0) => {
     const tweet = tweets.find(t => t.tweet_id === tweetId);
-    if (!tweet || tweet.tweet_id === focusedTweetId) return null;
+    if (!tweet) return null;
     
     const children = childrenMap.get(tweetId) || [];
     // Sort children by date
@@ -50,7 +47,7 @@ export const ThreadView = ({ tweets, focusedTweetId, onSelectTweet, onSelectQuot
        return new Date(ta?.created_at || 0).getTime() - new Date(tb?.created_at || 0).getTime();
     });
 
-    const isFocused = false; // Never focused since we filter out focusedTweetId
+    const isFocused = tweetId === focusedTweetId;
 
     return (
       <div key={tweetId} className="flex flex-col relative">
@@ -70,10 +67,7 @@ export const ThreadView = ({ tweets, focusedTweetId, onSelectTweet, onSelectQuot
                  onSelectTweet(tweet);
                }}
              >
-                <TweetCard 
-                  tweet={tweet} 
-                  onQuotedTweetClick={onSelectQuotedTweet}
-                />
+                <TweetCard tweet={tweet} />
              </div>
         </div>
 
