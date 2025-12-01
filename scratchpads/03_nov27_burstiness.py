@@ -24,19 +24,27 @@ from dotenv import load_dotenv
 
 from lib.conversation_explorer import build_conversation_trees, build_incomplete_conversation_trees, build_quote_trees, print_conversation_threads
 from lib.count_quotes import count_quotes
+from lib.create_ascii_chart import create_ascii_chart
 # Load environment variables
 load_dotenv()
 # %%
-ENRICHED_TWEETS_PATH = '/Users/frsc/Documents/Projects/data/2025-09-03_enriched_tweets.parquet' # for francisco
-# ENRICHED_TWEETS_PATH = '../enriched_tweets.parquet' # for alexandre
+#ENRICHED_TWEETS_PATH = '/Users/frsc/Documents/Projects/data/2025-09-03_enriched_tweets.parquet' # for francisco
+ENRICHED_TWEETS_PATH = '~/data/enriched_tweets.parquet' # for alexandre
 
 tweets = pd.read_parquet(ENRICHED_TWEETS_PATH, dtype_backend='pyarrow')
 tweets = tweets.set_index('tweet_id', drop=False)
+# %%
+tweets.index.name = 'index'
 
 # Filter tweets to only those whose tweet_ids are in index_to_cluster
 # clustered_tweet_ids = list(index_to_cluster.keys())
 # tweets = tweets.loc[tweets.index.intersection(clustered_tweet_ids)]
 # print(f"Filtered to {len(tweets)} tweets that are in clusters")
+
+
+# %% drop duplicate values in the index
+tweets = tweets[~tweets.index.duplicated(keep='first')]
+
 
 tweets.head()
 
@@ -57,7 +65,7 @@ else:
 
 tweets = tweets.merge(
     quoted_counts,
-    left_on='tweet_id',
+    left_index=True,
     right_on='quoted_tweet_id',
     how='left',
     suffixes=('', '_drop')
@@ -66,7 +74,12 @@ tweets = tweets.merge(
 tweets = tweets.drop(columns=['quoted_tweet_id_drop'], errors='ignore')
 # Fill NaN values with 0 for tweets that were never quoted
 tweets['quoted_count'] = tweets['quoted_count'].fillna(0).astype(int)
+# Reset index if index name is 'index' to avoid ambiguity when setting it again
+if tweets.index.name == 'index':
+    tweets = tweets.reset_index(drop=False)
+# Now set tweet_id as index (it should only be a column at this point)
 tweets = tweets.set_index('tweet_id', drop=False)
+tweets.index.name = 'index'
 
 # # %%
 # # make tweets into a list of tweets as a dict where each key is a column name
@@ -89,8 +102,6 @@ tweets = tweets.set_index('tweet_id', drop=False)
 from typing import List, Tuple
 from datetime import datetime
 import numpy as np
-
-
 
 def wiener_index(tree: dict) -> float:
     """
@@ -189,19 +200,28 @@ def calculate_quote_half_lives(tweets_df: pd.DataFrame, percentile: float = 0.5)
         
         # Filter out quotes from the same author
         if quoted_author is not None:
-            group = group[group['account_id'] != quoted_author]
+            
+            try:
+                group = group[group['account_id'] != quoted_author]
+            except:
+                print("KeyError: quoted_author", quoted_author)
+                print("quoted_id", quoted_id)
+                print("--------------------------------")
+                print("group", group)
+                print("--------------------------------")
+                raise
         
         if len(group) >= 2:  # need at least 2 for meaningful half-life
             timestamps = group['created_at'].tolist()
             half_lives[quoted_id] = temporal_half_life(timestamps, percentile)
     return pd.Series(half_lives, name=f'half_life_p{int(percentile*100)}')
-# %% Calculate half-lives for all quoted tweets
+# %% Calculate half-lives for all quoted tweets.
 half_life_path = '../half_life_50.pkl'
 OVERWRITE_HALF_LIFE_CALCULATION = True
 
 if OVERWRITE_HALF_LIFE_CALCULATION or not os.path.exists(half_life_path):
     print("Calculating half-lives...")
-    half_life_50 = calculate_quote_half_lives(tweets, percentile=0.5)
+    half_life_50 = calculate_quote_half_lives(tweets, percentile=0.8)
     os.makedirs(os.path.dirname(half_life_path), exist_ok=True)
     half_life_50.to_pickle(half_life_path)
     print(f"Saved half-life results to {half_life_path}")
@@ -217,7 +237,8 @@ print(half_life_50.describe())
 tweets['half_life_hours'] = tweets.index.map(half_life_50)
 # %%
 
-# %%
+
+# We picked 80% half-life because it gives us longer lasting tweets and helps ignore bursts
 # max col width
 pd.set_option('display.max_colwidth', None)
 # filter top 50 by quoted_count and then sort by hours for each year
@@ -225,16 +246,45 @@ tweets_with_year = tweets[tweets.half_life_hours.notna()].copy()
 tweets_with_year['created_at'] = pd.to_datetime(tweets_with_year['created_at'])
 tweets_with_year['year'] = tweets_with_year['created_at'].dt.year
 
+# %%
 def print_top_tweets_by_year(year):
     """Print top 50 tweets by quoted_count for a given year, sorted by half_life_hours"""
     year_tweets = tweets_with_year[tweets_with_year['year'] == year]
     top_50_quoted_count = year_tweets.sort_values(by='quoted_count', ascending=False).head(50)
     print(f"\n=== Year {year} ===")
-    print(top_50_quoted_count.sort_values(by='half_life_hours', ascending=False).head(50))
+
+    #print(top_50_quoted_count.sort_values(by='quoted_count', ascending=False).head(50))
+    # print the usernames, the full text, the quoted count, and the half life hours sorted by half life hours in a table
+    sorted_tweets = top_50_quoted_count.sort_values(by='half_life_hours', ascending=False).head(50)
+
+    
+    # Display timeseries for each quoted tweet
+    print(f"\n{'='*70}")
+    print(f"Quote Distribution Timeseries for Top Tweets in {year}")
+    print(f"{'='*70}\n")
+    
+    for idx, (tweet_id, tweet_row) in enumerate(sorted_tweets.iterrows(), 1):
+        # Get the dates of tweets quoting this tweet
+        quoting_dates = tweets[tweets['quoted_tweet_id'] == tweet_id]['created_at']
+        
+        if len(quoting_dates) > 0:
+            half_life_str = f"{tweet_row.get('half_life_hours', 0):.2f}" if pd.notna(tweet_row.get('half_life_hours')) else "N/A"
+            print(f"\n[{idx}/{len(sorted_tweets)}] Tweet ID: {tweet_id}")
+            print(f"Author: @{tweet_row.get('username', 'unknown')}")
+            print(f"Quoted count: {tweet_row['quoted_count']} | Half-life: {half_life_str} hours")
+            full_text = str(tweet_row.get('full_text', 'N/A'))
+            text_preview = full_text[:500] + "..." if len(full_text) > 500 else full_text
+            print(f"Text: {text_preview}")
+            print("\nQuote timeline:")
+            print(create_ascii_chart(quoting_dates, min_date=f"{year}-01-01", max_date=f"{year+3}-12-31"))
+            print("\n" + "-"*70)
+
 
 # for year in sorted(tweets_with_year['year'].unique()):
 #     print_top_tweets_by_year(year)
 # %%
+
+print_top_tweets_by_year(2023)
 # I think half life doesn something, it gives us longer lasting tweets and helps ignore bursts
 
 # half life is too coarse: confuses recency of tweets with burstiness
@@ -246,5 +296,12 @@ top_quoted_count_tweet = tweets.loc[top_quoted_count_tweet_id]
 # get the dates of tweets quoting it
 quoting_dates = tweets[tweets['quoted_tweet_id'] == top_quoted_count_tweet_id]['created_at']
 # call create_ascii_chart with the quoting dates
-create_ascii_chart(quoting_dates)
+print(create_ascii_chart(quoting_dates))
+
+# %%
+# %%
+
+
+columns = ["tweet_id", "created_at", "quoted_tweet_id", "quoted_count", "half_life_hours"]
+tweets[columns].head()
 # %%

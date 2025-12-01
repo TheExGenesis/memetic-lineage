@@ -1,6 +1,17 @@
+# %%
+import pandas as pd
 
-def create_ascii_chart(dates, width=60, height=10):
-    """Create ASCII histogram showing tweet distribution over time"""
+
+def create_ascii_chart(dates, width=60, height=10, min_date=None, max_date=None):
+    """Create ASCII histogram showing tweet distribution over time
+    
+    Args:
+        dates: Series or list of datetime objects
+        width: Width of the chart in characters
+        height: Height parameter (currently unused, kept for compatibility)
+        min_date: Optional minimum date to display (datetime or string)
+        max_date: Optional maximum date to display (datetime or string)
+    """
     # Check if dates is empty (works with both Series and lists)
     if dates is None or len(dates) == 0:
         return "No temporal data available"
@@ -8,19 +19,42 @@ def create_ascii_chart(dates, width=60, height=10):
     # Convert to datetime if needed
     dates = pd.to_datetime(dates)
     
+    # Filter dates by min_date and max_date if provided
+    if min_date is not None:
+        min_date = pd.to_datetime(min_date)
+        dates = dates[dates >= min_date]
+    
+    if max_date is not None:
+        max_date = pd.to_datetime(max_date)
+        dates = dates[dates <= max_date]
+    
+    if len(dates) == 0:
+        return "No temporal data available in specified date range"
+    
     # Group by date and count
     date_counts = dates.dt.date.value_counts().sort_index()
     
     if len(date_counts) == 0:
         return "No temporal data available"
     
-    # Get date range
-    min_date = date_counts.index.min()
-    max_date = date_counts.index.max()
+    # Get date range (use provided min/max if available, otherwise use data range)
+    data_min_date = date_counts.index.min()
+    data_max_date = date_counts.index.max()
+    
+    if min_date is not None:
+        display_min_date = min_date.date() if hasattr(min_date, 'date') else min_date
+    else:
+        display_min_date = data_min_date
+    
+    if max_date is not None:
+        display_max_date = max_date.date() if hasattr(max_date, 'date') else max_date
+    else:
+        display_max_date = data_max_date
+    
     max_count = date_counts.max()
     
     # Create time buckets (up to width buckets)
-    date_range = pd.date_range(min_date, max_date, periods=min(width, len(date_counts)))
+    date_range = pd.date_range(display_min_date, display_max_date, periods=min(width, len(date_counts)))
     
     # Aggregate counts into buckets
     bucket_counts = []
@@ -55,7 +89,7 @@ def create_ascii_chart(dates, width=60, height=10):
     
     # Create sparkline-style histogram
     chart_lines = []
-    chart_lines.append(f"\nTweet Volume Histogram ({min_date} to {max_date})")
+    chart_lines.append(f"\nTweet Volume Histogram ({display_min_date} to {display_max_date})")
     chart_lines.append("─" * (width + 10))
     
     # Sparkline (single row with varying heights)
@@ -97,3 +131,4 @@ def create_ascii_chart(dates, width=60, height=10):
     chart_lines.append(f"\n      Total tweets: {len(dates)} | Max per bucket: {max_bucket_count}")
     
     return "\n".join(chart_lines)
+# %%
