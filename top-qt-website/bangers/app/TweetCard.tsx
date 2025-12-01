@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { decode } from 'he'
 import { Tweet } from '@/lib/types'
 
 type TweetCardProps = {
@@ -23,22 +24,12 @@ export const TweetCard = ({ tweet, onQuotedTweetClick }: TweetCardProps) => {
   }
 
   const displayText = getDisplayText(tweet.full_text, expanded)
-  
-  // Decode HTML entities - use a library approach that works on both server and client
-  const decodeHtmlEntities = (text: string) => {
-    return text
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-  }
 
   // Handle fallback for formatted date if created_at is invalid (though it should be valid)
   const formatDate = (dateStr: string) => {
     try {
       return new Date(dateStr).toISOString().split('T')[0]
-    } catch (e) {
+    } catch {
       return dateStr
     }
   }
@@ -91,7 +82,7 @@ export const TweetCard = ({ tweet, onQuotedTweetClick }: TweetCardProps) => {
       </div>
 
       <div className="text-sm leading-relaxed mb-3 whitespace-pre-line">
-        {decodeHtmlEntities(displayText)}
+        {decode(displayText)}
       </div>
 
       {shouldTruncate && (
@@ -157,7 +148,7 @@ export const TweetCard = ({ tweet, onQuotedTweetClick }: TweetCardProps) => {
             </span>
           </div>
           <div className="text-sm mb-2">
-            {decodeHtmlEntities(tweet.quoted_tweet.full_text)}
+            {decode(tweet.quoted_tweet.full_text)}
           </div>
           {tweet.quoted_tweet.media_urls &&
             tweet.quoted_tweet.media_urls.length > 0 && (
