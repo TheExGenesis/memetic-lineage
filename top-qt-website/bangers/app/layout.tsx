@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Libre_Baskerville } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 
 const libreBaskerville = Libre_Baskerville({
@@ -11,6 +12,9 @@ const libreBaskerville = Libre_Baskerville({
 export const metadata: Metadata = {
   title: "Bangers",
   description: "Top quoted tweets archive",
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({
@@ -24,6 +28,7 @@ export default function RootLayout({
         className={`${libreBaskerville.variable} font-serif antialiased bg-white text-black`}
       >
         {children}
+        <Analytics />
       </body>
     </html>
   );

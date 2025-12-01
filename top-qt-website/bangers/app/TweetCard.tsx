@@ -1,169 +1,173 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import Image from 'next/image';
+import { useState } from 'react'
+import { decode } from 'he'
+import { Tweet } from '@/lib/types'
 
-const decodeHtml = (html: string): string => {
-  if (typeof document === 'undefined') {
-    return html
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#039;/g, "'");
-  }
-  const txt = document.createElement('textarea');
-  txt.innerHTML = html;
-  return txt.value;
+type TweetCardProps = {
+  tweet: Tweet;
+  onQuotedTweetClick?: (quotedTweetId: string) => void;
 };
 
-interface Tweet {
-  tweet_id: string;
-  created_at: string;
-  full_text: string;
-  username: string;
-  favorite_count: number;
-  retweet_count: number;
-  quote_count: number;
-  year: number;
-  quoted_tweet_id?: string;
-  avatar_media_url?: string;
-  conversation_id?: string;
-  media_urls?: string[];
-  quoted_tweet?: {
-    tweet_id: string;
-    created_at: string;
-    full_text: string;
-    username: string;
-    favorite_count: number;
-    retweet_count: number;
-    avatar_media_url?: string;
-    media_urls?: string[];
-  };
-}
+export const TweetCard = ({ tweet, onQuotedTweetClick }: TweetCardProps) => {
+  const [expanded, setExpanded] = useState(false)
+  const tweetUrl = `https://twitter.com/${tweet.username}/status/${tweet.tweet_id}`
+  // Only truncate if significantly longer to avoid close calls
+  const TRUNCATE_LENGTH = 280
+  const shouldTruncate = tweet.full_text.length > TRUNCATE_LENGTH
 
-export const TweetCard = ({ tweet }: { tweet: Tweet }) => {
-  const [expanded, setExpanded] = useState(false);
-  const tweetUrl = `https://twitter.com/${tweet.username}/status/${tweet.tweet_id}`;
-  
-  const decodedText = decodeHtml(tweet.full_text);
-  const shouldTruncate = decodedText.length > 280;
-  const displayText = expanded || !shouldTruncate 
-    ? decodedText 
-    : decodedText.slice(0, 280) + '...';
+  // Use a fixed truncation for initial render to avoid hydration mismatch
+  // Then let React take over state
+  const getDisplayText = (text: string, isExpanded: boolean) => {
+    if (!shouldTruncate || isExpanded) return text
+    return text.slice(0, TRUNCATE_LENGTH) + '...'
+  }
+
+  const displayText = getDisplayText(tweet.full_text, expanded)
+
+  // Handle fallback for formatted date if created_at is invalid (though it should be valid)
+  const formatDate = (dateStr: string) => {
+    try {
+      return new Date(dateStr).toISOString().split('T')[0]
+    } catch {
+      return dateStr
+    }
+  }
 
   return (
     <div className="border-b border-black pb-4 mb-4 last:border-b-0 break-inside-avoid">
       <div className="flex items-start gap-3 mb-2">
         <div className="w-8 h-8 bg-gray-200 rounded-full overflow-hidden flex-shrink-0 border border-black">
           {tweet.avatar_media_url && (
-            <Image 
-              src={tweet.avatar_media_url} 
-              alt={tweet.username} 
-              width={32}
-              height={32}
-              className="w-full h-full object-cover" 
-              unoptimized
+            <img
+              src={tweet.avatar_media_url}
+              alt={tweet.username}
+              className="w-full h-full object-cover"
             />
           )}
         </div>
         <div className="flex-1">
+          <div className="flex items-center justify-between">
+            <div>
           <div className="font-bold text-sm">@{tweet.username}</div>
-          <a 
-            href={tweetUrl} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-xs text-gray-600 hover:underline"
-          >
-            {new Date(tweet.created_at).toISOString().split('T')[0]}
-          </a>
+              <div className="text-xs text-gray-600">
+                {formatDate(tweet.created_at)}
+              </div>
+            </div>
+            <a
+              href={tweetUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-400 hover:text-blue-600 transition-colors opacity-60 hover:opacity-100"
+              onClick={(e) => e.stopPropagation()}
+              title="View on Twitter"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+            </a>
+          </div>
         </div>
       </div>
-      
+
       <div className="text-sm leading-relaxed mb-3 whitespace-pre-line">
-        {displayText}
+        {decode(displayText)}
       </div>
-      
+
       {shouldTruncate && (
-        <button 
-          onClick={() => setExpanded(!expanded)}
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            setExpanded(!expanded)
+          }}
           className="text-xs text-blue-600 hover:underline mb-2"
         >
           {expanded ? 'Show less' : 'Read more'}
         </button>
       )}
 
-      {tweet.media_urls && tweet.media_urls.length > 0 && (
-        <div className="mb-3 space-y-2">
-          {tweet.media_urls.map((url, idx) => (
-            <div key={idx} className="rounded overflow-hidden border border-black">
-              <Image 
-                src={url} 
-                alt={`Tweet media ${idx + 1}`}
-                width={600}
-                height={400}
-                className="w-full h-auto object-contain"
-                unoptimized
-              />
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Render Images */}
+      {tweet.media_urls && tweet.media_urls.length > 0 && (() => {
+        const uniqueUrls = Array.from(new Set(tweet.media_urls))
+        return (
+          <div
+            className={`grid gap-2 mb-3 ${uniqueUrls.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}
+          >
+            {uniqueUrls.map((url, i) => (
+              <div
+                key={i}
+                className="rounded-lg overflow-hidden border border-gray-200"
+              >
+                <img
+                  src={url}
+                  alt="Tweet media"
+                  className="w-full h-auto object-cover max-h-96"
+                />
+              </div>
+            ))}
+          </div>
+        )
+      })()}
 
-      {tweet.quoted_tweet && (
-        <div className="mb-3 border border-gray-400 rounded p-2 bg-gray-50">
-          <div className="flex items-start gap-2 mb-1">
-            {tweet.quoted_tweet.avatar_media_url && (
-              <div className="w-6 h-6 bg-gray-200 rounded-full overflow-hidden flex-shrink-0 border border-gray-300">
-                <Image 
-                  src={tweet.quoted_tweet.avatar_media_url} 
-                  alt={tweet.quoted_tweet.username} 
-                  width={24}
-                  height={24}
-                  className="w-full h-full object-cover" 
-                  unoptimized
+      {/* Render Quoted Tweet */}
+      {tweet.quoted_tweet && tweet.quoted_tweet_id && (
+        <div
+          className="border border-gray-300 rounded-lg p-3 mb-3 hover:bg-gray-50 transition-colors"
+          onClick={(e) => {
+            if (!onQuotedTweetClick) return;
+            e.stopPropagation();
+            onQuotedTweetClick(tweet.quoted_tweet_id!);
+          }}
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-5 h-5 bg-gray-200 rounded-full overflow-hidden flex-shrink-0">
+              {tweet.quoted_tweet.avatar_media_url && (
+                <img
+                  src={tweet.quoted_tweet.avatar_media_url}
+                  alt={tweet.quoted_tweet.username}
+                  className="w-full h-full object-cover"
+                />
+              )}
+            </div>
+            <span className="font-bold text-xs">
+              @{tweet.quoted_tweet.username}
+            </span>
+            <span className="text-xs text-gray-500">
+              {formatDate(tweet.quoted_tweet.created_at)}
+            </span>
+          </div>
+          <div className="text-sm mb-2">
+            {decode(tweet.quoted_tweet.full_text)}
+          </div>
+          {tweet.quoted_tweet.media_urls &&
+            tweet.quoted_tweet.media_urls.length > 0 && (
+              <div className="rounded overflow-hidden border border-gray-200">
+                <img
+                  src={tweet.quoted_tweet.media_urls[0]}
+                  alt="Quoted media"
+                  className="w-full h-32 object-cover"
                 />
               </div>
             )}
-            <div className="flex-1 min-w-0">
-              <div className="text-xs font-bold">@{tweet.quoted_tweet.username}</div>
-              <div className="text-xs text-gray-600">
-                {new Date(tweet.quoted_tweet.created_at).toISOString().split('T')[0]}
-              </div>
-            </div>
-          </div>
-          <div className="text-xs leading-relaxed mb-2 whitespace-pre-line">
-            {decodeHtml(tweet.quoted_tweet.full_text)}
-          </div>
-          {tweet.quoted_tweet.media_urls && tweet.quoted_tweet.media_urls.length > 0 && (
-            <div className="mb-2 space-y-1">
-              {tweet.quoted_tweet.media_urls.map((url, idx) => (
-                <div key={idx} className="rounded overflow-hidden border border-gray-300">
-                  <Image 
-                    src={url} 
-                    alt={`Quoted tweet media ${idx + 1}`}
-                    width={300}
-                    height={200}
-                    className="w-full h-auto object-contain"
-                    unoptimized
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-          <div className="flex gap-3 text-xs text-gray-500 font-mono">
-            <span>♥ {tweet.quoted_tweet.favorite_count}</span>
-            <span>↻ {tweet.quoted_tweet.retweet_count}</span>
-          </div>
         </div>
       )}
-      
+
       <div className="flex gap-4 text-xs text-gray-500 font-mono">
         <span>♥ {tweet.favorite_count}</span>
         <span>↻ {tweet.retweet_count}</span>
-        <span>❝ {tweet.quote_count}</span>
+        {tweet.quote_count !== undefined && <span>❝ {tweet.quote_count}</span>}
       </div>
     </div>
-  );
-};
-
+  )
+}
