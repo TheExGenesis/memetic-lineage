@@ -191,7 +191,13 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
                                 About
                             </a>
                         </div>
-                        <div className="text-sm italic mb-3">from the Community Archive</div>
+                        <div className="text-sm italic mb-1">from the Community Archive</div>
+                        <div className="text-sm mb-3">
+                            by{' '}
+                            <a href="https://twitter.com/exgenesis" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70">@exgenesis</a>
+                            {' '}& {' '}
+                            <a href="https://twitter.com/A_Variengien" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70">@A_Variengien</a>
+                        </div>
                         {showTip && (
                             <div className="text-sm bg-yellow-50 border-2 border-yellow-400 px-3 py-2 rounded flex items-center justify-between gap-3">
                                 <div>
