@@ -34,6 +34,7 @@ ENRICHED_TWEETS_PATH = '~/data/enriched_tweets.parquet' # for alexandre
 tweets = pd.read_parquet(ENRICHED_TWEETS_PATH, dtype_backend='pyarrow')
 tweets = tweets.set_index('tweet_id', drop=False)
 # %%
+
 tweets.index.name = 'index'
 
 # Filter tweets to only those whose tweet_ids are in index_to_cluster
@@ -217,11 +218,13 @@ def calculate_quote_half_lives(tweets_df: pd.DataFrame, percentile: float = 0.5)
     return pd.Series(half_lives, name=f'half_life_p{int(percentile*100)}')
 # %% Calculate half-lives for all quoted tweets.
 half_life_path = '../half_life_50.pkl'
-OVERWRITE_HALF_LIFE_CALCULATION = True
+OVERWRITE_HALF_LIFE_CALCULATION = False
+
+PERCENTILE = 0.8
 
 if OVERWRITE_HALF_LIFE_CALCULATION or not os.path.exists(half_life_path):
     print("Calculating half-lives...")
-    half_life_50 = calculate_quote_half_lives(tweets, percentile=0.8)
+    half_life_50 = calculate_quote_half_lives(tweets, percentile=PERCENTILE)
     os.makedirs(os.path.dirname(half_life_path), exist_ok=True)
     half_life_50.to_pickle(half_life_path)
     print(f"Saved half-life results to {half_life_path}")
@@ -237,31 +240,42 @@ print(half_life_50.describe())
 tweets['half_life_hours'] = tweets.index.map(half_life_50)
 # %%
 
-
 # We picked 80% half-life because it gives us longer lasting tweets and helps ignore bursts
 # max col width
-pd.set_option('display.max_colwidth', None)
+# pd.set_option('display.max_colwidth', None)
 # filter top 50 by quoted_count and then sort by hours for each year
 tweets_with_year = tweets[tweets.half_life_hours.notna()].copy()
 tweets_with_year['created_at'] = pd.to_datetime(tweets_with_year['created_at'])
 tweets_with_year['year'] = tweets_with_year['created_at'].dt.year
 
 # %%
-def print_top_tweets_by_year(year):
-    """Print top 50 tweets by quoted_count for a given year, sorted by half_life_hours"""
-    year_tweets = tweets_with_year[tweets_with_year['year'] == year]
-    top_50_quoted_count = year_tweets.sort_values(by='quoted_count', ascending=False).head(50)
-    print(f"\n=== Year {year} ===")
+def print_top_tweets_by_year(year=None, N=50):
+    """Print top 50 tweets by quoted_count for a given year (or all years if None), sorted by half_life_hours"""
+    if year is None:
+        year_tweets = tweets_with_year
+        year_label = "All Years"
+    else:
+        year_tweets = tweets_with_year[tweets_with_year['year'] == year]
+        year_label = f"Year {year}"
+    
+    top_50_quoted_count = year_tweets.sort_values(by='quoted_count', ascending=False).head(N)
+    
+    output_lines = []
+    output_lines.append(f"\n=== {year_label} ===")
 
     #print(top_50_quoted_count.sort_values(by='quoted_count', ascending=False).head(50))
     # print the usernames, the full text, the quoted count, and the half life hours sorted by half life hours in a table
-    sorted_tweets = top_50_quoted_count.sort_values(by='half_life_hours', ascending=False).head(50)
+    sorted_tweets = top_50_quoted_count.sort_values(by='half_life_hours', ascending=False).head(N)
 
     
     # Display timeseries for each quoted tweet
-    print(f"\n{'='*70}")
-    print(f"Quote Distribution Timeseries for Top Tweets in {year}")
-    print(f"{'='*70}\n")
+    output_lines.append(f"\n{'='*70}")
+    output_lines.append(f"Quote Distribution Timeseries for Top Tweets in {year_label}")
+    output_lines.append(f"{'='*70}\n")
+
+    # get the min and max dates of the tweets quoting any of the top 50 tweets
+    min_date = tweets[tweets['quoted_tweet_id'].isin(sorted_tweets.index)]['created_at'].min()
+    max_date = tweets[tweets['quoted_tweet_id'].isin(sorted_tweets.index)]['created_at'].max()
     
     for idx, (tweet_id, tweet_row) in enumerate(sorted_tweets.iterrows(), 1):
         # Get the dates of tweets quoting this tweet
@@ -269,22 +283,34 @@ def print_top_tweets_by_year(year):
         
         if len(quoting_dates) > 0:
             half_life_str = f"{tweet_row.get('half_life_hours', 0):.2f}" if pd.notna(tweet_row.get('half_life_hours')) else "N/A"
-            print(f"\n[{idx}/{len(sorted_tweets)}] Tweet ID: {tweet_id}")
-            print(f"Author: @{tweet_row.get('username', 'unknown')}")
-            print(f"Quoted count: {tweet_row['quoted_count']} | Half-life: {half_life_str} hours")
+            output_lines.append(f"\n[{idx}/{len(sorted_tweets)}] Tweet ID: {tweet_id}")
+            output_lines.append(f"Author: @{tweet_row.get('username', 'unknown')}")
+
+            output_lines.append(f"Created at: {tweet_row.get('created_at', 'N/A')}")
+
+
+            output_lines.append(f"Quoted count: {tweet_row['quoted_count']} | Half-life ({PERCENTILE*100}%): {half_life_str} hours")
             full_text = str(tweet_row.get('full_text', 'N/A'))
             text_preview = full_text[:500] + "..." if len(full_text) > 500 else full_text
-            print(f"Text: {text_preview}")
-            print("\nQuote timeline:")
-            print(create_ascii_chart(quoting_dates, min_date=f"{year}-01-01", max_date=f"{year+3}-12-31"))
-            print("\n" + "-"*70)
+            output_lines.append(f"Text: {text_preview}")
+            output_lines.append("\nQuote timeline:")
+            output_lines.append(create_ascii_chart(quoting_dates, min_date=min_date, max_date=max_date))
+            output_lines.append("\n" + "-"*70)
+    
+    return "\n".join(output_lines)
 
 
 # for year in sorted(tweets_with_year['year'].unique()):
 #     print_top_tweets_by_year(year)
 # %%
 
-print_top_tweets_by_year(2023)
+all_year = print_top_tweets_by_year(None, N=100)
+
+# %% Add to a file
+
+with open('top_quoted_tweets_by_year.txt', 'w') as f:
+    f.write(all_year)
+
 # I think half life doesn something, it gives us longer lasting tweets and helps ignore bursts
 
 # half life is too coarse: confuses recency of tweets with burstiness

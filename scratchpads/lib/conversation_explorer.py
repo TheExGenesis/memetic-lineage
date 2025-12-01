@@ -2,7 +2,7 @@
 import pandas as pd
 import numpy as np
 from collections import defaultdict
-from typing import TypedDict, Optional, Annotated
+from typing import TypedDict, Optional, Annotated, List
 from pandas import DataFrame
 from datetime import datetime
 from dataclasses import dataclass
