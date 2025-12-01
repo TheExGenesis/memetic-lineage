@@ -22,8 +22,8 @@ import json
 from pathlib import Path
 from dotenv import load_dotenv
 
-from conversation_explorer import build_conversation_trees, build_incomplete_conversation_trees, build_quote_trees, print_conversation_threads
-from count_quotes import count_quotes
+from lib.conversation_explorer import build_conversation_trees, build_incomplete_conversation_trees, build_quote_trees, print_conversation_threads
+from lib.count_quotes import count_quotes
 # Load environment variables
 load_dotenv()
 # %%
