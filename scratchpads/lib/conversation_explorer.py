@@ -311,31 +311,26 @@ def print_conversation_threads(
         nodes_to_show = set()
         
         for tid in target_ids:
-            # Always include the target itself
             nodes_to_show.add(tid)
             
-            if tid == tree["root"]:
-                # If target is root, show whole thread down to depth
-                queue = [(tid, 0)]
-                while queue:
-                    curr, curr_depth = queue.pop(0)
-                    if curr_depth < depth:
-                        children = tree["children"].get(curr, [])
-                        for child in children:
-                            if child not in nodes_to_show:
-                                nodes_to_show.add(child)
-                                queue.append((child, curr_depth + 1))
-            else:
-                # If target is reply, show path to root (upwards) up to depth
-                curr = tid
-                d = 0
-                while d < depth:
-                    parent = tree["parents"].get(curr)
-                    if parent is None:
-                        break
-                    nodes_to_show.add(parent)
-                    curr = parent
-                    d += 1
+            # Walk ancestors all the way to root (no depth limit)
+            curr = tid
+            while True:
+                parent = tree["parents"].get(curr)
+                if parent is None:
+                    break
+                nodes_to_show.add(parent)
+                curr = parent
+            
+            # Add descendants up to depth
+            queue = [(tid, 0)]
+            while queue:
+                curr, curr_depth = queue.pop(0)
+                if curr_depth < depth:
+                    for child in tree["children"].get(curr, []):
+                        if child not in nodes_to_show:
+                            nodes_to_show.add(child)
+                            queue.append((child, curr_depth + 1))
         
         # 2. Identify "display roots" for this partial tree
         # A display root is a node in nodes_to_show whose parent is NOT in nodes_to_show
