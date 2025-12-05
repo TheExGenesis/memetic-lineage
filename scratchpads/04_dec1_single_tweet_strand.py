@@ -19,8 +19,8 @@ from lib.count_quotes import count_quotes
 # Load environment variables
 load_dotenv()
 # %%
-ENRICHED_TWEETS_PATH = '/Users/frsc/Documents/Projects/data/2025-09-03_enriched_tweets.parquet' # for francisco
-# ENRICHED_TWEETS_PATH = '~/data/enriched_tweets.parquet' # for alexandre
+#ENRICHED_TWEETS_PATH = '/Users/frsc/Documents/Projects/data/2025-09-03_enriched_tweets.parquet' # for francisco
+ENRICHED_TWEETS_PATH = '~/data/enriched_tweets.parquet' # for alexandre
 
 tweets = pd.read_parquet(ENRICHED_TWEETS_PATH, dtype_backend='pyarrow')
 tweets = tweets.set_index('tweet_id', drop=False)
@@ -83,7 +83,6 @@ if tweets.index.name == 'index':
 # Now set tweet_id as index (it should only be a column at this point)
 tweets = tweets.set_index('tweet_id', drop=False)
 tweets.index.name = 'index'
-
 
 
 # %%
@@ -187,10 +186,7 @@ print(len(result_dicts))
 print('\n'.join([str(r) for r in results if int(r['key']) not in tweet_dict]))
 # %%
 def semantic_search_for_strands(tweet_id, exclude_tweet_ids=[], exclude_keywords=[]):
-    
     results = search_embeddings(tweet_dict[tweet_id]['full_text'], k=1000, threshold=0.5, exclude_tweet_id=str(tweet_id), filter={"must_not": [{"key": "text", "match": {"text": keyword}} for keyword in exclude_keywords]})
-    
-
     result_ids = [int(result['key']) for result in results]
     result_dicts = [tweet_dict[result_id] for result_id in result_ids if result_id in tweet_dict]
     filtered_result_dicts = [result_dict for result_dict in result_dicts if (int(result_dict['quoted_tweet_id']) != tweet_id if result_dict['quoted_tweet_id'] is not None else True)]

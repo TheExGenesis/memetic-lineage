@@ -125,6 +125,28 @@ export const TweetPane = ({ tweet, onClose, onSelectTweet }: TweetPaneProps) => 
                  onQuotedTweetClick={handleQuotedTweetSelect}
                />
             </div>
+            <a
+              href={`/multi-thread-visualizer?seed=${tweet.tweet_id}`}
+              className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-black text-white text-sm font-bold uppercase tracking-wide hover:bg-gray-800 transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <svg 
+                width="16" 
+                height="16" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+              >
+                <path d="M6 3v12" />
+                <circle cx="18" cy="6" r="3" />
+                <circle cx="6" cy="18" r="3" />
+                <path d="M18 9a9 9 0 0 1-9 9" />
+              </svg>
+              Explore Strand
+            </a>
          </div>
 
          {!initialTabSet || loading ? (

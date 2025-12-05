@@ -1,8 +1,83 @@
 'use server';
 
-import { fetchTweetDetails } from '@/lib/api';
+import { fetchTweetDetails, getQuotes } from '@/lib/api';
 import { supabaseCa } from '@/lib/supabase';
 import { Tweet } from '@/lib/types';
+
+export interface StrandSeed {
+  tweetId: string;
+  sourceType: 'root' | 'quote_of_root' | 'semantic_match' | 'quote_of_semantic_match';
+}
+
+export interface FindStrandSeedsResult {
+  seeds: StrandSeed[];
+  rootTweet: Tweet | null;
+  error?: string;
+}
+
+/**
+ * Finds related "strand" tweets for a given root tweet ID:
+ * 1. The root tweet itself
+ * 2. All quote tweets of the root
+ * 3. Top semantic matches (sorted by likes)
+ * 4. All quote tweets of the semantic matches
+ */
+export async function findStrandSeeds(
+  rootTweetId: string,
+  topSemanticCount: number = 20
+): Promise<FindStrandSeedsResult> {
+  try {
+    // 1. Fetch root tweet details
+    const rootTweets = await fetchTweetDetails([rootTweetId]);
+    if (rootTweets.length === 0) {
+      return { seeds: [], rootTweet: null, error: 'Root tweet not found' };
+    }
+    const rootTweet = rootTweets[0];
+
+    const seeds: StrandSeed[] = [
+      { tweetId: rootTweetId, sourceType: 'root' }
+    ];
+
+    // 2. Get all quote tweets of the root
+    const rootQuotes = await getQuotes(rootTweetId);
+    for (const qt of rootQuotes) {
+      seeds.push({ tweetId: qt.tweet_id, sourceType: 'quote_of_root' });
+    }
+
+    // 3. Run semantic search on root tweet text
+    const semanticResults = await searchEmbeddings(rootTweet.full_text, rootTweetId);
+    
+    // Sort by favorite_count (likes) and take top N
+    const topSemanticMatches = semanticResults
+      .sort((a, b) => (b.tweet.favorite_count ?? 0) - (a.tweet.favorite_count ?? 0))
+      .slice(0, topSemanticCount);
+
+    for (const match of topSemanticMatches) {
+      seeds.push({ tweetId: match.tweet.tweet_id, sourceType: 'semantic_match' });
+    }
+
+    // 4. Get quotes of each semantic match
+    for (const match of topSemanticMatches) {
+      const matchQuotes = await getQuotes(match.tweet.tweet_id);
+      for (const qt of matchQuotes) {
+        seeds.push({ tweetId: qt.tweet_id, sourceType: 'quote_of_semantic_match' });
+      }
+    }
+
+    // Remove duplicates while preserving order
+    const seen = new Set<string>();
+    const uniqueSeeds = seeds.filter(seed => {
+      if (seen.has(seed.tweetId)) return false;
+      seen.add(seed.tweetId);
+      return true;
+    });
+
+    return { seeds: uniqueSeeds, rootTweet };
+  } catch (error) {
+    console.error('findStrandSeeds error:', error);
+    return { seeds: [], rootTweet: null, error: String(error) };
+  }
+}
 
 interface RawSearchResult {
   key: string;
