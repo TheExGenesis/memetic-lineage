@@ -34,6 +34,16 @@ interface MultiThreadClientProps {
 export const MultiThreadClient = ({ columns, strandInfo }: MultiThreadClientProps) => {
   const [columnWidth, setColumnWidth] = useState(400)
   const [showBreakdown, setShowBreakdown] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  const allTweetIds = columns.flatMap(col => col.targetIds)
+  
+  const copyIdsToClipboard = () => {
+    const idsString = allTweetIds.join(',')
+    navigator.clipboard.writeText(idsString)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   const formatDate = (d: Date) => d.toISOString().split('T')[0]
 
@@ -72,6 +82,12 @@ export const MultiThreadClient = ({ columns, strandInfo }: MultiThreadClientProp
             </div>
           </div>
           <div className="flex items-center gap-4">
+            <button
+              onClick={copyIdsToClipboard}
+              className="text-xs uppercase font-semibold px-3 py-1 border border-black hover:bg-black hover:text-white transition-colors"
+            >
+              {copied ? '✓ Copied!' : `Copy ${allTweetIds.length} IDs`}
+            </button>
             {strandInfo && (
               <button
                 onClick={() => setShowBreakdown(!showBreakdown)}
