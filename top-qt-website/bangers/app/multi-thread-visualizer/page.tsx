@@ -1,67 +1,8 @@
 import { Suspense } from 'react'
-import { getThread, getConversationId, fetchTweetDetails } from '@/lib/api'
-import { Tweet } from '@/lib/types'
 import { MultiThreadClient } from './MultiThreadClient'
 import { StrandSearchForm } from './StrandSearchForm'
-import { findStrandSeeds, StrandSeed } from '@/app/actions/search'
-
-interface ThreadColumn {
-  targetIds: string[]
-  conversationId: string | null
-  tweets: Tweet[]
-  rootDate: Date
-  sourceType?: StrandSeed['sourceType']
-}
-
-async function loadThreadColumns(tweetIds: string[], seedMap?: Map<string, StrandSeed['sourceType']>): Promise<ThreadColumn[]> {
-  const convIdToColumn = new Map<string, ThreadColumn>()
-  const standaloneColumns: ThreadColumn[] = []
-
-  for (const id of tweetIds) {
-    const convId = await getConversationId(id)
-
-    if (convId && convIdToColumn.has(convId)) {
-      convIdToColumn.get(convId)!.targetIds.push(id)
-      continue
-    }
-
-    let tweets: Tweet[] = []
-    if (convId) {
-      tweets = await getThread(convId)
-    }
-
-    if (tweets.length === 0) {
-      const fetched = await fetchTweetDetails([id])
-      if (fetched.length > 0) {
-        tweets = fetched
-      }
-    }
-
-    if (tweets.length === 0) continue
-
-    const rootDate = tweets.reduce(
-      (earliest, t) => {
-        const d = new Date(t.created_at)
-        return d < earliest ? d : earliest
-      },
-      new Date(tweets[0].created_at)
-    )
-
-    const sourceType = seedMap?.get(id)
-    const col: ThreadColumn = { targetIds: [id], conversationId: convId, tweets, rootDate, sourceType }
-
-    if (convId) {
-      convIdToColumn.set(convId, col)
-    } else {
-      standaloneColumns.push(col)
-    }
-  }
-
-  const allColumns = [...convIdToColumn.values(), ...standaloneColumns]
-  allColumns.sort((a, b) => a.rootDate.getTime() - b.rootDate.getTime())
-
-  return allColumns
-}
+import { findStrandSeeds } from '@/app/actions/search'
+import { loadThreadColumns } from './loadThreadColumns'
 
 export default async function MultiThreadVisualizerPage({
   searchParams

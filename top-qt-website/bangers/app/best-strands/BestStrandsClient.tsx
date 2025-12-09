@@ -1,0 +1,171 @@
+'use client';
+
+import { useState } from 'react';
+import { StrandWithTweet } from '@/lib/types';
+import { StrandDetail } from './StrandDetail';
+
+interface BestStrandsClientProps {
+  strands: StrandWithTweet[];
+}
+
+const formatDate = (dateStr?: string) => {
+  if (!dateStr) return 'Unknown';
+  try {
+    return new Date(dateStr).toISOString().split('T')[0];
+  } catch {
+    return 'Unknown';
+  }
+};
+
+const getRatingColor = (rating: number) => {
+  if (rating >= 8) return 'bg-green-100 text-green-800 border-green-300';
+  if (rating >= 6) return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+  return 'bg-gray-100 text-gray-800 border-gray-300';
+};
+
+const getLevelBadge = (level: 'high' | 'medium' | 'low') => {
+  switch (level) {
+    case 'high':
+      return 'bg-emerald-100 text-emerald-700';
+    case 'medium':
+      return 'bg-amber-100 text-amber-700';
+    case 'low':
+      return 'bg-slate-100 text-slate-600';
+  }
+};
+
+export function BestStrandsClient({ strands }: BestStrandsClientProps) {
+  const [selectedStrand, setSelectedStrand] = useState<StrandWithTweet | null>(null);
+
+  if (selectedStrand) {
+    return (
+      <StrandDetail 
+        strand={selectedStrand} 
+        onBack={() => setSelectedStrand(null)} 
+      />
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <header className="mb-8 border-b-4 border-black pb-4">
+          <div className="flex items-center gap-4 mb-2">
+            <a
+              href="/"
+              className="p-2 hover:bg-gray-100 transition-colors border border-transparent hover:border-black"
+              title="Back to home"
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M19 12H5" />
+                <path d="M12 19l-7-7 7-7" />
+              </svg>
+            </a>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Best Strands</h1>
+              <p className="text-sm text-gray-600">
+                Curated conversation strands, rated by evolution, cohesion, and utility
+              </p>
+            </div>
+          </div>
+        </header>
+
+        <div className="bg-white border-2 border-black shadow-[4px_4px_0_0_#000]">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b-2 border-black bg-gray-100">
+                <th className="text-left p-4 font-bold text-sm uppercase tracking-wide">Seed Tweet</th>
+                <th className="text-left p-4 font-bold text-sm uppercase tracking-wide">Summary</th>
+                <th className="text-center p-4 font-bold text-sm uppercase tracking-wide w-20">Rating</th>
+                <th className="text-center p-4 font-bold text-sm uppercase tracking-wide w-24">Evolution</th>
+                <th className="text-center p-4 font-bold text-sm uppercase tracking-wide w-24">Cohesion</th>
+                <th className="text-center p-4 font-bold text-sm uppercase tracking-wide w-24">Utility</th>
+                <th className="text-center p-4 font-bold text-sm uppercase tracking-wide w-28">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {strands.map((strand, idx) => {
+                const seedTweet = strand.seedTweet;
+                const tweetPreview = seedTweet 
+                  ? seedTweet.full_text.slice(0, 100) + (seedTweet.full_text.length > 100 ? '...' : '')
+                  : 'Tweet not found';
+                const summaryPreview = strand.rating.reasoning_summary.slice(0, 120) + 
+                  (strand.rating.reasoning_summary.length > 120 ? '...' : '');
+
+                return (
+                  <tr
+                    key={strand.seed_tweet_id}
+                    onClick={() => setSelectedStrand(strand)}
+                    className={`border-b border-gray-200 cursor-pointer transition-colors hover:bg-yellow-50 ${
+                      idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                    }`}
+                  >
+                    <td className="p-4">
+                      <div className="max-w-xs">
+                        {seedTweet && (
+                          <div className="flex items-center gap-2 mb-1">
+                            {seedTweet.avatar_media_url && (
+                              <img
+                                src={seedTweet.avatar_media_url}
+                                alt={seedTweet.username}
+                                className="w-5 h-5 rounded-full"
+                              />
+                            )}
+                            <span className="font-bold text-xs">@{seedTweet.username}</span>
+                          </div>
+                        )}
+                        <p className="text-sm text-gray-700 line-clamp-2">{tweetPreview}</p>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <p className="text-sm text-gray-600 line-clamp-2">{summaryPreview}</p>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className={`inline-block px-3 py-1 text-lg font-bold border ${getRatingColor(strand.rating.rating)}`}>
+                        {strand.rating.rating}
+                      </span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className={`inline-block px-2 py-1 text-xs font-semibold uppercase rounded ${getLevelBadge(strand.rating.evolution)}`}>
+                        {strand.rating.evolution}
+                      </span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className={`inline-block px-2 py-1 text-xs font-semibold uppercase rounded ${getLevelBadge(strand.rating.cohesion)}`}>
+                        {strand.rating.cohesion}
+                      </span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className={`inline-block px-2 py-1 text-xs font-semibold uppercase rounded ${getLevelBadge(strand.rating.utility)}`}>
+                        {strand.rating.utility}
+                      </span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="text-sm font-mono text-gray-600">
+                        {formatDate(seedTweet?.created_at)}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="mt-8 text-center text-sm text-gray-500">
+          {strands.length} strands curated from the Community Archive
+        </div>
+      </div>
+    </div>
+  );
+}
+

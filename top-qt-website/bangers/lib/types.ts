@@ -27,3 +27,28 @@ export interface Tweet {
     media_urls?: string[];
   };
 }
+
+export interface EssentialTweet {
+  tweet_id: string; // String to preserve precision for large Twitter IDs
+  annotation: string;
+}
+
+export interface StrandRating {
+  reasoning_summary: string;
+  rating: number;
+  evolution: 'high' | 'medium' | 'low';
+  cohesion: 'high' | 'medium' | 'low';
+  utility: 'high' | 'medium' | 'low';
+  essential_tweets: EssentialTweet[];
+}
+
+export interface Strand {
+  seed_tweet_id: string; // String to preserve precision for large Twitter IDs
+  thread_text: string;
+  rating: StrandRating;
+}
+
+// Extended strand with fetched tweet data for display
+export interface StrandWithTweet extends Strand {
+  seedTweet?: Tweet;
+}

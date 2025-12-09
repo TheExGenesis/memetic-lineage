@@ -184,12 +184,20 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
                     <header className="mb-8 border-b-4 border-black pb-4 flex-shrink-0">
                         <div className="flex items-center justify-between mb-2">
                             <h1 className="text-4xl font-bold tracking-tighter">bangers</h1>
-                            <a 
-                                href="/about"
-                                className="text-base font-bold underline hover:opacity-70 transition-opacity"
-                            >
-                                About
-                            </a>
+                            <div className="flex items-center gap-4">
+                                <a 
+                                    href="/best-strands"
+                                    className="text-base font-bold underline hover:opacity-70 transition-opacity"
+                                >
+                                    Best strands
+                                </a>
+                                <a 
+                                    href="/about"
+                                    className="text-base font-bold underline hover:opacity-70 transition-opacity"
+                                >
+                                    About
+                                </a>
+                            </div>
                         </div>
                         <div className="text-sm italic mb-1">from the Community Archive</div>
                         <div className="text-sm mb-3">
