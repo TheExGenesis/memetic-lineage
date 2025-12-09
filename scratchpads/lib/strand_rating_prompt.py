@@ -85,18 +85,6 @@ Return a JSON object with this exact structure:
 
 IMPORTANT: Return ONLY valid JSON. No markdown, no explanation outside the JSON.
 
-### Example Output
-
-**Key Dimensions:**
-*   *Evolution:* [Low/Med/High]
-*   *Cohesion:* [Low/Med/High]
-*   *Utility:* [Low/Med/High]
-
-**Top 10 Essential Tweets:**
-[List of Tweet IDs, chronological order preferred]
-
-***
-
 # Example Implementation (Mental Walkthrough)
 
 *If I were processing your **Strand 1 (Agency Map)** input using this prompt, here is how I would generate the output:*

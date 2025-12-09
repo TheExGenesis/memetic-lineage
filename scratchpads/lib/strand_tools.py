@@ -12,11 +12,13 @@ from lib.conversation_explorer import (
     print_conversation_threads,
 )
 from lib.semantic_search import search_embeddings
+from tqdm import tqdm
 
 SCRATCHPADS_DIR = Path(__file__).parent.parent
 TWEET_DICT_CACHE = SCRATCHPADS_DIR / 'tweet_dict_cache.pkl'
 REPLY_TREES_CACHE = SCRATCHPADS_DIR / 'complete_reply_trees_cache.pkl'
 QUOTED_COUNTS_CACHE = SCRATCHPADS_DIR / 'quoted_counts_cache.parquet'
+QUOTE_TWEETS_DICT_CACHE = SCRATCHPADS_DIR / 'quote_tweets_dict_cache.pkl'
 
 DEFAULT_PARQUET_PATH = os.environ.get(
     'ENRICHED_TWEETS_PATH',
@@ -78,12 +80,19 @@ def generate_caches(parquet_path: Optional[str] = None) -> None:
     
     complete_reply_trees = {**trees, **incomplete_trees}
     tweet_dict = {t['tweet_id']: t for t in tweets_list}
+    quote_tweets_dict: Dict[int, List[int]] = {}
+    for tweet in tweet_dict.values():
+        quoted_id = tweet.get('quoted_tweet_id')
+        if quoted_id is not None:
+            quote_tweets_dict.setdefault(quoted_id, []).append(tweet['tweet_id'])
     
     print("Saving caches...")
     with open(TWEET_DICT_CACHE, 'wb') as f:
         pickle.dump(tweet_dict, f)
     with open(REPLY_TREES_CACHE, 'wb') as f:
         pickle.dump(complete_reply_trees, f)
+    with open(QUOTE_TWEETS_DICT_CACHE, 'wb') as f:
+        pickle.dump(quote_tweets_dict, f)
     
     print(f"Caches saved to {SCRATCHPADS_DIR}")
 
@@ -109,6 +118,7 @@ def load_caches(auto_generate: bool = True) -> tuple[Dict[int, EnrichedTweet], D
         _tweet_dict = pickle.load(f)
     with open(REPLY_TREES_CACHE, 'rb') as f:
         _reply_trees = pickle.load(f)
+    assert _tweet_dict is not None and _reply_trees is not None
     print(f"Loaded {len(_tweet_dict)} tweets and {len(_reply_trees)} reply trees")
     return _tweet_dict, _reply_trees
 
@@ -119,6 +129,13 @@ def get_quote_tweets_dict() -> Dict[int, List[int]]:
     if _quote_tweets_dict is not None:
         return _quote_tweets_dict
     
+    if QUOTE_TWEETS_DICT_CACHE.exists():
+        print("Loading quote_tweets_dict from cache...")
+        with open(QUOTE_TWEETS_DICT_CACHE, 'rb') as f:
+            _quote_tweets_dict = pickle.load(f)
+        print(f"Loaded quote index with {len(_quote_tweets_dict)} quoted tweets")
+        return _quote_tweets_dict
+    
     tweet_dict, _ = load_caches()
     print("Building quote_tweets_dict index...")
     _quote_tweets_dict = {}
@@ -126,6 +143,8 @@ def get_quote_tweets_dict() -> Dict[int, List[int]]:
         quoted_id = tweet.get('quoted_tweet_id')
         if quoted_id is not None:
             _quote_tweets_dict.setdefault(quoted_id, []).append(tweet['tweet_id'])
+    with open(QUOTE_TWEETS_DICT_CACHE, 'wb') as f:
+        pickle.dump(_quote_tweets_dict, f)
     print(f"Built quote index with {len(_quote_tweets_dict)} quoted tweets")
     return _quote_tweets_dict
 
@@ -166,7 +185,7 @@ def semantic_search_for_strands(
     # Sort by quoted_count descending, take top_n
     return sorted(filtered, key=lambda x: x.get('quoted_count', 0), reverse=True)[:top_n]
 
-
+# %%
 def build_strand_seeds(
     tweet_id: int,
     include_semantic: bool = True,
@@ -192,12 +211,14 @@ def build_strand_seeds(
     # 2. Quotes of root
     if include_quotes:
         seeds.extend(quote_dict.get(tweet_id, []))
-    
+
+        print(f"Found {len(seeds)} seeds after quotes")
     # 3. Semantic neighbors
     if include_semantic:
         neighbors = semantic_search_for_strands(tweet_id, top_n=semantic_top_n)
         neighbor_ids = [n['tweet_id'] for n in neighbors]
         seeds.extend(neighbor_ids)
+        print(f"Found {len(neighbor_ids)} semantic neighbors")
         
         # 4. Quotes of semantic neighbors
         if include_quotes:
@@ -211,9 +232,9 @@ def build_strand_seeds(
         if s not in seen:
             seen.add(s)
             unique_seeds.append(s)
-    
+    print(f"Found {len(unique_seeds)} unique seeds")
     return unique_seeds
-
+# %%
 
 def get_thread_texts(
     tweet_ids: List[int],
@@ -236,7 +257,7 @@ def get_thread_texts(
     tweet_dict, reply_trees = load_caches()
     
     results: List[str] = []
-    for tid in tweet_ids:
+    for tid in tqdm(tweet_ids, desc="Generating thread texts"):
         if enrich:
             expanded_seeds = build_strand_seeds(tid, semantic_top_n=semantic_top_n)
         else:
@@ -250,8 +271,10 @@ def get_thread_texts(
         )
         results.append(thread_text)
     return results
-
+# %%
 
 def get_thread_text(tweet_id: int, depth: int = 10, enrich: bool = True) -> str:
     """Single tweet convenience wrapper."""
     return get_thread_texts([tweet_id], depth=depth, enrich=enrich)[0]
+
+# %%
