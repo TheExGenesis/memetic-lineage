@@ -10,7 +10,7 @@ class EssentialTweet(BaseModel):
 
 class StrandRating(BaseModel):
     reasoning_summary: str = Field(description="3-5 sentence summary identifying boundary object, arc, and whether dialectical or constructive")
-    rating: int = Field(ge=0, le=10, description="Score from 0-10 based on evolution of discourse and community utility")
+    rating: int = Field(description="Score from 0-10 based on evolution of discourse and community utility")
     evolution: Literal["low", "medium", "high"] = Field(description="How much the idea evolved over time")
     cohesion: Literal["low", "medium", "high"] = Field(description="How connected the participants and ideas are")
     utility: Literal["low", "medium", "high"] = Field(description="Practical value for the community or outsiders")
@@ -85,59 +85,7 @@ Return a JSON object with this exact structure:
 
 IMPORTANT: Return ONLY valid JSON. No markdown, no explanation outside the JSON.
 
-# Example Implementation (Mental Walkthrough)
-
-*If I were processing your **Strand 1 (Agency Map)** input using this prompt, here is how I would generate the output:*
-
-**Reasoning Summary:**
-This strand represents a classic "Teleological Arc" regarding community agency and scaling social systems. It begins in 2020 with abstract aspirations for "systems change" during COVID, crystallizes in 2024 through Rich Decibels' "Agency Map" (the boundary object), and evolves into concrete execution with the launch of physical spaces (Fractal, The Neighborhood) and events. The discourse moves from vague idealism to specific tactical tooling for community builders, showing high evolution and real-world application.
-
-**Rating:** 8/10
-
-**Key Dimensions:**
-*   *Evolution:* High (From "dreaming of change" to "opening physical spaces")
-*   *Cohesion:* High (Strong interlinking between key nodes like Visakanv, Rich, and Malcolm)
-*   *Utility:* High (Provides actionable maps for community organizers)
-
-**Top 10 Essential Tweets:**
-1.  1241409748156776448 (The pre-context: Covid as systems change opportunity)
-2.  1333199165589864449 (The aspiration: 100-year games/domino meme context)
-3.  1464240020169109504 (Early mapping: Context vs Capacity)
-4.  1716140468751204826 (The pivot: Moving to "Permanent Local" / bottom right)
-5.  1716527363549233374 (The dialectic: Octo adding Economics/Governance layers)
-6.  1742494880625016921 (The Artifact: Rich's Agency Map thread)
-7.  1743080673613869124 (Application: People plotting their own history on the map)
-8.  1766279606351605884 (Expansion: America as a network state on the map)
-9.  1896925779793232224 (Execution: Rich opening his physical space)
-10. 1942262762656153873 (Retrospective: "Made it" - validating the map years later)
-
-***
-
-*If I were processing your **Strand 2 (Ice Cream/Trauma)** input:*
-
-**Reasoning Summary:**
-This strand is a hermeneutic exploration of childhood conditioning and somatic tension, anchored by RomeoStevens76's "Ice Cream Probability Shape" tweet. Unlike the first strand, this is not about building a physical space, but about refining a psychological concept. The discussion creates a bridge between critique of the education system, somatic healing practices (Alexander Technique, TRE), and predictive processing theories (VSMCs), validating a shared subjective experience of "trying" vs "allowing."
-
-**Rating:** 7/10
-
-**Key Dimensions:**
-*   *Evolution:* High (From educational critique to specific somatic/neurological theories)
-*   *Cohesion:* Medium-High (Centered around one sticky concept that people return to over years)
-*   *Utility:* High (Provides vocabulary for internal psychological state management)
-
-**Top 10 Essential Tweets:**
-1.  1206274851545026560 (Pre-context: Qiaochu on childhood conditioning)
-2.  1455068457091756034 (The Artifact: Romeo's Ice Cream Tweet)
-3.  1455958356934467588 (Interpretation: M_ashcroft on "Trying not to try")
-4.  1524408561144668161 (Expansion: Tyler on consent training)
-5.  1556873073239896064 (Counter-point/Nuance: The benefit of parental collapse)
-6.  1610358856273592324 (Application: Rich on TRE/MDMA and somatic release)
-7.  1742494880625016921 (Synthesis: Yatharth on the "Walmart problem" and judging tension)
-8.  1787687636242669988 (Case Study: tr_babb on physical throat tension as software error)
-9.  1802789213886365759 (Theoretical Deep Dive: Johnsonmxe on Vaso-computation)
-10. 1825215568338899070 (Artistic integration: Dan Allison's "Inner Animal" drawing)
-
----
+# Example Implementations (Mental Walkthrough)
 
 **Reasoning Summary:**
 This strand represents a recurring **Social Ritual** rather than an evolutionary narrative. Anchored initially by Vividvoid’s artistic invitation "On Being Seen" (2021), it devolves from a vulnerable exploration of self-perception into a series of standard social media engagement games ("Post a picture," "Last saved selfie"). While it succeeds as "Social Glue"—densifying the network by allowing anons to reveal their faces and build intimacy—the *idea* itself does not evolve. The prompt remains static over four years, serving as a periodic "pulse check" for community membership rather than a vehicle for knowledge production or conceptual refinement.
@@ -170,4 +118,55 @@ This strand represents a recurring **Social Ritual** rather than an evolutionary
     *Persistence:* Key nodes confirming they are still active and visible in the network years later.
 10. **1940494134416232552** [2025-07-02] (@arithmoquine)
     *Vibe Maintenance:* Closing the loop with costume photos and party pics, reinforcing the "scene" aesthetic.
+
+---
+
+**Reasoning Summary:**
+This strand is a hermeneutic exploration of childhood conditioning and somatic tension, anchored by RomeoStevens76's "Ice Cream Probability Shape" tweet. Unlike the first strand, this is not about building a physical space, but about refining a psychological concept. The discussion creates a bridge between critique of the education system, somatic healing practices (Alexander Technique, TRE), and predictive processing theories (VSMCs), validating a shared subjective experience of "trying" vs "allowing."
+
+**Rating:** 7/10
+
+**Key Dimensions:**
+*   *Evolution:* High (From educational critique to specific somatic/neurological theories)
+*   *Cohesion:* Medium-High (Centered around one sticky concept that people return to over years)
+*   *Utility:* High (Provides vocabulary for internal psychological state management)
+
+**Top 10 Essential Tweets:**
+1.  1206274851545026560 (Pre-context: Qiaochu on childhood conditioning)
+2.  1455068457091756034 (The Artifact: Romeo's Ice Cream Tweet)
+3.  1455958356934467588 (Interpretation: M_ashcroft on "Trying not to try")
+4.  1524408561144668161 (Expansion: Tyler on consent training)
+5.  1556873073239896064 (Counter-point/Nuance: The benefit of parental collapse)
+6.  1610358856273592324 (Application: Rich on TRE/MDMA and somatic release)
+7.  1742494880625016921 (Synthesis: Yatharth on the "Walmart problem" and judging tension)
+8.  1787687636242669988 (Case Study: tr_babb on physical throat tension as software error)
+9.  1802789213886365759 (Theoretical Deep Dive: Johnsonmxe on Vaso-computation)
+10. 1825215568338899070 (Artistic integration: Dan Allison's "Inner Animal" drawing)
+
+---
+
+**Reasoning Summary:**
+This strand represents a classic "Teleological Arc" regarding community agency and scaling social systems. It begins in 2020 with abstract aspirations for "systems change" during COVID, crystallizes in 2024 through Rich Decibels' "Agency Map" (the boundary object), and evolves into concrete execution with the launch of physical spaces (Fractal, The Neighborhood) and events. The discourse moves from vague idealism to specific tactical tooling for community builders, showing high evolution and real-world application.
+
+**Rating:** 8/10
+
+**Key Dimensions:**
+*   *Evolution:* High (From "dreaming of change" to "opening physical spaces")
+*   *Cohesion:* High (Strong interlinking between key nodes like Visakanv, Rich, and Malcolm)
+*   *Utility:* High (Provides actionable maps for community organizers)
+
+**Top 10 Essential Tweets:**
+1.  1241409748156776448 (The pre-context: Covid as systems change opportunity)
+2.  1333199165589864449 (The aspiration: 100-year games/domino meme context)
+3.  1464240020169109504 (Early mapping: Context vs Capacity)
+4.  1716140468751204826 (The pivot: Moving to "Permanent Local" / bottom right)
+5.  1716527363549233374 (The dialectic: Octo adding Economics/Governance layers)
+6.  1742494880625016921 (The Artifact: Rich's Agency Map thread)
+7.  1743080673613869124 (Application: People plotting their own history on the map)
+8.  1766279606351605884 (Expansion: America as a network state on the map)
+9.  1896925779793232224 (Execution: Rich opening his physical space)
+10. 1942262762656153873 (Retrospective: "Made it" - validating the map years later)
+
+***
+
 """

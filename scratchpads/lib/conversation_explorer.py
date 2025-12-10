@@ -266,114 +266,119 @@ def build_quote_trees(tweets: List[EnrichedTweet]) -> Dict[int, ConversationTree
     return trees
 
 
-def print_conversation_threads(
+def filter_conversation_trees(
     tweet_ids: List[int],
     conversation_trees: Dict[int, ConversationTree],
-    tweets: Dict[int, EnrichedTweet],
-    depth: int = 5
-) -> str:
+    tweet_dict: Dict[int, EnrichedTweet],
+    depth: int = 5,
+    depth_up: int | None = None,
+    depth_from_root: int | None = None
+) -> Dict[int, ConversationTree]:
     """
-    Efficiently print conversation threads for a list of tweet IDs.
+    Filter conversation trees to include only subtrees relevant to the given tweet IDs.
     
     Args:
-        tweet_ids: List of tweet IDs to display threads for
+        tweet_ids: List of tweet IDs to filter trees for
         conversation_trees: Pre-computed conversation trees
-        tweets: Dictionary of tweet data keyed by tweet_id
-        depth: Depth limit for displaying threads (ancestors or descendants)
+        tweet_dict: Dictionary of tweet data keyed by tweet_id
+        depth: Depth limit for including descendants
+        depth_up: Depth limit for including ancestors
+        depth_from_root: Depth limit for including descendants from root
         
     Returns:
-        String representation of the threads formatted like 'tree' command
+        Dict mapping conversation_id -> filtered ConversationTree
     """
-    output_lines = []
+    if depth_up is None:
+        depth_up = depth
+    if depth_from_root is None:
+        depth_from_root = depth
+    filtered_trees = {}
     
     # Pre-filter: map conversation_id -> set of relevant tweet_ids
     conv_to_targets = defaultdict(set)
     for tid in tweet_ids:
-        if tid not in tweets:
+        if tid not in tweet_dict:
             continue
-        conv_id = tweets[tid].get("conversation_id")
-        # If conv_id exists and we have a tree for it
+        conv_id = tweet_dict[tid].get("conversation_id")
         if conv_id and conv_id in conversation_trees:
             conv_to_targets[conv_id].add(tid)
-        else:
-            # For standalone tweets or those without trees, we can skip 
-            # or handle them if needed. The request focuses on threads.
-            pass 
 
-    # Sort conversations to make output deterministic
-    sorted_conv_ids = sorted(conv_to_targets.keys())
-
-    for conv_id in sorted_conv_ids:
-        target_ids = conv_to_targets[conv_id]
+    for conv_id, target_ids in conv_to_targets.items():
         tree = conversation_trees[conv_id]
         
-        # 1. Identify all nodes to display for this conversation
-        nodes_to_show = set()
+        # Identify all nodes to include
+        nodes_to_include = set()
         
         for tid in target_ids:
-            nodes_to_show.add(tid)
+            nodes_to_include.add(tid)
             
-            # Walk ancestors all the way to root (no depth limit)
+            # Walk ancestors up to depth limit
             curr = tid
-            while True:
+            ancestor_depth = 0
+            while ancestor_depth < depth_up:
                 parent = tree["parents"].get(curr)
                 if parent is None:
                     break
-                nodes_to_show.add(parent)
+                nodes_to_include.add(parent)
                 curr = parent
+                ancestor_depth += 1
             
+
             # Add descendants up to depth
-            queue = [(tid, 0)]
+            queue = [(tid, depth_from_root if tid in conversation_trees else depth)]
             while queue:
                 curr, curr_depth = queue.pop(0)
-                if curr_depth < depth:
+                if curr_depth > 0:
                     for child in tree["children"].get(curr, []):
-                        if child not in nodes_to_show:
-                            nodes_to_show.add(child)
-                            queue.append((child, curr_depth + 1))
+                        if child not in nodes_to_include:
+                            nodes_to_include.add(child)
+                            queue.append((child, curr_depth - 1))
         
-        # 2. Identify "display roots" for this partial tree
-        # A display root is a node in nodes_to_show whose parent is NOT in nodes_to_show
-        display_roots = []
-        for node in nodes_to_show:
+        # Build filtered tree structure
+        filtered_children = defaultdict(list)
+        filtered_parents = {}
+        
+        for node in nodes_to_include:
+            # Include parent relationship if parent is also in filtered set
             parent = tree["parents"].get(node)
-            if parent is None or parent not in nodes_to_show:
-                display_roots.append(node)
+            if parent is not None and parent in nodes_to_include:
+                filtered_parents[node] = parent
+                filtered_children[parent].append(node)
         
-        display_roots.sort() 
+        # Determine root (original root if included, otherwise None)
+        original_root = tree.get("root")
+        filtered_root = original_root if original_root in nodes_to_include else None
         
-        # 3. Render each component
-        for root in display_roots:
-            output_lines.extend(_render_tree_node(root, nodes_to_show, tree, tweets))
-            output_lines.append("") 
-
-    return "\n".join(output_lines)
-
-
-def _render_tree_node(
-    node_id: int,
-    visible_nodes: Set[int],
-    tree: ConversationTree,
-    tweets: Dict[int, EnrichedTweet],
-    prefix: str = "",
-    is_last_child: bool = True,
-    is_root_of_view: bool = True
-) -> List[str]:
-    lines = []
-    tweet = tweets.get(node_id)
-    if not tweet:
-        return []
-
-    # Prepare node content
-    stats_parts = []
-    if tweet.get("favorite_count"):
-        stats_parts.append(f"💜 {tweet['favorite_count']}")
-    if tweet.get("retweet_count"):
-        stats_parts.append(f"🔁 {tweet['retweet_count']}")
-    if tweet.get("quoted_count"):
-        stats_parts.append(f"💬 {tweet['quoted_count']}")
+        # Build paths for filtered tree
+        filtered_paths = {}
+        if filtered_root:
+            visited = set()
+            stack = [(filtered_root, [filtered_root])]
+            while stack:
+                current_id, path = stack.pop()
+                children = filtered_children.get(current_id, [])
+                if not children:
+                    filtered_paths[current_id] = path
+                else:
+                    unvisited = [c for c in children if c not in visited]
+                    if unvisited:
+                        for child_id in unvisited:
+                            visited.add(child_id)
+                            stack.append((child_id, path + [child_id]))
+        
+        filtered_trees[conv_id] = {
+            "root": filtered_root,
+            "children": filtered_children,
+            "parents": filtered_parents,
+            "paths": filtered_paths,
+        }
     
-    stats_str = " ".join(stats_parts)
+    return filtered_trees
+
+
+
+# we want to pass a function as a parameter of _render_tree_node to render the header
+def _render_header_default(tweet: EnrichedTweet) -> str:
     username = tweet.get("username", "unknown")
     
     # Format date
@@ -385,6 +390,92 @@ def _render_tree_node(
         else:
             # Fallback for string or other types
             date_str = str(created_at)[:10]
+        
+    # Prepare node content
+    stats_parts = []
+    if tweet.get("favorite_count"):
+        stats_parts.append(f"💜 {tweet['favorite_count']}")
+    if tweet.get("retweet_count"):
+        stats_parts.append(f"🔁 {tweet['retweet_count']}")
+    if tweet.get("quoted_count"):
+        stats_parts.append(f"💬 {tweet['quoted_count']}")
+    stats_str = " ".join(stats_parts)
+        
+    return f"{tweet['tweet_id']} [{date_str}] @{username} {stats_str}"
+
+
+def strand_header_print_factory(seed_info: Dict[int, str]) -> Callable[[EnrichedTweet], str]:
+    def print_header(tweet: EnrichedTweet) -> str:
+        base = _render_header_default(tweet)
+        seed_type_str = seed_info.get(tweet.get("tweet_id"), "")
+        if seed_type_str:
+            return f'{base} [Seed type: {seed_type_str}]'
+        else:
+            return base
+    return print_header
+
+
+def render_conversation_trees(
+    filtered_trees: Dict[int, ConversationTree],
+    tweet_dict: Dict[int, EnrichedTweet],
+    render_header: Callable[[EnrichedTweet], str] = _render_header_default
+) -> str:
+    """
+    Render filtered conversation trees to a string representation.
+    
+    Args:
+        filtered_trees: Dict mapping conversation_id -> filtered ConversationTree
+        tweet_dict: Dictionary of tweet data keyed by tweet_id
+        
+    Returns:
+        String representation of the threads formatted like 'tree' command
+    """
+    output_lines = []
+    
+    # Sort conversations to make output deterministic
+    sorted_conv_ids = sorted(filtered_trees.keys())
+    
+    for conv_id in sorted_conv_ids:
+        tree = filtered_trees[conv_id]
+        
+        # Collect all nodes in the filtered tree
+        nodes_to_show = set(tree["parents"].keys())
+        nodes_to_show.update(tree["parents"].values())
+        for children_list in tree["children"].values():
+            nodes_to_show.update(children_list)
+        if tree["root"] is not None:
+            nodes_to_show.add(tree["root"])
+        
+        # Identify display roots (nodes whose parent is not in filtered set)
+        display_roots = []
+        for node in nodes_to_show:
+            parent = tree["parents"].get(node)
+            if parent is None or parent not in nodes_to_show:
+                display_roots.append(node)
+        
+        display_roots.sort()
+        
+        # Render each component
+        for root in display_roots:
+            output_lines.extend(_render_tree_node(root, nodes_to_show, tree, tweet_dict, render_header=render_header))
+            output_lines.append("")
+    
+    return "\n".join(output_lines)
+
+def _render_tree_node(
+    node_id: int,
+    visible_nodes: Set[int],
+    tree: ConversationTree,
+    tweets: Dict[int, EnrichedTweet],
+    prefix: str = "",
+    is_last_child: bool = True,
+    is_root_of_view: bool = True,
+    render_header: Callable[[EnrichedTweet], str] = _render_header_default
+) -> List[str]:
+    lines = []
+    tweet = tweets.get(node_id)
+    if not tweet:
+        return []
 
     # Handle quoted text
     quoted_text_block = []
@@ -405,7 +496,7 @@ def _render_tree_node(
     if not is_root_of_view:
         connector = "└── " if is_last_child else "├── "
     
-    header = f"{connector}{node_id} [{date_str}] @{username} {stats_str}"
+    header = f"{connector}{render_header(tweet)}"
     lines.append(prefix + header)
     
     # Determine indentation for content and children
@@ -435,11 +526,34 @@ def _render_tree_node(
             tweets, 
             child_prefix, 
             is_last, 
-            is_root_of_view=False
+            is_root_of_view=False,
+            render_header=render_header
         ))
         
     return lines
 
+
+def print_conversation_threads(
+    tweet_ids: List[int],
+    conversation_trees: Dict[int, ConversationTree],
+    tweet_dict: Dict[int, EnrichedTweet],
+    depth: int = 5,
+    render_header: Callable[[EnrichedTweet], str] = _render_header_default
+) -> str:
+    """
+    Efficiently print conversation threads for a list of tweet IDs.
+    
+    Args:
+        tweet_ids: List of tweet IDs to display threads for
+        conversation_trees: Pre-computed conversation trees
+        tweet_dict: Dictionary of tweet data keyed by tweet_id
+        depth: Depth limit for displaying threads (ancestors or descendants)
+        
+    Returns:
+        String representation of the threads formatted like 'tree' command
+    """
+    filtered_trees = filter_conversation_trees(tweet_ids, conversation_trees, tweet_dict, depth)
+    return render_conversation_trees(filtered_trees, tweet_dict, render_header=render_header)
 
 
 # %%
