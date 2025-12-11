@@ -409,7 +409,7 @@ def strand_header_print_factory(seed_info: Dict[int, str]) -> Callable[[Enriched
         base = _render_header_default(tweet)
         seed_type_str = seed_info.get(tweet.get("tweet_id"), "")
         if seed_type_str:
-            return f'{base} [Seed type: {seed_type_str}]'
+            return f'{base} [(SEED) type={seed_type_str}]'
         else:
             return base
     return print_header
@@ -458,7 +458,7 @@ def render_conversation_trees(
         # Render each component
         for root in display_roots:
             output_lines.extend(_render_tree_node(root, nodes_to_show, tree, tweet_dict, render_header=render_header))
-            output_lines.append("")
+            output_lines.append("\n===\n")
     
     return "\n".join(output_lines)
 
@@ -470,7 +470,8 @@ def _render_tree_node(
     prefix: str = "",
     is_last_child: bool = True,
     is_root_of_view: bool = True,
-    render_header: Callable[[EnrichedTweet], str] = _render_header_default
+    render_header: Callable[[EnrichedTweet], str] = _render_header_default,
+    is_linear_continuation: bool = False
 ) -> List[str]:
     lines = []
     tweet = tweets.get(node_id)
@@ -493,14 +494,14 @@ def _render_tree_node(
     text_lines = full_text.split("\n")
     
     connector = ""
-    if not is_root_of_view:
+    if not is_root_of_view and not is_linear_continuation:
         connector = "└── " if is_last_child else "├── "
     
     header = f"{connector}{render_header(tweet)}"
     lines.append(prefix + header)
     
     # Determine indentation for content and children
-    if is_root_of_view:
+    if is_root_of_view or is_linear_continuation:
         child_prefix = prefix
         content_prefix = prefix
     else:
@@ -517,18 +518,33 @@ def _render_tree_node(
     children = [c for c in tree["children"].get(node_id, []) if c in visible_nodes]
     children.sort()
     
-    for i, child in enumerate(children):
-        is_last = (i == len(children) - 1)
+    if len(children) == 1:
+        lines.append(f"{content_prefix}↓")
         lines.extend(_render_tree_node(
-            child, 
+            children[0], 
             visible_nodes, 
             tree, 
             tweets, 
             child_prefix, 
-            is_last, 
+            is_last_child=True, 
             is_root_of_view=False,
-            render_header=render_header
+            render_header=render_header,
+            is_linear_continuation=True
         ))
+    else:
+        for i, child in enumerate(children):
+            is_last = (i == len(children) - 1)
+            lines.extend(_render_tree_node(
+                child, 
+                visible_nodes, 
+                tree, 
+                tweets, 
+                child_prefix, 
+                is_last, 
+                is_root_of_view=False,
+                render_header=render_header,
+                is_linear_continuation=False
+            ))
         
     return lines
 
