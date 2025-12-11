@@ -1,4 +1,5 @@
 # %%
+from lib.image_describer import MediaDescription
 import pandas as pd
 import numpy as np
 from collections import defaultdict
@@ -48,7 +49,6 @@ class ConversationTree(TypedDict):
     root: int
     children: Dict[int, List[int]]
     parents: Dict[int, int]
-    paths: Dict[int, List[int]]
 
 
 def build_conversation_trees(
@@ -59,8 +59,7 @@ def build_conversation_trees(
     Returns dict of conversation_id -> {
         'root': tweet_id of root,
         'children': dict of tweet_id -> list of child tweet_ids,
-        'parents': dict of tweet_id -> parent tweet_id,
-        'paths': dict of leaf_id -> list of tweet_ids from root to leaf
+        'parents': dict of tweet_id -> parent tweet_id
     }
     """
     print(f"Building trees from {len(tweets)} conversation tweets")
@@ -76,7 +75,6 @@ def build_conversation_trees(
                 "children": defaultdict(list),
                 "parents": {},
                 "root": None,
-                "paths": {},
             }
 
         tweet_id = tweet["tweet_id"]
@@ -88,34 +86,7 @@ def build_conversation_trees(
         else:
             conversations[conv_id]["root"] = tweet_id
 
-    # Build paths iteratively
-    for conv in tqdm.tqdm(conversations.values(), desc="Building paths"):
-        root = conv["root"]
-        if not root:
-            continue
-
-        visited = set()  # Track visited tweet IDs
-        stack = [(root, [root])]
-
-        while stack:
-            current_id, path = stack.pop()
-            children = conv["children"].get(current_id, [])
-
-            if not children:
-                conv["paths"][current_id] = path
-            else:
-                # Only process unvisited children
-                unvisited = [c for c in children if c not in visited]
-                if unvisited:
-                    for child_id in unvisited:
-                        visited.add(child_id)
-                        stack.append((child_id, path + [child_id]))
-
-    # After building paths
-    total_paths = sum(len(conv["paths"]) for conv in conversations.values())
-    print(
-        f"Built {total_paths} conversation paths across {len(conversations)} trees"
-    )
+    print(f"Built {len(conversations)} conversation trees")
     return conversations
 
 
@@ -133,8 +104,7 @@ def build_incomplete_conversation_trees(
         Dict of root_id -> {
             'root': root_id,
             'children': dict of tweet_id -> list of child ids,
-            'parents': dict of tweet_id -> parent id,
-            'paths': dict of leaf_id -> list of tweet_ids from root to leaf
+            'parents': dict of tweet_id -> parent id
         }
     """
     # Combine tweets and build parent relationships
@@ -168,14 +138,13 @@ def build_incomplete_conversation_trees(
             "root": root_id,
             "children": defaultdict(list),
             "parents": {},
-            "paths": {},
         }
 
         # BFS with cycle protection and depth limit
         from collections import deque
-        queue = deque([(root_id, [root_id], 0)])
+        queue = deque([(root_id, 0)])
         while queue:
-            current_id, path, depth = queue.popleft()
+            current_id, depth = queue.popleft()
 
             # Safety against infinite loops
             if depth > 100:  # Max depth for any reasonable conversation
@@ -187,11 +156,7 @@ def build_incomplete_conversation_trees(
                 if child_id not in tree["parents"]:  # Prevent re-parenting
                     tree["parents"][child_id] = current_id
                     tree["children"][current_id].append(child_id)
-                    queue.append((child_id, path + [child_id], depth + 1))
-
-            # Record path if leaf node
-            if not children.get(current_id):
-                tree["paths"][current_id] = path
+                    queue.append((child_id, depth + 1))
 
         trees[root_id] = tree
 
@@ -235,14 +200,13 @@ def build_quote_trees(tweets: List[EnrichedTweet]) -> Dict[int, ConversationTree
             "root": root_id,
             "children": defaultdict(list),
             "parents": {},
-            "paths": {},
         }
         
         # BFS to build tree
         from collections import deque
-        queue = deque([(root_id, [root_id], 0)])
+        queue = deque([(root_id, 0)])
         while queue:
-            current_id, path, depth = queue.popleft()
+            current_id, depth = queue.popleft()
             
             # Safety against infinite loops
             if depth > 100:
@@ -254,11 +218,7 @@ def build_quote_trees(tweets: List[EnrichedTweet]) -> Dict[int, ConversationTree
                 if child_id not in tree["parents"]:
                     tree["parents"][child_id] = current_id
                     tree["children"][current_id].append(child_id)
-                    queue.append((child_id, path + [child_id], depth + 1))
-
-            # Record path if leaf node
-            if not children.get(current_id):
-                tree["paths"][current_id] = path
+                    queue.append((child_id, depth + 1))
         
         trees[root_id] = tree
     
@@ -345,32 +305,12 @@ def filter_conversation_trees(
                 filtered_parents[node] = parent
                 filtered_children[parent].append(node)
         
-        # Determine root (original root if included, otherwise None)
         original_root = tree.get("root")
-        filtered_root = original_root if original_root in nodes_to_include else None
-        
-        # Build paths for filtered tree
-        filtered_paths = {}
-        if filtered_root:
-            visited = set()
-            stack = [(filtered_root, [filtered_root])]
-            while stack:
-                current_id, path = stack.pop()
-                children = filtered_children.get(current_id, [])
-                if not children:
-                    filtered_paths[current_id] = path
-                else:
-                    unvisited = [c for c in children if c not in visited]
-                    if unvisited:
-                        for child_id in unvisited:
-                            visited.add(child_id)
-                            stack.append((child_id, path + [child_id]))
         
         filtered_trees[conv_id] = {
-            "root": filtered_root,
+            "root": original_root,
             "children": filtered_children,
             "parents": filtered_parents,
-            "paths": filtered_paths,
         }
     
     return filtered_trees
@@ -418,7 +358,8 @@ def strand_header_print_factory(seed_info: Dict[int, str]) -> Callable[[Enriched
 def render_conversation_trees(
     filtered_trees: Dict[int, ConversationTree],
     tweet_dict: Dict[int, EnrichedTweet],
-    render_header: Callable[[EnrichedTweet], str] = _render_header_default
+    render_header: Callable[[EnrichedTweet], str] = _render_header_default,
+    image_descriptions: Dict[int, list[MediaDescription]] = {},
 ) -> str:
     """
     Render filtered conversation trees to a string representation.
@@ -457,7 +398,7 @@ def render_conversation_trees(
         
         # Render each component
         for root in display_roots:
-            output_lines.extend(_render_tree_node(root, nodes_to_show, tree, tweet_dict, render_header=render_header))
+            output_lines.extend(_render_tree_node(root, nodes_to_show, tree, tweet_dict, render_header=render_header, image_descriptions=image_descriptions))
             output_lines.append("\n===\n")
     
     return "\n".join(output_lines)
@@ -471,6 +412,7 @@ def _render_tree_node(
     is_last_child: bool = True,
     is_root_of_view: bool = True,
     render_header: Callable[[EnrichedTweet], str] = _render_header_default,
+    image_descriptions: Dict[int, list[MediaDescription]] = {},
     is_linear_continuation: bool = False
 ) -> List[str]:
     lines = []
@@ -513,7 +455,19 @@ def _render_tree_node(
         
     for q_line in quoted_text_block:
         lines.append(f"{content_prefix}{q_line}")
-        
+
+    # Render images
+    image_descriptions_list = image_descriptions.get(node_id, [])
+    if image_descriptions_list:
+        lines.append(f"{content_prefix}Images:")
+        for i, image_desc in enumerate(image_descriptions_list):
+            description = image_desc['description']
+            description_lines = description.split('\n')
+            for j, desc_line in enumerate(description_lines):
+                if j == 0:
+                    lines.append(f"{content_prefix}  - [Image #{i}] {desc_line}")
+                else:
+                    lines.append(f"{content_prefix}    {desc_line}")
     # Process children
     children = [c for c in tree["children"].get(node_id, []) if c in visible_nodes]
     children.sort()
@@ -529,6 +483,7 @@ def _render_tree_node(
             is_last_child=True, 
             is_root_of_view=False,
             render_header=render_header,
+            image_descriptions=image_descriptions,
             is_linear_continuation=True
         ))
     else:
@@ -543,6 +498,7 @@ def _render_tree_node(
                 is_last, 
                 is_root_of_view=False,
                 render_header=render_header,
+                image_descriptions=image_descriptions,
                 is_linear_continuation=False
             ))
         

@@ -1,3 +1,4 @@
+# %%
 import os
 import re
 import csv
@@ -25,10 +26,6 @@ DEFAULT_CACHE_PATH = Path(__file__).parent.parent / "image_cache.csv"
 def _headers() -> dict[str, str]:
     return {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
 
-def extract_tweet_id(tweet_id_or_url: str) -> str:
-    match = re.search(r"/status/(\d+)", tweet_id_or_url)
-    return match.group(1) if match else tweet_id_or_url
-
 def fetch_tweet(tweet_id: str) -> dict | None:
     url = f"{SUPABASE_URL}/rest/v1/tweets?tweet_id=eq.{tweet_id}&select=tweet_id,full_text"
     resp = httpx.get(url, headers=_headers())
@@ -42,7 +39,7 @@ def fetch_tweet_media(tweet_id: str) -> list[dict]:
     resp.raise_for_status()
     return resp.json()
 
-def load_cache(cache_path: Path = DEFAULT_CACHE_PATH) -> dict[str, list[MediaDescription]]:
+def load_img_cache(cache_path: Path = DEFAULT_CACHE_PATH) -> dict[str, list[MediaDescription]]:
     cache: dict[str, list[MediaDescription]] = {}
     if not cache_path.exists():
         return cache
@@ -58,7 +55,27 @@ def load_cache(cache_path: Path = DEFAULT_CACHE_PATH) -> dict[str, list[MediaDes
             })
     return cache
 
+def save_img_cache(cache: dict[str, list[MediaDescription]], cache_path: Path = DEFAULT_CACHE_PATH) -> None:
+    """Save the entire cache dict to CSV file, overwriting the existing file."""
+    if not cache:
+        return
+    
+    # Collect all entries from cache
+    all_entries: list[MediaDescription] = []
+    for entries in cache.values():
+        all_entries.extend(entries)
+    
+    if not all_entries:
+        return
+    
+    # Overwrite the file with all cache entries
+    with open(cache_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["tweet_id", "tweet_text", "media_url", "description"])
+        writer.writeheader()
+        writer.writerows(all_entries)
+
 def save_to_cache(entries: list[MediaDescription], cache_path: Path = DEFAULT_CACHE_PATH) -> None:
+    """Legacy function for backward compatibility. Use save_cache for bulk saves."""
     file_exists = cache_path.exists()
     with open(cache_path, "a", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=["tweet_id", "tweet_text", "media_url", "description"])
@@ -83,44 +100,46 @@ def describe_image(image_url: str, tweet_text: str) -> str:
     return completion.choices[0].message.content or ""
 
 def get_image_descriptions(
-    tweet_id_or_url: str,
-    use_cache: bool = True,
-    cache_path: Path = DEFAULT_CACHE_PATH,
+    tweet_id: int,
     verbose: bool = True,
 ) -> list[MediaDescription]:
-    tweet_id = extract_tweet_id(tweet_id_or_url)
-    cache = load_cache(cache_path)
+    """
+    Get image descriptions for a tweet and add them to the cache dict in place.
+    
+    Args:
+        tweet_id_or_url: Tweet ID or URL
+        verbose: If True, print progress messages
+    """
+    tweet_id_str = str(tweet_id)
+
+    if verbose:
+        print(f"Processing tweet {tweet_id_str}")
     
     if verbose:
-        print(f"Loading cache for tweet {tweet_id}")
-    
-    if use_cache and tweet_id in cache:
-        return cache[tweet_id]
-    
-    if verbose:
-        print(f"Fetching tweet {tweet_id} from Supabase")
-    tweet = fetch_tweet(tweet_id)
+        print(f"Fetching tweet {tweet_id_str} from Supabase")
+    tweet = fetch_tweet(tweet_id_str)
     if not tweet:
         return []
     
     if verbose:
-        print(f"Fetching media for tweet {tweet_id} from Supabase")
-    media_rows = fetch_tweet_media(tweet_id)
+        print(f"Fetching media for tweet {tweet_id_str} from Supabase")
+    media_rows = fetch_tweet_media(tweet_id_str)
     if not media_rows:
         return []
     
     if verbose:
-        print(f"Describing images for tweet {tweet_id}")
+        print(f"Describing images for tweet {tweet_id_str}")
     results: list[MediaDescription] = []
     for m in media_rows:
         desc = describe_image(m["media_url"], tweet["full_text"])
         results.append({
-            "tweet_id": tweet_id,
+            "tweet_id": tweet_id_str,
             "tweet_text": tweet["full_text"],
             "media_url": m["media_url"],
             "description": desc,
         })
     
-    save_to_cache(results, cache_path)
     return results
 
+
+# %%

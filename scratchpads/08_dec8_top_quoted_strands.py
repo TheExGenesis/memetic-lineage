@@ -14,6 +14,7 @@ from lib.strand_caches import get_quote_tweets_dict, load_caches
 from lib.strand_rating_prompt import STRAND_RATER_PROMPT, StrandRating
 from lib.strand_builder import get_strand_conversation_string, get_strand_seeds
 from lib.conversation_explorer import filter_conversation_trees, render_conversation_trees, strand_header_print_factory
+from lib.image_describer import get_image_descriptions, load_img_cache, save_img_cache, DEFAULT_CACHE_PATH, MediaDescription
 # %%
 load_dotenv(Path(__file__).parent.parent / ".env")
 
@@ -187,8 +188,8 @@ def save_results(results: list[StrandResult], path: Path = OUTPUT_PATH) -> None:
 # %%
 
 print("Loading top quoted tweet IDs...")
-tweet_ids = load_top_tweet_ids()[:100]
-print(f"Found {len(tweet_ids)} tweet IDs")
+high_half_life_qt_tweet_ids = load_top_tweet_ids()[:100]
+print(f"Found {len(high_half_life_qt_tweet_ids)} tweet IDs")
 # %%
 ultimape_tweet_id = 731740482137559040
 # %%
@@ -203,31 +204,125 @@ exclude_tweet_id = str(tid)
 filter_obj = {"must_not": [{"key": "text", "match": {"text": kw}} for kw in []]} if [] else None
 # %%
 seeds = get_strand_seeds(tweet_id=tid, tweet_dict=tweet_dict, quote_tweets_dict=quote_dict, exclude_keywords=[], semantic_limit=20, debug=True)
+
+
+# %%
+
+# seeds id with commas
+seeds_ids = [i.tweet_id for i in seeds]
+seeds_ids_str = ','.join(map(str, seeds_ids))
+print(seeds_ids_str)
+
 # %%
 filtered_trees = filter_conversation_trees([i.tweet_id for i in seeds], conversation_trees, tweet_dict, depth=10, depth_up=10, depth_from_root=100)
+
+
 # %%
-# converstaion tree
-# {1624933204519190529: {'root': 1624933204519190529,
-#   'children': defaultdict(list, {}),
-#   'parents': {},
-#   'paths': {1624933204519190529: [1624933204519190529]}}}
+# Let's gather ALL the tweet IDs, and make paralle calls to get_image_descriptions so the cache is filled
+
+# Load cache once before parallel calls
+
+# %%
+# let's get all the tweet ids from gathering all keys and vales of the parents in one big set
+
+tweet_ids_set = set()
+for tree in filtered_trees.values():
+    for tid in tree["parents"].keys():
+        tweet_ids_set.add(tid)
+    for tid in tree["parents"].values():
+        tweet_ids_set.add(tid)
+    for tid in tree["children"].keys():
+        tweet_ids_set.add(tid)
+
+tweet_ids = list(tweet_ids_set)
+
+# %%
+print(f"Found {len(tweet_ids)} tweet IDs")
+
+# %%
+
+image_cache = load_img_cache(DEFAULT_CACHE_PATH)
+tweet_id_to_describe = [tid for tid in tweet_ids if tid not in image_cache]
+print(f"Found {len(tweet_id_to_describe)} tweet IDs to describe")
+# %%
+# Process all the tweet id to describe in parallel. We add the result to the image_cache dict.
+
+
+def get_multiple_image_descriptions(image_cache: dict[int, list[MediaDescription]], tweet_ids: list[int], verbose: bool = False) -> dict[int, list[MediaDescription]]:
+    tweet_id_to_describe = [tid for tid in tweet_ids if tid not in image_cache]
+    print(f"Found {len(tweet_id_to_describe)} tweet IDs to describe")
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = {executor.submit(get_image_descriptions, tweet_id, verbose=False): tweet_id for tweet_id in tweet_id_to_describe}
+        for future in tqdm(as_completed(futures), total=len(futures), desc="Describing images"):
+            tid = futures[future]
+            descriptions = future.result()
+            if descriptions:
+                image_cache[str(tid)] = descriptions
+    return image_cache
+
+
+
+# %%
+
+get_image_descriptions(1668633368479805447, verbose=True)
+# %%
+# Save cache in bulk after all parallel calls complete
+save_img_cache(image_cache, DEFAULT_CACHE_PATH)
+
+# Convert cache to the format expected by render_strand_header
+image_descriptions = {tid: image_cache.get(str(tid), []) for tid in tweet_ids}
 
 # %%
 # make seed into a dict
 seed_info = {i.tweet_id: i.source_type for i in seeds}
 render_strand_header = strand_header_print_factory(seed_info)
-strand_str = render_conversation_trees(filtered_trees, tweet_dict, render_header=render_strand_header)
+strand_str = render_conversation_trees(filtered_trees, tweet_dict, render_header=render_strand_header, image_descriptions=image_descriptions)
 print(strand_str)
+
+
+# %%
+# Here to start gathering the seeds for all root tweet ids
+# Then we get a (set of filtered trees, where each filtered tree correspond to a seed) for each one of the 100 root tweet ids
+# We describe all the images in the trees
+# We render the trees with the images descriptions
+# We return the thread texts
+
+thread_texts = []
+image_cache = load_img_cache(DEFAULT_CACHE_PATH)
+depth = 10
+for tid in high_half_life_qt_tweet_ids[:1]:
+    seeds = get_strand_seeds(tid, tweet_dict, quote_dict, conversation_trees)
+    print(f"Found {len(seeds)} seeds for tweet {tid}")
+    seed_ids = [s.tweet_id for s in seeds]
+    print(f"Found {len(seed_ids)} seed IDs for tweet {tid}")
+    filtered_trees = filter_conversation_trees(seed_ids, conversation_trees, tweet_dict, depth=depth, depth_up=depth, depth_from_root=depth)
+
+    tree_tweet_ids = set()
+    for tree in filtered_trees.values():
+        for tid in tree["parents"].keys():
+            tree_tweet_ids.add(tid)
+        for tid in tree["parents"].values():
+            tree_tweet_ids.add(tid)
+        for tid in tree["children"].keys():
+            tree_tweet_ids.add(tid)
+    tree_tweet_ids = list(tree_tweet_ids)
+    print(f"Found {len(tree_tweet_ids)} tweet IDs in the trees for tweet {tid}")
+
+    image_cache = get_multiple_image_descriptions(image_cache, tree_tweet_ids)
+    print(f"Found {len(image_cache)} image descriptions for tweet {tid}")
+    thread_text = render_conversation_trees(filtered_trees, tweet_dict, render_header=render_strand_header, image_descriptions=image_cache)
+    print(f"Generated thread text for tweet {tid}")
+    thread_texts.append(thread_text)
 
 # %%
 print("Generating thread texts...")
 
 thread_texts = []
 def generate_strand_thread_text(tid: int, depth=10) -> str:
-    seeds = get_strand_seeds(tid, tweet_dict, quote_dict, conversation_trees, depth=depth)
+    seeds = get_strand_seeds(tid, tweet_dict, quote_dict, conversation_trees)
     tweet_ids = [s.tweet_id for s in seeds]
     filtered_trees = filter_conversation_trees(tweet_ids, conversation_trees, tweet_dict, depth)
-    return render_conversation_trees(filtered_trees, tweet_dict, render_header=render_strand_header)
+    return render_conversation_trees(filtered_trees, tweet_dict, render_header=render_strand_header, image_descriptions=image_descriptions)
 
 with ThreadPoolExecutor(max_workers=4) as executor:
     futures = {executor.submit(generate_strand_thread_text, tid): tid for tid in tweet_ids}
