@@ -58,6 +58,9 @@ async function fetchTweetsByPeriod() {
     tweet.column = String(tweet.year);
   });
   
+  console.log(`year tweets: ${yearTweets.length}`);
+  console.log(`sample 3 year tweets: ${JSON.stringify(yearTweets.slice(0, 3), null, 2)}`);
+  
   // Calculate date ranges
   const now = new Date();
   const lastWeekDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -88,6 +91,9 @@ async function fetchTweetsByPeriod() {
   (lastWeekTweets || []).forEach((tweet: any) => {
     tweet.column = 'Last Week';
   });
+  
+  console.log(`last week tweets: ${(lastWeekTweets || []).length}`);
+  console.log(`last month tweets: ${(lastMonthTweets || []).length}`);
   
   // Combine all tweets
   const allTweets = [...yearTweets, ...(lastMonthTweets || []), ...(lastWeekTweets || [])];
@@ -253,7 +259,33 @@ async function fetchTweetsByPeriod() {
 }
 
 export default async function Home() {
+  // Test CA database connection - fetch a single tweet
+  const { data: testTweet, error } = await supabaseCa
+    .from('tweets')
+    .select(`
+      tweet_id,
+      tweet_media (
+        media_url,
+        media_type
+      )
+    `).in('tweet_id', ['1600065172906790912'])
+    .limit(1)
+    .single();
+
+    
+
+  console.log('CA Database test:');
+  console.log('Error:', error);
+  console.log('Tweet:', testTweet);
+
   const tweets = await fetchTweetsByPeriod();
+  console.log(`tweets: ${tweets.length}`);
+      if (tweets.length > 0) {
+        const tweetsWithMedia = tweets.filter((tweet) => tweet.media_urls !== undefined);
+        console.log(`Tweets with defined media_urls: ${tweetsWithMedia.length} out of ${tweets.length}`);
+      } else {
+        console.log('no tweets');
+      }
 
   if (tweets.length === 0) {
     return (

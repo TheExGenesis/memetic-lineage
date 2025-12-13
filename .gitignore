@@ -18,3 +18,6 @@ py/.venv
 *.env
 *.next
 *node_modules
+scratchpads/*.txt
+cluster_reports.zip
+cluster_volume_evolution.png
