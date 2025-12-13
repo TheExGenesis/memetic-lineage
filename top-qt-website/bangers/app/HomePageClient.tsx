@@ -220,6 +220,9 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
                                 </button>
                             </div>
                         )}
+                        <div className="text-xs bg-blue-50 border border-blue-200 px-3 py-2 rounded mt-2 text-blue-700">
+                            ℹ️ Data snapshot from late November 2024
+                        </div>
                     </header>
                     
                     <main className="flex gap-8 overflow-x-auto flex-1 scrollbar-hide">
