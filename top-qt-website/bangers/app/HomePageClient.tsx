@@ -1,163 +1,89 @@
-'use client';
+'use client'
 
-import { useState, useRef, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { TweetCard } from './TweetCard';
-import { TweetPane } from './TweetPane';
-import { VerticalSpine } from './VerticalSpine';
-import { Tweet } from '@/lib/types';
+import { useState, useCallback } from 'react'
+import { TweetCard } from './TweetCard'
+import { TweetPane } from './TweetPane'
+import { VerticalSpine } from './VerticalSpine'
+import { Tweet } from '@/lib/types'
+import { useUrlSync, useTweetSelection, usePaneNavigation } from './hooks'
 
 export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [selectedTweets, setSelectedTweets] = useState<Tweet[]>([]);
-  const [showTip, setShowTip] = useState(true);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const tweetMapRef = useRef<Map<string, Tweet>>(new Map());
+  const [showTip, setShowTip] = useState(true)
+
+  const {
+    selectedTweets,
+    setTweets,
+    handleTweetClick,
+    handleClosePane,
+    handleSpineClick,
+  } = useTweetSelection()
+
+  const { updateUrl } = useUrlSync({
+    tweets,
+    onTweetsLoaded: setTweets,
+  })
+
+  const {
+    scrollContainerRef,
+    isHomeCollapsed,
+    activePaneStyle,
+  } = usePaneNavigation(selectedTweets.length)
+
+  // Wrap handlers to sync URL
+  const onTweetClick = useCallback((tweet: Tweet, depth: number) => {
+    handleTweetClick(tweet, depth)
+    const newStack = depth === -1 ? [] : selectedTweets.slice(0, depth + 1)
+    newStack.push(tweet)
+    updateUrl(newStack)
+  }, [handleTweetClick, selectedTweets, updateUrl])
+
+  const onClosePane = useCallback((index: number) => {
+    handleClosePane(index)
+    updateUrl(selectedTweets.slice(0, index))
+  }, [handleClosePane, selectedTweets, updateUrl])
+
+  const onSpineClick = useCallback((index: number) => {
+    handleSpineClick(index)
+    const newStack = index === -1 ? [] : selectedTweets.slice(0, index + 1)
+    updateUrl(newStack)
+  }, [handleSpineClick, selectedTweets, updateUrl])
 
   // Group tweets by column
-  const groups: Record<string, Tweet[]> = {};
+  const groups: Record<string, Tweet[]> = {}
   tweets.forEach((tweet: Tweet) => {
-    const col = tweet.column || 'Unknown';
+    const col = tweet.column || 'Unknown'
     if (!groups[col]) {
-      groups[col] = [];
+      groups[col] = []
     }
-    groups[col].push(tweet);
-  });
+    groups[col].push(tweet)
+  })
 
   const sortColumns = (a: string, b: string) => {
-    const aNum = Number(a);
-    const bNum = Number(b);
+    const aNum = Number(a)
+    const bNum = Number(b)
     
     if (!isNaN(aNum) && !isNaN(bNum)) {
-      return bNum - aNum;
+      return bNum - aNum
     }
     
-    const order = ['Last Week', 'Last Month'];
-    const aIndex = order.indexOf(a);
-    const bIndex = order.indexOf(b);
+    const order = ['Last Week', 'Last Month']
+    const aIndex = order.indexOf(a)
+    const bIndex = order.indexOf(b)
     
     if (aIndex !== -1 && bIndex !== -1) {
-      return aIndex - bIndex;
+      return aIndex - bIndex
     }
     
-    if (aIndex !== -1) return -1;
-    if (bIndex !== -1) return 1;
+    if (aIndex !== -1) return -1
+    if (bIndex !== -1) return 1
     
-    return a.localeCompare(b);
-  };
+    return a.localeCompare(b)
+  }
 
   const tweetsByColumn = Object.keys(groups).sort(sortColumns).map(column => ({
     column: column,
     tweets: groups[column]
-  }));
-
-  // Build tweet map for URL -> tweet lookup
-  useEffect(() => {
-    const map = new Map<string, Tweet>();
-    tweets.forEach(t => map.set(t.tweet_id, t));
-    tweetMapRef.current = map;
-  }, [tweets]);
-
-  // Initialize from URL on mount
-  useEffect(() => {
-    const loadFromUrl = async () => {
-      const ids = searchParams.get('tweets');
-      if (!ids) return;
-
-      const tweetIds = ids.split(',').filter(Boolean);
-      const foundTweets: Tweet[] = [];
-      const missingIds: string[] = [];
-
-      // Check which tweets we already have
-      for (const id of tweetIds) {
-        const tweet = tweetMapRef.current.get(id);
-        if (tweet) {
-          foundTweets.push(tweet);
-        } else {
-          missingIds.push(id);
-        }
-      }
-
-      // Fetch missing tweets
-      if (missingIds.length > 0) {
-        const { fetchTweetDetails } = await import('@/lib/api');
-        const fetchedTweets = await fetchTweetDetails(missingIds);
-        
-        // Add to map for future lookups
-        fetchedTweets.forEach(t => tweetMapRef.current.set(t.tweet_id, t));
-        
-        // Reconstruct in correct order
-        const allTweets = tweetIds
-          .map(id => tweetMapRef.current.get(id))
-          .filter((t): t is Tweet => t !== undefined);
-        
-        if (allTweets.length > 0) {
-          setSelectedTweets(allTweets);
-        }
-      } else if (foundTweets.length > 0) {
-        setSelectedTweets(foundTweets);
-      }
-    };
-
-    loadFromUrl();
-  }, [searchParams]);
-
-  // Sync state to URL
-  const updateUrl = (tweets: Tweet[]) => {
-    const ids = tweets.map(t => t.tweet_id).join(',');
-    const params = new URLSearchParams();
-    if (ids) {
-      params.set('tweets', ids);
-    }
-    router.replace(`?${params.toString()}`, { scroll: false });
-  };
-
-  const handleTweetClick = (tweet: Tweet, depth: number) => {
-     const newStack = depth === -1 ? [] : selectedTweets.slice(0, depth + 1);
-     newStack.push(tweet);
-     setSelectedTweets(newStack);
-     updateUrl(newStack);
-  };
-
-  const handleClosePane = (index: number) => {
-    const newStack = selectedTweets.slice(0, index);
-    setSelectedTweets(newStack);
-    updateUrl(newStack);
-  };
-
-  const handleSpineClick = (index: number) => {
-      // Navigate back to this pane being the active one
-      // index -1 means home
-      const newStack = index === -1 ? [] : selectedTweets.slice(0, index + 1);
-      setSelectedTweets(newStack);
-      updateUrl(newStack);
-  };
-
-  useEffect(() => {
-    // Scroll to the right when a new pane is added
-    if (scrollContainerRef.current && selectedTweets.length > 0) {
-        setTimeout(() => {
-            scrollContainerRef.current?.scrollTo({
-                left: scrollContainerRef.current.scrollWidth,
-                behavior: 'smooth'
-            });
-        }, 100);
-    }
-  }, [selectedTweets.length]);
-
-  const isHomeCollapsed = selectedTweets.length > 0;
-  
-  // Calculate width for the active pane to take available space
-  // Standard spine width is w-12 (48px/3rem)
-  const spineWidthPx = 48;
-  const collapsedWidth = isHomeCollapsed ? (selectedTweets.length * spineWidthPx) : 0;
-  
-  // We want the active pane to fill the rest of the screen width, but min 500px
-  // We can use calc(100vw - collapsedWidth)
-  const activePaneStyle = isHomeCollapsed 
-    ? { width: `calc(100vw - ${collapsedWidth}px)`, minWidth: '500px' }
-    : { width: '500px' }; // Should not happen for active pane in collapsed mode but typescript safety
+  }))
 
   return (
     <div className="h-screen flex flex-col bg-white text-black overflow-hidden">
@@ -170,7 +96,7 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
         {isHomeCollapsed ? (
             <VerticalSpine 
                 label="Bangers Home" 
-                onClick={() => handleSpineClick(-1)} 
+                onClick={() => onSpineClick(-1)} 
             />
         ) : (
             <div 
@@ -233,7 +159,7 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
                             </h2>
                             <div className="flex flex-col gap-2 overflow-y-auto flex-1 scrollbar-hide pb-20">
                             {tweets.map(tweet => (
-                                <div key={tweet.tweet_id} onClick={() => handleTweetClick(tweet, -1)} className="cursor-pointer hover:opacity-80 transition-opacity">
+                                <div key={tweet.tweet_id} onClick={() => onTweetClick(tweet, -1)} className="cursor-pointer hover:opacity-80 transition-opacity">
                                     <TweetCard tweet={tweet} />
                                 </div>
                             ))}
@@ -314,21 +240,18 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
 
         {/* Stacked Panes */}
         {selectedTweets.map((tweet, index) => {
-            // Only the last selected tweet is expanded
-            const isLast = index === selectedTweets.length - 1;
+            const isLast = index === selectedTweets.length - 1
 
             if (!isLast) {
-                // Render Spine for non-active panes
                 return (
                     <VerticalSpine 
                         key={`${tweet.tweet_id}-${index}`}
                         tweet={tweet}
-                        onClick={() => handleSpineClick(index)}
+                        onClick={() => onSpineClick(index)}
                     />
-                );
+                )
             }
 
-            // Render Full Pane for active pane
             return (
                 <div 
                   key={`${tweet.tweet_id}-${index}`} 
@@ -337,11 +260,11 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
                 >
                     <TweetPane 
                         tweet={tweet}
-                        onClose={() => handleClosePane(index)}
-                        onSelectTweet={(t) => handleTweetClick(t, index)}
+                        onClose={() => onClosePane(index)}
+                        onSelectTweet={(t) => onTweetClick(t, index)}
                     />
                 </div>
-            );
+            )
         })}
 
       </div>
@@ -356,5 +279,5 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
         }
       `}</style>
     </div>
-  );
-};
+  )
+}
