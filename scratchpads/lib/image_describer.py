@@ -3,10 +3,13 @@ import os
 import re
 import csv
 from pathlib import Path
-from typing import TypedDict
+from typing import TypedDict, Dict, List
 import httpx
 from groq import Groq
 from dotenv import load_dotenv
+
+from .retry import with_retry, is_transient_error
+from .parallel import parallel_map_to_dict
 
 load_dotenv(Path(__file__).parent.parent.parent / ".env")
 
@@ -83,7 +86,9 @@ def save_to_cache(entries: list[MediaDescription], cache_path: Path = DEFAULT_CA
             writer.writeheader()
         writer.writerows(entries)
 
+@with_retry(max_retries=3, base_delay=2.0)
 def describe_image(image_url: str, tweet_text: str) -> str:
+    """Describe an image using Groq vision model. Retries on transient errors."""
     client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
     completion = client.chat.completions.create(
         model="meta-llama/llama-4-maverick-17b-128e-instruct",
@@ -140,6 +145,55 @@ def get_image_descriptions(
         })
     
     return results
+
+
+def get_image_descriptions_batch(
+    tweet_ids: List[int],
+    existing_cache: Dict[int, List[MediaDescription]],
+    max_workers: int = 2,
+    verbose: bool = False
+) -> Dict[int, List[MediaDescription]]:
+    """
+    Get image descriptions for multiple tweets in parallel.
+    
+    Only fetches descriptions for tweet_ids not already in existing_cache.
+    Returns dict of NEW descriptions only (caller should merge with cache).
+    
+    Args:
+        tweet_ids: List of tweet IDs to get descriptions for
+        existing_cache: Existing cache to skip already-processed tweets
+        max_workers: Parallel workers (keep low for Groq rate limits)
+        verbose: Print progress messages
+        
+    Returns:
+        Dict of tweet_id -> list of MediaDescription (only new entries)
+    """
+    # Filter to only uncached tweet IDs
+    missing_ids = [tid for tid in tweet_ids if tid not in existing_cache]
+    
+    if not missing_ids:
+        if verbose:
+            print("All tweet IDs already in cache")
+        return {}
+    
+    if verbose:
+        print(f"Fetching descriptions for {len(missing_ids)} tweets (skipped {len(tweet_ids) - len(missing_ids)} cached)")
+    
+    def fetch_one(tid: int) -> List[MediaDescription]:
+        try:
+            return get_image_descriptions(tid, verbose=False)
+        except Exception as e:
+            print(f"[ERROR] Image descriptions for {tid}: {e}")
+            return [{"description": "[PIC NOT AVAILABLE]", "tweet_id": str(tid), "tweet_text": "", "media_url": ""}]
+    
+    results, failed = parallel_map_to_dict(
+        missing_ids, fetch_one,
+        max_workers=max_workers,
+        desc="Fetching image descriptions"
+    )
+    
+    # Filter out empty results (tweets with no images)
+    return {tid: descs for tid, descs in results.items() if descs}
 
 
 # %%
