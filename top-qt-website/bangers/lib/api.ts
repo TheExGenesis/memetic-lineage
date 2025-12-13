@@ -1,6 +1,23 @@
 import { supabaseCa } from './supabase';
 import { Tweet } from './types';
 
+// Generic batch fetcher - reduces duplicate batching logic
+async function batchFetch<T, R>(
+  ids: T[],
+  fetchFn: (batch: T[]) => Promise<R[]>,
+  batchSize: number = 200
+): Promise<R[]> {
+  if (ids.length === 0) return [];
+  
+  const results: R[] = [];
+  for (let i = 0; i < ids.length; i += batchSize) {
+    const batch = ids.slice(i, i + batchSize);
+    const batchResults = await fetchFn(batch);
+    results.push(...batchResults);
+  }
+  return results;
+}
+
 // Helper to fetch user details (username, avatar) for a list of account IDs
 async function fetchUserDetails(accountIds: string[]) {
   if (accountIds.length === 0) return { usernameMap: new Map(), avatarMap: new Map() };
@@ -30,31 +47,23 @@ export async function fetchTweetDetails(tweetIds: string[]): Promise<Tweet[]> {
   if (tweetIds.length === 0) return [];
 
   // Fetch tweets in batches
-  const BATCH_SIZE = 200;
-  const batches = [];
-  for (let i = 0; i < tweetIds.length; i += BATCH_SIZE) {
-    batches.push(tweetIds.slice(i, i + BATCH_SIZE));
-  }
-  
-  let allTweets: any[] = [];
-  
-  for (const batch of batches) {
-      const { data, error } = await supabaseCa
-        .from('tweets')
-        .select(`
-          tweet_id, created_at, full_text, favorite_count, retweet_count,
-          reply_to_tweet_id, reply_to_user_id, reply_to_username,
-          account_id,
-          tweet_media ( media_url, media_type )
-        `)
-        .in('tweet_id', batch);
+  const allTweets = await batchFetch(tweetIds, async (batch) => {
+    const { data, error } = await supabaseCa
+      .from('tweets')
+      .select(`
+        tweet_id, created_at, full_text, favorite_count, retweet_count,
+        reply_to_tweet_id, reply_to_user_id, reply_to_username,
+        account_id,
+        tweet_media ( media_url, media_type )
+      `)
+      .in('tweet_id', batch);
 
-      if (error) {
-        console.error('Error fetching tweets batch:', error);
-        continue;
-      }
-      if (data) allTweets = [...allTweets, ...data];
-  }
+    if (error) {
+      console.error('Error fetching tweets batch:', error);
+      return [];
+    }
+    return data || [];
+  });
   
   if (allTweets.length === 0) return [];
 
@@ -65,62 +74,51 @@ export async function fetchTweetDetails(tweetIds: string[]): Promise<Tweet[]> {
   const accountIds = allTweets.map((t: any) => t.account_id);
   const { usernameMap, avatarMap } = await fetchUserDetails(accountIds);
 
-  // Check for Quoted Tweets
-  // 1. Find which tweets have quotes
-  const quoteMap = new Map<string, string>(); // tweet_id -> quoted_tweet_id
-  const tweetIdsToCheck = allTweets.map(t => t.tweet_id);
+  // Fetch quote tweet mappings
+  const quoteResults = await batchFetch(tweetIds, async (batch) => {
+    const { data } = await supabaseCa
+      .from('quote_tweets')
+      .select('tweet_id, quoted_tweet_id')
+      .in('tweet_id', batch);
+    return data || [];
+  });
   
-  // We must chunk this query too
-  for (const batch of batches) {
-      const { data: quotesData } = await supabaseCa
-        .from('quote_tweets')
-        .select('tweet_id, quoted_tweet_id')
-        .in('tweet_id', batch);
-        
-      if (quotesData) {
-          quotesData.forEach((q: any) => quoteMap.set(q.tweet_id, q.quoted_tweet_id));
-      }
-  }
+  const quoteMap = new Map<string, string>();
+  quoteResults.forEach((q: any) => quoteMap.set(q.tweet_id, q.quoted_tweet_id));
 
-  // 2. Fetch details for the quoted tweets
+  // Fetch details for the quoted tweets
   const quotedTweetIds = Array.from(new Set(Array.from(quoteMap.values()).filter(Boolean)));
   const quotedTweetsMap = new Map<string, any>();
 
   if (quotedTweetIds.length > 0) {
-      const qBatches = [];
-      for (let i = 0; i < quotedTweetIds.length; i += BATCH_SIZE) {
-        qBatches.push(quotedTweetIds.slice(i, i + BATCH_SIZE));
-      }
+    const quotedTweets = await batchFetch(quotedTweetIds, async (batch) => {
+      const { data } = await supabaseCa
+        .from('tweets')
+        .select(`
+          tweet_id, created_at, full_text, favorite_count, retweet_count,
+          account_id,
+          tweet_media ( media_url, media_type )
+        `)
+        .in('tweet_id', batch);
+      return data || [];
+    });
 
-      for (const batch of qBatches) {
-          const { data: qData } = await supabaseCa
-            .from('tweets')
-            .select(`
-                tweet_id, created_at, full_text, favorite_count, retweet_count,
-                account_id,
-                tweet_media ( media_url, media_type )
-            `)
-            .in('tweet_id', batch);
-            
-          if (qData) {
-              // Fetch user details for quoted tweets
-              const qAccountIds = qData.map((t: any) => t.account_id);
-              const { usernameMap: qUserMap, avatarMap: qAvatarMap } = await fetchUserDetails(qAccountIds);
-              
-              qData.forEach((qt: any) => {
-                  quotedTweetsMap.set(qt.tweet_id, {
-                      tweet_id: qt.tweet_id,
-                      created_at: qt.created_at,
-                      full_text: qt.full_text,
-                      favorite_count: qt.favorite_count,
-                      retweet_count: qt.retweet_count,
-                      username: qUserMap.get(qt.account_id) || 'unknown',
-                      avatar_media_url: qAvatarMap.get(qt.account_id),
-                      media_urls: qt.tweet_media?.map((m: any) => m.media_url)
-                  });
-              });
-          }
-      }
+    // Fetch user details for quoted tweets
+    const qAccountIds = quotedTweets.map((t: any) => t.account_id);
+    const { usernameMap: qUserMap, avatarMap: qAvatarMap } = await fetchUserDetails(qAccountIds);
+
+    quotedTweets.forEach((qt: any) => {
+      quotedTweetsMap.set(qt.tweet_id, {
+        tweet_id: qt.tweet_id,
+        created_at: qt.created_at,
+        full_text: qt.full_text,
+        favorite_count: qt.favorite_count,
+        retweet_count: qt.retweet_count,
+        username: qUserMap.get(qt.account_id) || 'unknown',
+        avatar_media_url: qAvatarMap.get(qt.account_id),
+        media_urls: qt.tweet_media?.map((m: any) => m.media_url)
+      });
+    });
   }
 
   return allTweets.map((t: any) => {

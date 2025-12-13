@@ -5,10 +5,14 @@ import { fetchTweetDetails } from '@/lib/api';
 import { Strand, StrandWithTweet } from '@/lib/types';
 import { BestStrandsClient } from './BestStrandsClient';
 
-// Parse JSON while preserving large integer tweet IDs as strings
-function parseStrandsJson(jsonText: string): Strand[] {
-  // Replace numeric tweet_id values with string versions to preserve precision
-  // This regex matches "tweet_id": followed by a number (without quotes)
+// Path to rated strands in scratchpads
+const RATED_STRANDS_DIR = path.join(
+  process.cwd(), 
+  '../../scratchpads/data/rated_strands'
+);
+
+// Parse a single strand JSON, fixing large integer tweet IDs
+function parseStrandJson(jsonText: string): Strand {
   const fixedJson = jsonText
     .replace(/"seed_tweet_id":\s*(\d+)/g, '"seed_tweet_id": "$1"')
     .replace(/"tweet_id":\s*(\d+)/g, '"tweet_id": "$1"');
@@ -17,12 +21,35 @@ function parseStrandsJson(jsonText: string): Strand[] {
 }
 
 async function loadStrandsWithTweets(): Promise<StrandWithTweet[]> {
-  // Read the JSON file as text to preserve large integer precision
-  const jsonPath = path.join(process.cwd(), 'app/data/top_quoted_strands.json');
-  const jsonText = await fs.readFile(jsonPath, 'utf-8');
-  const strands = parseStrandsJson(jsonText);
+  // Read all JSON files from the rated_strands directory
+  let files: string[];
+  try {
+    files = await fs.readdir(RATED_STRANDS_DIR);
+  } catch (e) {
+    console.error('Could not read rated_strands directory:', e);
+    return [];
+  }
   
-  // Extract all seed tweet IDs (already strings now)
+  const jsonFiles = files.filter(f => f.endsWith('.json'));
+  
+  // Load and parse all strand files
+  const strands: Strand[] = [];
+  for (const file of jsonFiles) {
+    try {
+      const filePath = path.join(RATED_STRANDS_DIR, file);
+      const jsonText = await fs.readFile(filePath, 'utf-8');
+      const strand = parseStrandJson(jsonText);
+      strands.push(strand);
+    } catch (e) {
+      console.error(`Error parsing ${file}:`, e);
+    }
+  }
+  
+  if (strands.length === 0) {
+    return [];
+  }
+  
+  // Extract all seed tweet IDs
   const seedTweetIds = strands.map(s => s.seed_tweet_id);
   
   // Fetch all seed tweets in one batch

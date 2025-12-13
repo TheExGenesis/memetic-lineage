@@ -56,9 +56,12 @@ export async function findStrandSeeds(
       seeds.push({ tweetId: match.tweet.tweet_id, sourceType: 'semantic_match' });
     }
 
-    // 4. Get quotes of each semantic match
-    for (const match of topSemanticMatches) {
-      const matchQuotes = await getQuotes(match.tweet.tweet_id);
+    // 4. Get quotes of each semantic match (parallel)
+    const matchQuotesResults = await Promise.all(
+      topSemanticMatches.map(match => getQuotes(match.tweet.tweet_id))
+    );
+    
+    for (const matchQuotes of matchQuotesResults) {
       for (const qt of matchQuotes) {
         seeds.push({ tweetId: qt.tweet_id, sourceType: 'quote_of_semantic_match' });
       }
