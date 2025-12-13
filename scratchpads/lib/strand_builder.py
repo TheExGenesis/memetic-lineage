@@ -198,7 +198,6 @@ def build_strand_single(
     
     return StrandBuildResult(tid, text, seed_ids), new_images
 
-
 def build_strands_phased(
     tweet_ids: List[int],
     tweet_dict: Dict[int, EnrichedTweet],
@@ -222,7 +221,11 @@ def build_strands_phased(
     Returns:
         Tuple of (results_dict keyed by tweet_id, updated_image_cache)
     """
+    print(f"[build_strands_phased] Starting with {len(tweet_ids)} tweet IDs")
+    print(f"[build_strands_phased] Workers: seeds={seeds_workers}, trees={trees_workers}, images={images_workers}")
+    
     # Phase 1: Get seeds for all tweet_ids
+    print("[Phase 1] Getting seeds...")
     def get_seeds_for_tid(tid: int) -> List[StrandSeed]:
         return get_strand_seeds(tid, tweet_dict, quote_dict, debug=False)
     
@@ -230,8 +233,10 @@ def build_strands_phased(
         tweet_ids, get_seeds_for_tid,
         max_workers=seeds_workers, desc="Phase 1: Seeds"
     )
+    print(f"[Phase 1] Got seeds for {len(seeds_by_tid)} strands, {len(seeds_failed)} failed")
     
     # Phase 2: Filter trees for all
+    print("[Phase 2] Filtering conversation trees...")
     def filter_trees_for_tid(tid: int) -> Dict[int, ConversationTree]:
         seeds = seeds_by_tid.get(tid, [])
         seed_ids = [s.tweet_id for s in seeds]
@@ -245,19 +250,25 @@ def build_strands_phased(
         filter_trees_for_tid,
         max_workers=trees_workers, desc="Phase 2: Filter trees"
     )
+    print(f"[Phase 2] Filtered trees for {len(trees_by_tid)} strands, {len(trees_failed)} failed")
     
     # Phase 3: Batch collect + dedupe + fetch images
+    print("[Phase 3] Collecting tweet IDs from trees...")
     all_tree_tids: Set[int] = set()
     for trees in trees_by_tid.values():
         all_tree_tids.update(extract_tree_tweet_ids(trees))
     
+    print(f"[Phase 3] Found {len(all_tree_tids)} unique tweet IDs across all trees")
+    print(f"[Phase 3] Fetching image descriptions (cache has {len(image_cache)} entries)...")
     new_images = get_image_descriptions_batch(
         list(all_tree_tids), image_cache,
         max_workers=images_workers
     )
     merged_cache = {**image_cache, **new_images}
+    print(f"[Phase 3] Fetched {len(new_images)} new image descriptions, cache now has {len(merged_cache)} entries")
     
     # Phase 4: Render all (sequential, fast)
+    print("[Phase 4] Rendering strands...")
     results: Dict[int, StrandBuildResult] = {}
     for tid in tweet_ids:
         if tid in seeds_failed or tid in trees_failed:
@@ -273,10 +284,13 @@ def build_strands_phased(
         
         results[tid] = StrandBuildResult(tid, text, seed_ids)
     
+    print(f"[Phase 4] Rendered {len(results)} strands")
+    
     failed_count = len(seeds_failed) + len(trees_failed)
     if failed_count:
         print(f"[WARN] {failed_count} strands failed (seeds: {len(seeds_failed)}, trees: {len(trees_failed)})")
     
+    print(f"[build_strands_phased] Complete: {len(results)} successful, {failed_count} failed")
     return results, merged_cache
 
 

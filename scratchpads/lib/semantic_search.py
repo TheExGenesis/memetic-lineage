@@ -1,6 +1,9 @@
 # %%
 from typing import TypedDict, Optional, List
 import requests
+from requests.exceptions import RequestException
+
+from .retry import with_retry
 
 
 class RawSearchResultMetadata(TypedDict, total=False):
@@ -23,6 +26,15 @@ class SemanticSearchResult(TypedDict):
     key: str
     distance: float
     metadata: RawSearchResultMetadata
+
+
+@with_retry(max_retries=3, base_delay=1.0, retryable_errors=(RequestException,))
+def _search_embeddings_request(payload: dict) -> dict:
+    """Make the HTTP request to search API. Raises on failure."""
+    url = 'http://embed.tweetstack.app/embeddings/search'
+    response = requests.post(url, json=payload, headers={'Content-Type': 'application/json'}, timeout=30)
+    response.raise_for_status()
+    return response.json()
 
 
 def search_embeddings(
@@ -49,28 +61,20 @@ def search_embeddings(
     Returns:
         List of search results with key, distance, and metadata
     """
-    url = 'http://embed.tweetstack.app/embeddings/search'
-    
     payload = {
         'searchTerm': search_term,
         'k': k,
         'threshold': threshold
     }
-    
     if filter is not None:
         payload['filter'] = filter
     
-    response = requests.post(
-        url,
-        json=payload,
-        headers={'Content-Type': 'application/json'}
-    )
-    
-    if not response.ok:
-        print(f'Search API error: {response.text}')
+    try:
+        data = _search_embeddings_request(payload)
+    except RequestException as e:
+        print(f'Search API error after retries: {e}')
         return []
     
-    data = response.json()
     if not data.get('success') or not isinstance(data.get('results'), list):
         return []
     

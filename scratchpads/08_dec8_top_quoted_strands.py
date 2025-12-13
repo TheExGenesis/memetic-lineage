@@ -7,7 +7,7 @@ Functions moved to lib/: strand_builder.py, strand_rater.py, image_describer.py
 """
 import json
 from pathlib import Path
-from typing import Set
+from typing import Set, TypedDict
 
 from dotenv import load_dotenv
 
@@ -23,6 +23,7 @@ DATA_DIR = Path(__file__).parent / "data"
 TOP_IDS_PATH = DATA_DIR / "top_quoted_tweet_ids.json"
 STRANDS_DIR = DATA_DIR / "strands"
 RATED_DIR = DATA_DIR / "rated_strands"
+DEBUG_DIR = DATA_DIR / "debug_responses"
 
 
 def load_top_tweet_ids() -> list[int]:
@@ -30,32 +31,18 @@ def load_top_tweet_ids() -> list[int]:
         return json.load(f)
 
 
-def get_completed_strand_ids(strands_dir: Path, rated_dir: Path) -> Set[int]:
-    """
-    Get IDs of strands that are already completed (have non-empty text).
-    Checks both strands dir and rated_strands dir.
-    """
-    completed = set()
-    
-    # Check strands dir for non-empty strands
-    if strands_dir.exists():
-        for f in strands_dir.glob("*.json"):
-            try:
-                data = json.loads(f.read_text())
-                if data.get("thread_text", "").strip():
-                    completed.add(int(f.stem))
-            except (json.JSONDecodeError, ValueError):
-                pass
-    
-    # Rated strands are definitely complete
-    if rated_dir.exists():
-        for f in rated_dir.glob("*.json"):
-            try:
-                completed.add(int(f.stem))
-            except ValueError:
-                pass
-    
-    return completed
+def get_built_strand_ids(strands_dir: Path) -> Set[int]:
+    """Get IDs of strands that have been built (file exists)."""
+    if not strands_dir.exists():
+        return set()
+    return {int(f.stem) for f in strands_dir.glob("*.json") if f.stem.isdigit()}
+
+
+def get_rated_strand_ids(rated_dir: Path) -> Set[int]:
+    """Get IDs of strands that have been rated."""
+    if not rated_dir.exists():
+        return set()
+    return {int(f.stem) for f in rated_dir.glob("*.json") if f.stem.isdigit()}
 
 
 # %%
@@ -64,7 +51,8 @@ quote_dict = get_quote_tweets_dict()
 tweet_dict, conversation_trees = load_caches()
 
 print("Loading top quoted tweet IDs...")
-high_half_life_qt_tweet_ids = load_top_tweet_ids()[:100]
+top_tweet_ids = load_top_tweet_ids()
+high_half_life_qt_tweet_ids = top_tweet_ids[:100]
 print(f"Found {len(high_half_life_qt_tweet_ids)} tweet IDs")
 
 # %%
@@ -72,14 +60,29 @@ print(f"Found {len(high_half_life_qt_tweet_ids)} tweet IDs")
 image_cache = load_img_cache(DEFAULT_CACHE_PATH)
 depth = 10
 
-# Filter out already-completed strands
-completed_ids = get_completed_strand_ids(STRANDS_DIR, RATED_DIR)
+# Filter out already-built strands (skip building, not rating)
+rated_ids = get_rated_strand_ids(RATED_DIR)
+built_ids = get_built_strand_ids(STRANDS_DIR)
+# %%
 all_target_ids = high_half_life_qt_tweet_ids  # Process all 100
-strand_target_tweet_ids =sorted([tid for tid in all_target_ids if tid not in completed_ids])[:1]
+strand_target_tweet_ids = sorted([tid for tid in all_target_ids if tid not in rated_ids and tid not in built_ids])
 
-print(f"Already completed: {len(completed_ids)} strands")
-print(f"Remaining to process: {len(strand_target_tweet_ids)} strands")
+print(f"Already rated: {len(rated_ids)}, already built: {len(built_ids)}")
+print(f"Remaining to build: {len(strand_target_tweet_ids)} strands")
+# %%
+# from lib.strand_builder import build_strands_phased, get_strand_seeds
+# from lib.parallel import parallel_map_to_dict
+# from lib.strand_builder import StrandSeed
 
+# def get_seeds_for_tid(tid: int) -> list[StrandSeed]:
+#     return get_strand_seeds(tid, tweet_dict, quote_dict, debug=False)
+
+# seeds_by_tid, seeds_failed = parallel_map_to_dict(
+#     strand_target_tweet_ids, get_seeds_for_tid,
+#     max_workers=4, desc="Phase 1: Seeds"
+# )
+# print(f"[Phase 1] Got seeds for {len(seeds_by_tid)} strands, {len(seeds_failed)} failed")
+# %%
 if not strand_target_tweet_ids:
     print("All strands already processed!")
 else:
@@ -119,17 +122,23 @@ else:
 
 # %%
 # Load all non-empty strands for rating (including previously built ones)
-def load_strand_texts_for_rating(strands_dir: Path, rated_dir: Path) -> dict[int, str]:
-    """Load strand texts that haven't been rated yet."""
+class StrandData(TypedDict):
+    thread_text: str
+    seed_ids: list[int]
+
+
+def load_strands_for_rating(strands_dir: Path, rated_dir: Path) -> dict[int, StrandData]:
+    """Load strands (text + seed_ids) that haven't been rated yet."""
     rated_ids = set()
     if rated_dir.exists():
         for f in rated_dir.glob("*.json"):
             try:
                 rated_ids.add(int(f.stem))
             except ValueError:
+                print(f"[WARN] Could not parse rated file name: {f.name}")
                 pass
     
-    strand_texts = {}
+    strands = {}
     if strands_dir.exists():
         for f in strands_dir.glob("*.json"):
             try:
@@ -139,37 +148,45 @@ def load_strand_texts_for_rating(strands_dir: Path, rated_dir: Path) -> dict[int
                 data = json.loads(f.read_text())
                 text = data.get("thread_text", "")
                 if text.strip():
-                    strand_texts[tid] = text
-            except (json.JSONDecodeError, ValueError):
+                    strands[tid] = {
+                        "thread_text": text,
+                        "seed_ids": data.get("seed_ids", [])
+                    }
+            except (json.JSONDecodeError, ValueError) as e:
+                print(f"[ERROR] Failed to load strand {f.name}: {e}")
                 pass
     
-    return strand_texts
+    return strands
 
 
-strand_texts = load_strand_texts_for_rating(STRANDS_DIR, RATED_DIR)
-print(f"Found {len(strand_texts)} strands to rate")
+strands_data = load_strands_for_rating(STRANDS_DIR, RATED_DIR)
+print(f"Found {len(strands_data)} strands to rate")
 # %%
 from lib.strand_rater import rate_strand
+
+first_tid = list(strands_data.keys())[0]
 res = rate_strand(
-    thread_text=strand_texts[list(strand_texts.keys())[0]],
-    tweet_id=list(strand_texts.keys())[0],
+    thread_text=strands_data[first_tid]["thread_text"],
+    tweet_id=first_tid,
     model_name="anthropic/claude-sonnet-4",
     provider="openrouter",
     max_retries=1,
-    base_temperature=0.7
+    base_temperature=0.7,
+    debug_dir=DEBUG_DIR,
 )
 res
 # %%
 # Rate strands using LLM
-if strand_texts:
+if strands_data:
     print("Rating strands...")
     rated = rate_strands_batch(
-        {tid: strand_texts[tid] for tid in list(strand_texts.keys())[:1]},
+        strands_data,
         model_name="anthropic/claude-sonnet-4.5",
         provider="openrouter",
         max_workers=2,
-        output_dir=RATED_DIR
+        output_dir=RATED_DIR,
         max_retries=2,
+        debug_dir=DEBUG_DIR,
     )
     print(f"Rated {len(rated)} strands, saved to {RATED_DIR}/")
 else:

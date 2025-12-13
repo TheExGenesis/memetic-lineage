@@ -145,6 +145,36 @@ def get_quote_tweets_dict() -> Cache:
     return _quote_tweets_dict
 
 
+def backup_tweet_dict_from_parquet(parquet_path: str) -> None:
+    """Backup tweet_dict directly from parquet to diskcache."""
+    import sys
+    import time
+    import pandas as pd
+    from tqdm import tqdm
+    
+    path = Path(parquet_path).expanduser()
+    if not path.exists():
+        raise FileNotFoundError(f"Parquet file not found: {path}")
+    
+    print(f"Loading tweets from {path}...")
+    t0 = time.time()
+    tweets = pd.read_parquet(path, dtype_backend='pyarrow')
+    print(f"Loaded {len(tweets):,} tweets in {time.time()-t0:.1f}s")
+    
+    print("Converting to records...")
+    t0 = time.time()
+    records = tweets.to_dict(orient='records')
+    del tweets
+    print(f"Converted in {time.time()-t0:.1f}s")
+    
+    print(f"Writing to diskcache at {TWEET_DICT_DISKCACHE}...")
+    t0 = time.time()
+    with Cache(str(TWEET_DICT_DISKCACHE), size_limit=15 * 1024**3) as cache:
+        for r in tqdm(records, desc="tweet_dict", file=sys.stdout, mininterval=0.5):
+            cache[r['tweet_id']] = r
+    print(f"Done in {time.time()-t0:.1f}s")
+
+
 def migrate_to_diskcache() -> None:
     """Migrate existing joblib caches to diskcache format."""
     import sys

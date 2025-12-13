@@ -28,9 +28,9 @@ from lib.create_ascii_chart import create_ascii_chart
 # Load environment variables
 load_dotenv()
 # %%
-#ENRICHED_TWEETS_PATH = '/Users/frsc/Documents/Projects/data/2025-09-03_enriched_tweets.parquet' # for francisco
-ENRICHED_TWEETS_PATH = '~/data/enriched_tweets.parquet' # for alexandre
-
+ENRICHED_TWEETS_PATH = '/Users/frsc/Documents/Projects/data/2025-12-05_enriched_tweets.parquet' # for francisco
+# ENRICHED_TWEETS_PATH = '~/data/enriched_tweets.parquet' # for alexandre
+# %%
 tweets = pd.read_parquet(ENRICHED_TWEETS_PATH, dtype_backend='pyarrow')
 tweets = tweets.set_index('tweet_id', drop=False)
 # %%
@@ -224,20 +224,20 @@ PERCENTILE = 0.8
 
 if OVERWRITE_HALF_LIFE_CALCULATION or not os.path.exists(half_life_path):
     print("Calculating half-lives...")
-    half_life_50 = calculate_quote_half_lives(tweets, percentile=PERCENTILE)
+    half_life_80 = calculate_quote_half_lives(tweets, percentile=PERCENTILE)
     os.makedirs(os.path.dirname(half_life_path), exist_ok=True)
-    half_life_50.to_pickle(half_life_path)
+    half_life_80.to_pickle(half_life_path)
     print(f"Saved half-life results to {half_life_path}")
 else:
     print(f"Loading existing half-life results from {half_life_path}")
-    half_life_50 = pd.read_pickle(half_life_path)
+    half_life_80 = pd.read_pickle(half_life_path)
 
-print(f"\nCalculated half-lives for {len(half_life_50)} tweets")
-print(f"Stats for 50% half-life (hours):")
-print(half_life_50.describe())
+print(f"\nCalculated half-lives for {len(half_life_80)} tweets")
+print(f"Stats for {PERCENTILE*100}% half-life (hours):")
+print(half_life_80.describe())
 #
 # Merge back into tweets dataframe
-tweets['half_life_hours'] = tweets.index.map(half_life_50)
+tweets['half_life_hours'] = tweets.index.map(half_life_80)
 # %%
 
 # We picked 80% half-life because it gives us longer lasting tweets and helps ignore bursts
@@ -247,6 +247,8 @@ tweets['half_life_hours'] = tweets.index.map(half_life_50)
 tweets_with_year = tweets[tweets.half_life_hours.notna()].copy()
 tweets_with_year['created_at'] = pd.to_datetime(tweets_with_year['created_at'])
 tweets_with_year['year'] = tweets_with_year['created_at'].dt.year
+# %%
+tweets[tweets.quoted_count>2]
 
 # %%
 def print_top_tweets_by_year(year=None, N=50):

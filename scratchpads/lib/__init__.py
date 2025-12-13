@@ -9,7 +9,7 @@ from .strand_builder import (
 
 # Strand rating
 from .strand_rater import (
-    StrandResult,
+    RatedStrandResult,
     rate_strand,
     rate_strands_batch,
 )

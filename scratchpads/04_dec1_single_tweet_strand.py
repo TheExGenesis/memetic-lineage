@@ -19,8 +19,10 @@ from lib.count_quotes import count_quotes
 # Load environment variables
 load_dotenv()
 # %%
-#ENRICHED_TWEETS_PATH = '/Users/frsc/Documents/Projects/data/2025-09-03_enriched_tweets.parquet' # for francisco
-ENRICHED_TWEETS_PATH = '~/data/enriched_tweets.parquet' # for alexandre
+ENRICHED_TWEETS_PATH = '/Users/frsc/Documents/Projects/data/2025-09-03_enriched_tweets.parquet' # for francisco
+# ENRICHED_TWEETS_PATH = '~/data/enriched_tweets.parquet' # for alexandre
+TWEET_DICT_CACHE = 'data/tweet_dict_cache.pkl'
+REPLY_TREES_CACHE = 'data/complete_reply_trees_cache.pkl'
 
 tweets = pd.read_parquet(ENRICHED_TWEETS_PATH, dtype_backend='pyarrow')
 tweets = tweets.set_index('tweet_id', drop=False)
@@ -131,8 +133,6 @@ import pickle
 import os
 
 # Define paths for cached data
-TWEET_DICT_CACHE = 'tweet_dict_cache.pkl'
-REPLY_TREES_CACHE = 'complete_reply_trees_cache.pkl'
 OVERRIDE_CACHE = False
 # Check if cached files exist and load them
 if os.path.exists(TWEET_DICT_CACHE) and os.path.exists(REPLY_TREES_CACHE) and not OVERRIDE_CACHE:
@@ -151,7 +151,9 @@ else:
     with open(REPLY_TREES_CACHE, 'wb') as f:
         pickle.dump(complete_reply_trees, f)
     print("Data cached successfully.")
-
+# %%
+# load tweet dict pickle cache
+tweet_dict_pkl = pickle.load(open(TWEET_DICT_CACHE, 'rb'))
 # %%
 # let's make an index  quoted_tweet_id -> quote tweets
 quote_tweets_dict = {}
