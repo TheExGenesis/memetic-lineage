@@ -1,0 +1,76 @@
+{
+  "seed_tweet_id": 1977478171076317659,
+  "thread_text": "57469949874155520 [2011-04-11] @maradydd \ud83d\udc9c 1 [(SEED) type=semantic_search]\nUgh, bodies are weird. Also, you probably don't want to know what prompted that observation.\n\n===\n\n720037492347551747 [2016-04-12] @michelleakin \ud83d\udc9c 2 [(SEED) type=semantic_search]\nI AM PSYCHED FOR MY POST-PREGGO REVENGE BODY\n\n===\n\n1018932669806206976 [2018-07-16] @profoundish \ud83d\udc9c 1 [(SEED) type=semantic_search]\nBodies are gross\n\n===\n\n1585832103002124288 [2022-10-28] @loopholekid \nshould I eat a churro\n\u2193\n1585832731552153603 [2022-10-28] @loopholekid \nthank you that's all the statistical certainty I needed\n\u2193\n1585842674602414080 [2022-10-28] @loopholekid \nokay honestly that was gross\n\u2193\n1585842836078964738 [2022-10-28] @loopholekid  [(SEED) type=semantic_search]\nbody said \ud83e\udd22\n\n===\n\n1693834333633789977 [2023-08-22] @slimepriestess \ud83d\udc9c 119 \ud83d\udd01 21\nthe secret to bending the iron helm of fate over countless lifetimes is just true radical self love. This is why queers have an advantage at magic, transitioning is an act of love so radical it warps the very fabric of the world around it. it also scares the bad guys quite a lot.\n\u2193\n1694002926258418131 [2023-08-22] @forshaper \ud83d\udc9c 2 [(SEED) type=semantic_search]\n@slimepriestess Is there not disgust at the body one was born into?\n\u2193\n1694004239952232479 [2023-08-22] @slimepriestess \ud83d\udc9c 10\n@forshaper well yeah but that's not the impetus for change really, lots of people feel disgust with their bodies but never do anything about it. Doing something about it means caring about yourself enough to not just flinch into self loathing and psychdeath.\n\n===\n\n1833419999379153187 [2024-09-10] @pepijndevos \ud83d\udc9c 5 [(SEED) type=semantic_search]\nWHO dare disparage breastfeeding women \ud83d\udc4a https://t.co/GAXmntYnoY\n  [Quoting Tweet 1833414721845813581 (missing)]\n\n===\n\n1849677777915740370 [2024-10-25] @justavagrant_  [(SEED) type=semantic_search]\nOof do I have a bunch of repressed disgust\n\n===\n\n1936695281300521459 [2025-06-22] @hyperdiscogirl \ud83d\udc9c 34\ndoes this work?? soliciting more reports from parents \n\nI'm not a super neurotic individual but especially when I'm already stressed i can be kind of germophobic and easily overstimulated by sounds which both seem like they could be a recipe for a bad time with young kids\n\u2193\n1936836310041247926 [2025-06-22] @selentelechia \ud83d\udc9c 6 [(SEED) type=semantic_search]\nit works in some ways and makes things worse in others\n\npregnancy dramatically increases my disgust response. breastfeeding too. my disgust response is only noticeably lowered during the infant stage for my own baby, specifically the baby I just gave birth to and not my other kids\n\n===\n\n1950612009470627888 [2025-07-30] @alliharvard \ud83d\udc9c 71 \ud83d\udd01 9 [(SEED) type=semantic_search]\ninstead of commenting on women's bodies why don't you clean out your fridge\n\n===\n",
+  "seed_ids": [
+    1977478171076317659,
+    1694002926258418131,
+    1952838414044430805,
+    720037492347551747,
+    1780498039347577046,
+    1854049501272588396,
+    1585842836078964738,
+    1165548722689736705,
+    57469949874155520,
+    1849677777915740370,
+    1833419999379153187,
+    1018932669806206976,
+    1649618854333808641,
+    1551865624330063872,
+    1380936456068161536,
+    222743946802118657,
+    1950612009470627888,
+    1491147487914360832,
+    1936836310041247926,
+    1726575361725780444,
+    1887548232739529162
+  ],
+  "rating": {
+    "reasoning_summary": "This is not a coherent narrative strand\u2014it represents thematic noise around the word 'body' with no boundary object, no evolution, and no shared discourse. The tweets span 14 years (2011-2025) but never reference each other or build on a common idea. Topics include random body disgust (churros, pregnancy), trans identity as magic, breastfeeding politics, and germophobia. There is no catalyst, no dialectic, and no knowledge production. The only connection is semantic overlap detected by the search algorithm, not actual conversational threads.",
+    "rating": 1,
+    "evolution": "low",
+    "cohesion": "low",
+    "utility": "low",
+    "essential_tweets": [
+      {
+        "tweet_id": 57469949874155520,
+        "annotation": "The earliest signal: generic body weirdness observation with no follow-up"
+      },
+      {
+        "tweet_id": 1585842836078964738,
+        "annotation": "Isolated food disgust reaction\u2014representative of the strand's lack of depth"
+      },
+      {
+        "tweet_id": 1693834333633789977,
+        "annotation": "High-engagement tweet on trans identity, but completely disconnected from other nodes"
+      },
+      {
+        "tweet_id": 1694002926258418131,
+        "annotation": "A reply attempting dialectic (disgust vs love) but goes nowhere"
+      },
+      {
+        "tweet_id": 1936836310041247926,
+        "annotation": "Pregnancy disgust response\u2014most 'scientific' observation but still isolated"
+      },
+      {
+        "tweet_id": 1950612009470627888,
+        "annotation": "Viral dunk on body commentary\u2014pure noise with no intellectual content"
+      },
+      {
+        "tweet_id": 720037492347551747,
+        "annotation": "Pregnancy body positivity\u2014thematically opposite to disgust tweets, no synthesis"
+      },
+      {
+        "tweet_id": 1833419999379153187,
+        "annotation": "Breastfeeding politics\u2014another unrelated body topic"
+      },
+      {
+        "tweet_id": 1849677777915740370,
+        "annotation": "Vague introspection on repressed disgust with no elaboration"
+      },
+      {
+        "tweet_id": 1018932669806206976,
+        "annotation": "The most generic possible statement\u2014'Bodies are gross'\u2014epitomizes the strand's emptiness"
+      }
+    ]
+  }
+}
