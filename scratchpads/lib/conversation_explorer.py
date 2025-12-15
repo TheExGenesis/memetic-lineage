@@ -1,5 +1,5 @@
 # %%
-from lib.image_describer import MediaDescription
+from .image_describer import MediaDescription
 import pandas as pd
 import numpy as np
 from collections import defaultdict

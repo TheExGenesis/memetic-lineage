@@ -1,27 +1,21 @@
 # %%
 import os
-import joblib
+import sys
+import time
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
 
 from diskcache import Cache
+from tqdm import tqdm
 
-from lib.conversation_explorer import (
-    ConversationTree,
-    EnrichedTweet,
+from .conversation_explorer import (
     build_conversation_trees,
     build_incomplete_conversation_trees,
 )
 
 SCRATCHPADS_DIR = Path(__file__).parent.parent
 
-# Legacy joblib paths (for migration)
-TWEET_DICT_CACHE = SCRATCHPADS_DIR / 'tweet_dict_cache.joblib'
-REPLY_TREES_CACHE = SCRATCHPADS_DIR / 'complete_reply_trees_cache.joblib'
 QUOTED_COUNTS_CACHE = SCRATCHPADS_DIR / 'quoted_counts_cache.parquet'
-QUOTE_TWEETS_DICT_CACHE = SCRATCHPADS_DIR / 'quote_tweets_dict_cache.joblib'
-
-# Diskcache paths
 TWEET_DICT_DISKCACHE = SCRATCHPADS_DIR / 'tweet_dict.diskcache'
 REPLY_TREES_DISKCACHE = SCRATCHPADS_DIR / 'reply_trees.diskcache'
 QUOTE_TWEETS_DISKCACHE = SCRATCHPADS_DIR / 'quote_tweets.diskcache'
@@ -37,17 +31,19 @@ _quote_tweets_dict: Optional[Cache] = None
 
 
 def generate_caches(parquet_path: Optional[str] = None) -> None:
-    """Generate tweet_dict and reply_trees caches from enriched_tweets parquet."""
+    """Generate tweet_dict, reply_trees, and quote_tweets caches from enriched_tweets parquet."""
     import pandas as pd
-    from lib.count_quotes import count_quotes
+    from .count_quotes import count_quotes
     
     path = Path(parquet_path or DEFAULT_PARQUET_PATH).expanduser()
     if not path.exists():
         raise FileNotFoundError(f"Parquet file not found: {path}")
     
     print(f"Loading tweets from {path}...")
+    t0 = time.time()
     tweets = pd.read_parquet(path, dtype_backend='pyarrow')
     tweets = tweets.set_index('tweet_id', drop=False)
+    print(f"Loaded {len(tweets):,} tweets in {time.time()-t0:.1f}s")
     
     # Quoted counts
     if QUOTED_COUNTS_CACHE.exists():
@@ -77,7 +73,34 @@ def generate_caches(parquet_path: Optional[str] = None) -> None:
     tweets_list = tweets.to_dict(orient='records')
     del tweets
     
+    # Build tweet_dict
+    print(f"Writing tweet_dict to {TWEET_DICT_DISKCACHE}...")
+    t0 = time.time()
+    tweet_dict = {t['tweet_id']: t for t in tweets_list}
+    with Cache(str(TWEET_DICT_DISKCACHE), size_limit=15 * 1024**3) as cache:
+        cache.clear()
+        for k, v in tqdm(tweet_dict.items(), desc="tweet_dict", file=sys.stdout, mininterval=0.5):
+            cache[k] = v
+    print(f"Saved {len(tweet_dict):,} tweets in {time.time()-t0:.1f}s")
+    
+    # Build quote_tweets index
+    print(f"Writing quote_tweets to {QUOTE_TWEETS_DISKCACHE}...")
+    t0 = time.time()
+    quote_tweets_dict: Dict[int, List[int]] = {}
+    for tweet in tweet_dict.values():
+        quoted_id = tweet.get('quoted_tweet_id')
+        if quoted_id is not None:
+            quote_tweets_dict.setdefault(quoted_id, []).append(tweet['tweet_id'])
+    with Cache(str(QUOTE_TWEETS_DISKCACHE), size_limit=800 * 1024**2) as cache:
+        cache.clear()
+        for k, v in tqdm(quote_tweets_dict.items(), desc="quote_tweets", file=sys.stdout, mininterval=0.5):
+            cache[k] = v
+    print(f"Saved {len(quote_tweets_dict):,} quote mappings in {time.time()-t0:.1f}s")
+    del tweet_dict
+    
+    # Build conversation trees
     print("Building conversation trees...")
+    t0 = time.time()
     conversation_tweets = [t for t in tweets_list if t['conversation_id'] is not None]
     trees = build_conversation_trees(conversation_tweets)
     
@@ -85,19 +108,15 @@ def generate_caches(parquet_path: Optional[str] = None) -> None:
     incomplete_trees = build_incomplete_conversation_trees(non_conv_tweets, [])
     
     complete_reply_trees = {**trees, **incomplete_trees}
-    tweet_dict = {t['tweet_id']: t for t in tweets_list}
-    quote_tweets_dict: Dict[int, List[int]] = {}
-    for tweet in tweet_dict.values():
-        quoted_id = tweet.get('quoted_tweet_id')
-        if quoted_id is not None:
-            quote_tweets_dict.setdefault(quoted_id, []).append(tweet['tweet_id'])
     
-    print("Saving caches...")
-    joblib.dump(tweet_dict, TWEET_DICT_CACHE, compress=0)
-    joblib.dump(complete_reply_trees, REPLY_TREES_CACHE, compress=0)
-    joblib.dump(quote_tweets_dict, QUOTE_TWEETS_DICT_CACHE, compress=0)
+    print(f"Writing reply_trees to {REPLY_TREES_DISKCACHE}...")
+    with Cache(str(REPLY_TREES_DISKCACHE), size_limit=8 * 1024**3) as cache:
+        cache.clear()
+        for k, v in tqdm(complete_reply_trees.items(), desc="reply_trees", file=sys.stdout, mininterval=0.5):
+            cache[k] = v
+    print(f"Saved {len(complete_reply_trees):,} trees in {time.time()-t0:.1f}s")
     
-    print(f"Caches saved to {SCRATCHPADS_DIR}")
+    print(f"\nCaches saved to {SCRATCHPADS_DIR}")
 
 
 def load_caches(auto_generate: bool = True) -> tuple[Cache, Cache]:
@@ -107,13 +126,9 @@ def load_caches(auto_generate: bool = True) -> tuple[Cache, Cache]:
         return _tweet_dict, _reply_trees
 
     if not TWEET_DICT_DISKCACHE.exists() or not REPLY_TREES_DISKCACHE.exists():
-        if auto_generate and (TWEET_DICT_CACHE.exists() and REPLY_TREES_CACHE.exists()):
-            print("Diskcache not found but joblib exists. Run migrate_to_diskcache() first.")
-            raise FileNotFoundError("Run migrate_to_diskcache() to convert joblib caches")
-        elif auto_generate:
+        if auto_generate:
             print("Cache files not found. Generating from parquet...")
             generate_caches()
-            migrate_to_diskcache()
         else:
             raise FileNotFoundError(
                 f"Cache files not found. Set ENRICHED_TWEETS_PATH env var and call generate_caches(), or run:\n"
@@ -134,79 +149,12 @@ def get_quote_tweets_dict() -> Cache:
         return _quote_tweets_dict
     
     if not QUOTE_TWEETS_DISKCACHE.exists():
-        if QUOTE_TWEETS_DICT_CACHE.exists():
-            print("Diskcache not found but joblib exists. Run migrate_to_diskcache() first.")
-            raise FileNotFoundError("Run migrate_to_diskcache() to convert joblib caches")
-        raise FileNotFoundError("Quote tweets cache not found. Run generate_caches() and migrate_to_diskcache().")
+        raise FileNotFoundError("Quote tweets cache not found. Run generate_caches().")
     
     print("Opening quote_tweets diskcache...")
     _quote_tweets_dict = Cache(str(QUOTE_TWEETS_DISKCACHE))
     print(f"Loaded quote index with {len(_quote_tweets_dict)} quoted tweets")
     return _quote_tweets_dict
-
-
-def backup_tweet_dict_from_parquet(parquet_path: str) -> None:
-    """Backup tweet_dict directly from parquet to diskcache."""
-    import sys
-    import time
-    import pandas as pd
-    from tqdm import tqdm
-    
-    path = Path(parquet_path).expanduser()
-    if not path.exists():
-        raise FileNotFoundError(f"Parquet file not found: {path}")
-    
-    print(f"Loading tweets from {path}...")
-    t0 = time.time()
-    tweets = pd.read_parquet(path, dtype_backend='pyarrow')
-    print(f"Loaded {len(tweets):,} tweets in {time.time()-t0:.1f}s")
-    
-    print("Converting to records...")
-    t0 = time.time()
-    records = tweets.to_dict(orient='records')
-    del tweets
-    print(f"Converted in {time.time()-t0:.1f}s")
-    
-    print(f"Writing to diskcache at {TWEET_DICT_DISKCACHE}...")
-    t0 = time.time()
-    with Cache(str(TWEET_DICT_DISKCACHE), size_limit=15 * 1024**3) as cache:
-        for r in tqdm(records, desc="tweet_dict", file=sys.stdout, mininterval=0.5):
-            cache[r['tweet_id']] = r
-    print(f"Done in {time.time()-t0:.1f}s")
-
-
-def migrate_to_diskcache() -> None:
-    """Migrate existing joblib caches to diskcache format."""
-    import sys
-    import time
-    from tqdm import tqdm
-    
-    if not TWEET_DICT_CACHE.exists():
-        raise FileNotFoundError(f"Joblib cache not found: {TWEET_DICT_CACHE}")
-    
-    migrations = [
-        (QUOTE_TWEETS_DICT_CACHE, QUOTE_TWEETS_DISKCACHE, "quote_tweets", 800 * 1024**3),
-        (REPLY_TREES_CACHE, REPLY_TREES_DISKCACHE, "reply_trees", 8 * 1024**3),
-        (TWEET_DICT_CACHE, TWEET_DICT_DISKCACHE, "tweet_dict", 15 * 1024**3),
-    ]
-    
-    for joblib_path, diskcache_path, name, size_limit in migrations:
-        print(f"\n{'='*50}", flush=True)
-        print(f"[{name}] Loading from joblib...", flush=True)
-        t0 = time.time()
-        data = joblib.load(joblib_path)
-        print(f"[{name}] Loaded {len(data):,} items in {time.time()-t0:.1f}s", flush=True)
-        
-        print(f"[{name}] Writing to diskcache (size_limit={size_limit/1024**3:.1f}GB)...", flush=True)
-        t0 = time.time()
-        with Cache(str(diskcache_path), size_limit=size_limit) as cache:
-            for k, v in tqdm(data.items(), desc=name, file=sys.stdout, mininterval=0.5):
-                cache[k] = v
-        print(f"[{name}] Done in {time.time()-t0:.1f}s", flush=True)
-        del data
-    
-    print(f"\n{'='*50}", flush=True)
-    print("Migration complete!", flush=True)
 
 
 # %%

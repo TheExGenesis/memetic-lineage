@@ -27,7 +27,7 @@ from lib.count_quotes import count_quotes
 # Load environment variables
 load_dotenv()
 # %%
-# ENRICHED_TWEETS_PATH = '/Users/frsc/Documents/Projects/data/2025-09-03_enriched_tweets.parquet' # for francisco
+ENRICHED_TWEETS_PATH = '/Users/frsc/Documents/Projects/data/2025-12-05_enriched_tweets.parquet' # for francisco
 ENRICHED_TWEETS_PATH = '../enriched_tweets.parquet' # for alexandre
 
 tweets = pd.read_parquet(ENRICHED_TWEETS_PATH, dtype_backend='pyarrow')

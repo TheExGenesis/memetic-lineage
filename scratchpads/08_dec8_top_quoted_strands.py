@@ -7,14 +7,14 @@ Functions moved to lib/: strand_builder.py, strand_rater.py, image_describer.py
 """
 import json
 from pathlib import Path
-from typing import Set, TypedDict
+from typing import Set
 
 from dotenv import load_dotenv
 
 from lib.strand_caches import get_quote_tweets_dict, load_caches
 from lib.strand_builder import build_strands_phased, StrandBuildResult
-from lib.strand_rater import rate_strands_batch
-from lib.image_describer import load_img_cache, save_img_cache, DEFAULT_CACHE_PATH
+from lib.strand_rater import rate_strands_batch, StrandData, SeedData
+from lib.image_describer import get_image_cache
 
 # %%
 load_dotenv(Path(__file__).parent.parent / ".env")
@@ -24,11 +24,7 @@ TOP_IDS_PATH = DATA_DIR / "top_quoted_tweet_ids.json"
 STRANDS_DIR = DATA_DIR / "strands"
 RATED_DIR = DATA_DIR / "rated_strands"
 DEBUG_DIR = DATA_DIR / "debug_responses"
-
-
-def load_top_tweet_ids() -> list[int]:
-    with open(TOP_IDS_PATH) as f:
-        return json.load(f)
+QUOTED_COUNTS_CACHE_PATH = DATA_DIR / "quoted_counts_cache.parquet"
 
 
 def get_built_strand_ids(strands_dir: Path) -> Set[int]:
@@ -46,18 +42,19 @@ def get_rated_strand_ids(rated_dir: Path) -> Set[int]:
 
 
 # %%
+from pandas import read_parquet
 # Load caches
 quote_dict = get_quote_tweets_dict()
 tweet_dict, conversation_trees = load_caches()
 
 print("Loading top quoted tweet IDs...")
-top_tweet_ids = load_top_tweet_ids()
-high_half_life_qt_tweet_ids = top_tweet_ids[:100]
+quoted_count_tweets = read_parquet(QUOTED_COUNTS_CACHE_PATH).sort_values('quoted_count', ascending=False)
+high_half_life_qt_tweet_ids = quoted_count_tweets['quoted_tweet_id'].astype(int).tolist()[:100]
 print(f"Found {len(high_half_life_qt_tweet_ids)} tweet IDs")
 
 # %%
 # Configuration
-image_cache = load_img_cache(DEFAULT_CACHE_PATH)
+image_cache = get_image_cache()
 depth = 10
 
 # Filter out already-built strands (skip building, not rating)
@@ -70,6 +67,7 @@ strand_target_tweet_ids = sorted([tid for tid in all_target_ids if tid not in ra
 print(f"Already rated: {len(rated_ids)}, already built: {len(built_ids)}")
 print(f"Remaining to build: {len(strand_target_tweet_ids)} strands")
 # %%
+# debug cell
 # from lib.strand_builder import build_strands_phased, get_strand_seeds
 # from lib.parallel import parallel_map_to_dict
 # from lib.strand_builder import StrandSeed
@@ -78,17 +76,34 @@ print(f"Remaining to build: {len(strand_target_tweet_ids)} strands")
 #     return get_strand_seeds(tid, tweet_dict, quote_dict, debug=False)
 
 # seeds_by_tid, seeds_failed = parallel_map_to_dict(
-#     strand_target_tweet_ids, get_seeds_for_tid,
+#     all_target_ids[:1], get_seeds_for_tid,
 #     max_workers=4, desc="Phase 1: Seeds"
 # )
 # print(f"[Phase 1] Got seeds for {len(seeds_by_tid)} strands, {len(seeds_failed)} failed")
+# %%
+# debug cell
+# debug_ids = [1742494880625016921]
+# strand_results = build_strands_phased(
+#         debug_ids,
+#         tweet_dict,
+#         quote_dict,
+#         conversation_trees,
+#         image_cache,
+#         depth=depth,
+#         seeds_workers=1,
+#         trees_workers=1,
+#         images_workers=1,
+#         debug=True
+#     )
+# %%
+
 # %%
 if not strand_target_tweet_ids:
     print("All strands already processed!")
 else:
     # Phase 1-4: Build strands using phased pipeline
     print("Building strands with phase-level parallelism...")
-    strand_results, updated_cache = build_strands_phased(
+    strand_results = build_strands_phased(
         strand_target_tweet_ids,
         tweet_dict,
         quote_dict,
@@ -99,10 +114,7 @@ else:
         trees_workers=8,
         images_workers=2
     )
-
-    # Save updated image cache
-    save_img_cache(updated_cache, DEFAULT_CACHE_PATH)
-    print(f"Built {len(strand_results)} strands, updated image cache")
+    print(f"Built {len(strand_results)} strands (image cache updated automatically)")
 
     # Save only non-empty strand texts to individual files
     STRANDS_DIR.mkdir(parents=True, exist_ok=True)
@@ -111,7 +123,11 @@ else:
     for tid, result in strand_results.items():
         if result.thread_text.strip():
             with open(STRANDS_DIR / f"{tid}.json", "w") as f:
-                json.dump({"tweet_id": result.tweet_id, "thread_text": result.thread_text, "seed_ids": result.seed_ids}, f, indent=2)
+                json.dump({
+                    "tweet_id": result.tweet_id,
+                    "thread_text": result.thread_text,
+                    "seeds": [{"tweet_id": s.tweet_id, "source_type": s.source_type} for s in result.seeds]
+                }, f, indent=2)
             saved_count += 1
         else:
             empty_count += 1
@@ -122,13 +138,8 @@ else:
 
 # %%
 # Load all non-empty strands for rating (including previously built ones)
-class StrandData(TypedDict):
-    thread_text: str
-    seed_ids: list[int]
-
-
-def load_strands_for_rating(strands_dir: Path, rated_dir: Path) -> dict[int, StrandData]:
-    """Load strands (text + seed_ids) that haven't been rated yet."""
+def load_strands_for_rating(strands_dir: Path, rated_dir: Path, only_non_rated: bool = True) -> dict[int, StrandData]:
+    """Load strands (text + seeds) that haven't been rated yet."""
     rated_ids = set()
     if rated_dir.exists():
         for f in rated_dir.glob("*.json"):
@@ -143,14 +154,14 @@ def load_strands_for_rating(strands_dir: Path, rated_dir: Path) -> dict[int, Str
         for f in strands_dir.glob("*.json"):
             try:
                 tid = int(f.stem)
-                if tid in rated_ids:
+                if only_non_rated and tid in rated_ids:
                     continue
                 data = json.loads(f.read_text())
                 text = data.get("thread_text", "")
                 if text.strip():
                     strands[tid] = {
                         "thread_text": text,
-                        "seed_ids": data.get("seed_ids", [])
+                        "seeds": data.get("seeds", [])
                     }
             except (json.JSONDecodeError, ValueError) as e:
                 print(f"[ERROR] Failed to load strand {f.name}: {e}")
@@ -158,23 +169,26 @@ def load_strands_for_rating(strands_dir: Path, rated_dir: Path) -> dict[int, Str
     
     return strands
 
-
-strands_data = load_strands_for_rating(STRANDS_DIR, RATED_DIR)
+# %%
+strands_data = load_strands_for_rating(STRANDS_DIR, RATED_DIR, only_non_rated=True)
 print(f"Found {len(strands_data)} strands to rate")
 # %%
-from lib.strand_rater import rate_strand
+# debug = True
+# strands_data = strand_results
+# from lib.strand_rater import rate_strand
 
-first_tid = list(strands_data.keys())[0]
-res = rate_strand(
-    thread_text=strands_data[first_tid]["thread_text"],
-    tweet_id=first_tid,
-    model_name="anthropic/claude-sonnet-4",
-    provider="openrouter",
-    max_retries=1,
-    base_temperature=0.7,
-    debug_dir=DEBUG_DIR,
-)
-res
+# first_tid = list(strands_data.keys())[0]
+# res = rate_strand(
+#     # thread_text=strands_data[first_tid]["thread_text"],
+#     thread_text=strands_data[first_tid].thread_text,
+#     tweet_id=first_tid,
+#     model_name="anthropic/claude-sonnet-4",
+#     provider="openrouter",
+#     max_retries=1,
+#     base_temperature=0.7,
+#     debug_dir=DEBUG_DIR,
+# )
+# res
 # %%
 # Rate strands using LLM
 if strands_data:

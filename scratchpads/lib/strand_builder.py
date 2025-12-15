@@ -8,8 +8,10 @@ from .conversation_explorer import (
     filter_conversation_trees, render_conversation_trees,
     strand_header_print_factory, print_conversation_threads
 )
+from diskcache import Cache
+
 from .semantic_search import search_embeddings
-from .image_describer import MediaDescription, get_image_descriptions_batch
+from .image_describer import get_image_cache, get_image_descriptions_batch
 from .parallel import parallel_map_to_dict
 
 # %%
@@ -146,7 +148,7 @@ def get_strand_conversation_string(
 class StrandBuildResult:
     tweet_id: int
     thread_text: str
-    seed_ids: List[int]
+    seeds: List[StrandSeed]
 
 
 def extract_tree_tweet_ids(filtered_trees: Dict[int, ConversationTree]) -> Set[int]:
@@ -168,14 +170,13 @@ def build_strand_single(
     tweet_dict: Dict[int, EnrichedTweet],
     quote_dict: Dict[int, List[int]],
     conversation_trees: Dict[int, ConversationTree],
-    image_cache: Dict[int, List[MediaDescription]],
+    image_cache: Optional[Cache] = None,
     depth: int = 10
-) -> Tuple[StrandBuildResult, Dict[int, List[MediaDescription]]]:
-    """
-    Build a single strand. Returns (result, new_image_cache_entries).
+) -> StrandBuildResult:
+    """Build a single strand. For batch processing, use build_strands_phased instead."""
+    if image_cache is None:
+        image_cache = get_image_cache()
     
-    For batch processing, use build_strands_phased instead.
-    """
     # Phase 1: Seeds
     seeds = get_strand_seeds(tid, tweet_dict, quote_dict, debug=False)
     seed_ids = [s.tweet_id for s in seeds]
@@ -187,28 +188,28 @@ def build_strand_single(
         depth=depth, depth_up=depth, depth_from_root=depth
     )
     
-    # Phase 3: Image descriptions
+    # Phase 3: Image descriptions (stored directly in cache)
     tree_tids = list(extract_tree_tweet_ids(filtered_trees))
-    new_images = get_image_descriptions_batch(tree_tids, image_cache, max_workers=2)
-    merged_cache = {**image_cache, **new_images}
+    get_image_descriptions_batch(tree_tids, image_cache, max_workers=2)
     
     # Phase 4: Render
     render_header = strand_header_print_factory(seed_info)
-    text = render_conversation_trees(filtered_trees, tweet_dict, render_header, merged_cache)
+    text = render_conversation_trees(filtered_trees, tweet_dict, render_header, image_cache)
     
-    return StrandBuildResult(tid, text, seed_ids), new_images
+    return StrandBuildResult(tid, text, seeds)
 
 def build_strands_phased(
     tweet_ids: List[int],
     tweet_dict: Dict[int, EnrichedTweet],
     quote_dict: Dict[int, List[int]],
     conversation_trees: Dict[int, ConversationTree],
-    image_cache: Dict[int, List[MediaDescription]],
+    image_cache: Optional[Cache] = None,
     depth: int = 10,
     seeds_workers: int = 4,
     trees_workers: int = 8,
-    images_workers: int = 2
-) -> Tuple[Dict[int, StrandBuildResult], Dict[int, List[MediaDescription]]]:
+    images_workers: int = 2,
+    debug: bool = False
+) -> Dict[int, StrandBuildResult]:
     """
     Build multiple strands using phase-level parallelism.
     
@@ -219,15 +220,18 @@ def build_strands_phased(
     4. Render (CPU-bound, sequential)
     
     Returns:
-        Tuple of (results_dict keyed by tweet_id, updated_image_cache)
+        Dict of results keyed by tweet_id
     """
+    if image_cache is None:
+        image_cache = get_image_cache()
+    
     print(f"[build_strands_phased] Starting with {len(tweet_ids)} tweet IDs")
     print(f"[build_strands_phased] Workers: seeds={seeds_workers}, trees={trees_workers}, images={images_workers}")
     
     # Phase 1: Get seeds for all tweet_ids
     print("[Phase 1] Getting seeds...")
     def get_seeds_for_tid(tid: int) -> List[StrandSeed]:
-        return get_strand_seeds(tid, tweet_dict, quote_dict, debug=False)
+        return get_strand_seeds(tid, tweet_dict, quote_dict, debug=debug)
     
     seeds_by_tid, seeds_failed = parallel_map_to_dict(
         tweet_ids, get_seeds_for_tid,
@@ -260,12 +264,8 @@ def build_strands_phased(
     
     print(f"[Phase 3] Found {len(all_tree_tids)} unique tweet IDs across all trees")
     print(f"[Phase 3] Fetching image descriptions (cache has {len(image_cache)} entries)...")
-    new_images = get_image_descriptions_batch(
-        list(all_tree_tids), image_cache,
-        max_workers=images_workers
-    )
-    merged_cache = {**image_cache, **new_images}
-    print(f"[Phase 3] Fetched {len(new_images)} new image descriptions, cache now has {len(merged_cache)} entries")
+    get_image_descriptions_batch(list(all_tree_tids), image_cache, max_workers=images_workers)
+    print(f"[Phase 3] Image cache now has {len(image_cache)} entries")
     
     # Phase 4: Render all (sequential, fast)
     print("[Phase 4] Rendering strands...")
@@ -277,12 +277,11 @@ def build_strands_phased(
         seeds = seeds_by_tid.get(tid, [])
         trees = trees_by_tid.get(tid, {})
         seed_info = {s.tweet_id: s.source_type for s in seeds}
-        seed_ids = [s.tweet_id for s in seeds]
         
         render_header = strand_header_print_factory(seed_info)
-        text = render_conversation_trees(trees, tweet_dict, render_header, merged_cache)
+        text = render_conversation_trees(trees, tweet_dict, render_header, image_cache)
         
-        results[tid] = StrandBuildResult(tid, text, seed_ids)
+        results[tid] = StrandBuildResult(tid, text, seeds)
     
     print(f"[Phase 4] Rendered {len(results)} strands")
     
@@ -291,7 +290,7 @@ def build_strands_phased(
         print(f"[WARN] {failed_count} strands failed (seeds: {len(seeds_failed)}, trees: {len(trees_failed)})")
     
     print(f"[build_strands_phased] Complete: {len(results)} successful, {failed_count} failed")
-    return results, merged_cache
+    return results
 
 
 # %%

@@ -39,7 +39,7 @@ def _search_embeddings_request(payload: dict) -> dict:
 
 def search_embeddings(
     search_term: str,
-    k: int = 100,
+    k: int = 200,
     threshold: float = 0.5,
     exclude_tweet_id: Optional[str] = None,
     filter: Optional[dict] = None

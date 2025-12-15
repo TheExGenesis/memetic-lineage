@@ -17,10 +17,9 @@ from .strand_rater import (
 # Image descriptions
 from .image_describer import (
     MediaDescription,
+    get_image_cache,
     get_image_descriptions,
     get_image_descriptions_batch,
-    load_img_cache,
-    save_img_cache,
 )
 
 # Parallelism utilities

@@ -12,14 +12,14 @@ from dotenv import load_dotenv
 from lib.conversation_explorer import build_conversation_trees, build_incomplete_conversation_trees, build_quote_trees, print_conversation_threads
 from lib.count_quotes import count_quotes
 from lib.create_ascii_chart import create_ascii_chart
+from lib.valid_accounts import get_valid_account_ids
 from tqdm import tqdm
 import pickle
-from lib.count_quotes import count_quotes
 
 # Load environment variables
 load_dotenv()
 # %%
-ENRICHED_TWEETS_PATH = '/Users/frsc/Documents/Projects/data/2025-09-03_enriched_tweets.parquet' # for francisco
+ENRICHED_TWEETS_PATH = '/Users/frsc/Documents/Projects/data/2025-12-05_enriched_tweets.parquet' # for francisco
 # ENRICHED_TWEETS_PATH = '~/data/enriched_tweets.parquet' # for alexandre
 TWEET_DICT_CACHE = 'data/tweet_dict_cache.pkl'
 REPLY_TREES_CACHE = 'data/complete_reply_trees_cache.pkl'
@@ -53,21 +53,24 @@ tweet_id = 1796556282339443189
 
 
 # %%
+# Load valid account_ids (from archive_upload + optin tables)
+valid_account_ids = get_valid_account_ids()
+
 # %%
 # Check if quoted counts cache exists
 quoted_counts_cache_path = Path('quoted_counts_cache.parquet')
-
-if quoted_counts_cache_path.exists():
+override_cache = False
+if quoted_counts_cache_path.exists() and not override_cache:
     print("Loading quoted counts from cache...")
     quoted_counts = pd.read_parquet(quoted_counts_cache_path)
 else:
-    print("Calculating quoted counts...")
-    quoted_counts = count_quotes(tweets)
+    print("Calculating quoted counts (filtered to valid accounts)...")
+    quoted_counts = count_quotes(tweets, valid_account_ids=valid_account_ids)
     quoted_counts = quoted_counts.groupby('quoted_tweet_id', as_index=False)['quoted_count'].sum()
     # Save to cache
     quoted_counts.to_parquet(quoted_counts_cache_path)
     print(f"Saved quoted counts cache to {quoted_counts_cache_path}")
-
+# %%
 tweets = tweets.merge(
     quoted_counts,
     left_index=True,
@@ -156,10 +159,27 @@ else:
 tweet_dict_pkl = pickle.load(open(TWEET_DICT_CACHE, 'rb'))
 # %%
 # let's make an index  quoted_tweet_id -> quote tweets
-quote_tweets_dict = {}
-for tweet in tweet_dict.values():
-    if tweet['quoted_tweet_id'] is not None:
-        quote_tweets_dict[tweet['quoted_tweet_id']] = quote_tweets_dict.get(tweet['quoted_tweet_id'], []) + [tweet['tweet_id']]
+from diskcache import Cache
+from pathlib import Path
+
+QUOTE_TWEETS_DISKCACHE = Path(__file__).parent / 'quote_tweets.diskcache'
+# %%
+if QUOTE_TWEETS_DISKCACHE.exists() and not OVERRIDE_CACHE:
+    print("Loading quote_tweets_dict from diskcache...")
+    quote_tweets_dict = Cache(str(QUOTE_TWEETS_DISKCACHE))
+    print(f"Loaded {len(quote_tweets_dict)} quoted tweets from cache.")
+else:
+    print("Building quote_tweets_dict and saving to diskcache...")
+    quote_tweets_dict = Cache(str(QUOTE_TWEETS_DISKCACHE))
+    quote_tweets_dict.clear()
+    for tweet_id in tqdm(tweet_dict, desc="Building quote tweets dict"):
+        tweet = tweet_dict[tweet_id]
+        if tweet['quoted_tweet_id'] is not None:
+            quoted_id = tweet['quoted_tweet_id']
+            existing = quote_tweets_dict.get(quoted_id, [])
+            quote_tweets_dict[quoted_id] = existing + [tweet['tweet_id']]
+    print(f"Saved {len(quote_tweets_dict)} quoted tweets to diskcache.")
+    
 # %%
 # okay let's produce a strand.
 

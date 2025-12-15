@@ -18,15 +18,19 @@ load_dotenv(Path(__file__).parent.parent.parent / ".env")
 Provider = Literal["groq", "openrouter"]
 
 
+class SeedData(TypedDict):
+    tweet_id: int
+    source_type: str
+
 class StrandData(TypedDict):
     thread_text: str
-    seed_ids: list[int]
+    seeds: list[SeedData]
 
 
 class RatedStrandResult(TypedDict):
     seed_tweet_id: int
     thread_text: str
-    seed_ids: list[int]
+    seeds: list[SeedData]
     rating: dict
 
 
@@ -136,7 +140,7 @@ def _make_rate_strand_call(
 def rate_strand(
     thread_text: str,
     tweet_id: int,
-    seed_ids: list[int] = [],
+    seeds: list[SeedData] = [],
     model_name: str = "openai/gpt-4o-mini",
     provider: Provider = "openrouter",
     max_retries: int = 2,
@@ -162,7 +166,7 @@ def rate_strand(
             return {
                 "seed_tweet_id": tweet_id,
                 "thread_text": thread_text,
-                "seed_ids": seed_ids,
+                "seeds": seeds,
                 "rating": rating.model_dump(),
             }
         except Exception as e:
@@ -209,7 +213,7 @@ def rate_strands_batch(
     Rate multiple strands in parallel with phase-level parallelism.
     
     Args:
-        strands_data: Dict of tweet_id -> StrandData (thread_text + seed_ids)
+        strands_data: Dict of tweet_id -> StrandData (thread_text + seeds)
         model_name: LLM model to use
         provider: "groq" or "openrouter"
         max_workers: Parallel workers (keep low for rate limits)
@@ -246,7 +250,7 @@ def rate_strands_batch(
         data = strands_data[tid]
         result = rate_strand(
             data["thread_text"], tid,
-            seed_ids=data.get("seed_ids", []),
+            seeds=data.get("seeds", []),
             model_name=model_name, provider=provider,
             max_retries=max_retries, base_temperature=base_temperature,
             debug_dir=debug_dir
