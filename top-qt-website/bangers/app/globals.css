@@ -16,3 +16,12 @@ body {
   color: var(--foreground);
   font-family: var(--font-libre-baskerville), serif;
 }
+
+/* Hide scrollbars utility (Chrome/Safari/Edge/Firefox/IE) */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE/Edge */
+  scrollbar-width: none;    /* Firefox */
+}

@@ -90,7 +90,8 @@ export function BestStrandsClient({ strands }: BestStrandsClientProps) {
       <div className="h-screen flex flex-col bg-white text-black overflow-hidden">
         <div
           ref={scrollContainerRef}
-          className="flex flex-1 overflow-x-auto overflow-y-hidden scrollbar-hide"
+          className="flex flex-1 min-h-0 overflow-x-auto overflow-y-hidden scrollbar-hide touch-pan-x"
+          style={{ overscrollBehaviorY: 'none' as any }}
         >
           {/* Strand Detail as main pane or spine */}
           {hasSelectedTweets ? (
@@ -99,7 +100,7 @@ export function BestStrandsClient({ strands }: BestStrandsClientProps) {
               onClick={() => setSelectedTweets([])}
             />
           ) : (
-            <div className="flex-shrink-0 h-full w-full">
+            <div className="flex flex-col flex-shrink-0 h-full w-full min-h-0">
               <StrandDetail
                 strand={selectedStrand}
                 onBack={handleBackFromStrand}
@@ -125,7 +126,7 @@ export function BestStrandsClient({ strands }: BestStrandsClientProps) {
             return (
               <div
                 key={`${tweet.tweet_id}-${index}`}
-                className="flex-shrink-0 h-full"
+                className="flex flex-col flex-shrink-0 h-full min-h-0"
                 style={activePaneStyle}
               >
                 <TweetPane
@@ -285,5 +286,3 @@ export function BestStrandsClient({ strands }: BestStrandsClientProps) {
     </div>
   );
 }
-
-

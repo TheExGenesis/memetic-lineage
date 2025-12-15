@@ -93,8 +93,8 @@ export const TweetPane = ({ tweet, onClose, onSelectTweet }: TweetPaneProps) => 
   }, [activeTab, tweet, initialTabSet]);
 
   return (
-    // Removed fixed width w-[500px], added w-full h-full to fill parent container
-    <div className="flex flex-col w-full h-full border-r border-black bg-white flex-shrink-0 shadow-xl">
+    // Root needs min-h-0 so inner flex-1 can scroll
+    <div className="flex flex-col w-full h-full min-h-0 border-r border-black bg-white flex-shrink-0 shadow-xl">
       {/* Header / Tabs */}
       <div className="flex border-b border-black sticky top-0 bg-white z-10">
         {['qts', 'thread', 'vector search'].map((tab) => (
@@ -117,7 +117,7 @@ export const TweetPane = ({ tweet, onClose, onSelectTweet }: TweetPaneProps) => 
         </button>
       </div>
       
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 touch-pan-y scrollbar-hide">
          <div className="mb-6 border-b-4 border-black pb-6">
             <div style={{ maxWidth: '360px' }}>
                <TweetCard 

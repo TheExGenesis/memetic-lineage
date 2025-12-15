@@ -266,7 +266,7 @@ export function StrandDetail({ strand, onBack, onSelectTweet }: StrandDetailProp
       </header>
 
       {/* Essential Tweets Visualization */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden min-h-0">
         <div className="p-4 border-b border-gray-200 bg-white">
           <h2 className="text-lg font-bold">Essential Tweets Timeline</h2>
           <p className="text-sm text-gray-600">Chronologically ordered key moments in this strand&apos;s evolution</p>
@@ -277,7 +277,7 @@ export function StrandDetail({ strand, onBack, onSelectTweet }: StrandDetailProp
             <div className="text-gray-500 animate-pulse">Loading essential tweets...</div>
           </div>
         ) : (
-          <div className="flex overflow-x-auto overflow-y-hidden h-full pb-4">
+          <div className="flex overflow-x-auto overflow-y-hidden h-full pb-4 min-h-0 touch-pan-x scrollbar-hide" style={{ overscrollBehaviorY: 'none' as any }}>
             {essentialTweetsData.map((etData, idx) => {
               const isEven = idx % 2 === 0;
               const bgClass = isEven ? 'bg-white' : 'bg-gray-50';
@@ -285,7 +285,7 @@ export function StrandDetail({ strand, onBack, onSelectTweet }: StrandDetailProp
               return (
                 <div
                   key={etData.tweet_id}
-                  className={`flex-shrink-0 h-full border-r border-gray-200 flex flex-col ${bgClass}`}
+                  className={`flex-shrink-0 h-full border-r border-gray-200 flex flex-col min-h-0 ${bgClass}`}
                   style={{ width: columnWidth }}
                 >
                   {/* Column Header with Annotation */}
@@ -299,7 +299,7 @@ export function StrandDetail({ strand, onBack, onSelectTweet }: StrandDetailProp
                   </div>
 
                   {/* Thread View */}
-                  <div className="flex-1 overflow-y-auto p-3">
+                  <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 touch-pan-y scrollbar-hide">
                     {etData.threadTweets && etData.threadTweets.length > 0 ? (
                       <ThreadView
                         tweets={etData.threadTweets}
@@ -339,4 +339,3 @@ export function StrandDetail({ strand, onBack, onSelectTweet }: StrandDetailProp
     </div>
   );
 }
-
