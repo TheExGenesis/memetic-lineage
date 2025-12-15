@@ -1,0 +1,215 @@
+{
+  "seed_tweet_id": 1978455670220361896,
+  "thread_text": "1367509841812615171 [2021-03-04] @NathanpmYoung \ud83d\udc9c 16 \ud83d\udd01 2\nFeatures I'd use if @Twitter made them \ud83e\uddf5\n\u2193\n1367509843448315906 [2021-03-04] @NathanpmYoung \ud83d\udc9c 24 \ud83d\udd01 2\n*Waaaaaaay* better search\n\nSeriously, how can twitter become the jobs/journals/ etc etc platform it was made to be without much better search. It always takes me ages to find the tweets I want.\n\u2193\n1517639805093482496 [2022-04-22] @NathanpmYoung  [(SEED) type=quote_of_semantic_search]\nThreads still function if you delete a tweet\n\n(I deleted because it was very confusing)\n\nThread continues here: https://t.co/hpSXkNx9Lq\n  [Quoting @NathanpmYoung: A way to search for someone's account while writing a tweet. Why is this not already a thing?]\n\n===\n\n1519598569552072705 [2022-04-28] @NathanpmYoung \ud83d\udc9c 3 [(SEED) type=quote_of_semantic_search]\nIf I was as product manager at Twitter, here is a thread of features I'd consider https://t.co/hpSXkNx9Lq\n  [Quoting @NathanpmYoung: A way to search for someone's account while writing a tweet. Why is this not already a thing?]\n\n===\n\n1525625085284872192 [2022-05-14] @goblinodds \ud83d\udc9c 20 \ud83d\udd01 1 [(SEED) type=semantic_search]\ncommunities discoverability seems to be uhh nonexistent atm so\n\npls post your communities below so your mutuals can find them!\n\n===\n\n1550055763317506050 [2022-07-21] @mechanical_monk \ud83d\udc9c 532 \ud83d\udd01 135\nhello i made a thing\n\nit allows you to fetch a list of someone's follows, followers, or mutuals, or combine two such lists from two users, and export the results to CSV or JSON\n\nbelow i'll list some things you can use this for\n\nhttps://t.co/iaYQh2EhDx https://t.co/MrQX8PNuFl\nImages:\n  - [Image #0] The image is a screenshot of the website ListFollowers.com, which allows users to fetch and export lists of Twitter followers, followings, or mutuals. \n    \n    The website's welcome message and instructions are displayed on the left side of the page, while the main content area features a search bar where users can enter a Twitter username. The search results are presented in a table format, listing the user's bio, location, URL, number of followers, number of tweets, and other relevant information. \n    \n    The table includes a list of users, with their profile pictures, usernames, and bios, as well as their follower counts and other metrics. The top-right corner of the page displays a green box indicating that 5933 users were fetched, along with information about the API endpoint rate limits. \n    \n    Overall, the image showcases the functionality and user interface of ListFollowers.com, highlighting its ability to provide detailed information about Twitter users and their followers.\n\n===\n\n1550055766421372931 [2022-07-21] @mechanical_monk \ud83d\udc9c 42\n1) see who your biggest followers are, either by raw number of followers or by followers-to-follows ratio\n\n(as in the screenshot above)\n\nlet me know who's winning \ud83d\ude0e\n\u2193\n1550055770808496129 [2022-07-21] @mechanical_monk \ud83d\udc9c 48\n2) follow recommendations\n\nselect users who you follow, but someone else doesn't follow, by using the set operator \"difference\" on the 2 follow lists\n\nlooks like visa doesn't follow some of my favorite people like @acidshill, @sympatheticopp, or @myceliummage! https://t.co/ADSZx45uUP\nImages:\n  - [Image #0] The image shows a screenshot of a web page with a form to compare the followers of two Twitter users. \n    \n    * The form has two sections, \"User 1\" and \"User 2\", each containing a text box to input a Twitter username and a dropdown menu to select the type of list to compare, both set to \"follows\".\n    * The usernames entered are \"mechanical_monk\" and \"visakanv\".\n    * A checkbox labeled \"Add a second user?\" is checked.\n    * A dropdown menu labeled \"Combine lists with operation\" is set to \"difference\".\n    * The result of the comparison is displayed at the bottom of the page, showing the accounts followed by @mechanical_monk but not by @visakanv.\n\u2193\n1550055773602037760 [2022-07-21] @mechanical_monk \ud83d\udc9c 35\n3) follow recommendations, part 2\n\nfind the most underrated of your follows by sorting from the lowest number of followers\n\nshare them. hype them up\n\u2193\n1550055778387640320 [2022-07-21] @mechanical_monk \ud83d\udc9c 40\n4) making friends\n\nfind accounts who a person follows who are also your followers by using the \"intersection\" operator\n\nhttps://t.co/zIWpUnXqk8 https://t.co/N9viMY3M9o\n  [Quoting @visakanv: @eshear my top of mind feature requests for Twitter are  1. Make it easier to see, when you click on a new profile, who they\u2019re following that\u2019s already following you (ie, which of your followers can make an introduction to you)  2. better follower management. filter:followers search]\nImages:\n  - [Image #0] The image is a screenshot of a web page used to find mutual Twitter followers between two users. To reproduce the image, create a form with two sections labeled \"User 1\" and \"User 2\", each containing a text box for the username and a dropdown menu for the list type. \n    \n    For \"User 1\", the username is \"mechanical_monk\" and the list type is set to \"followers\". For \"User 2\", the username is \"ESYudkowsky\" and the list type is set to \"follows\". Below the two user sections, there is a checkbox labeled \"Add a second user?\" which is checked. \n    \n    Underneath, there is a dropdown menu labeled \"Combine lists with operation\" with the selected option being \"intersection\". At the bottom of the page, there is a description that reads: \"Accounts who follow @mechanical_monk and are followed by @ESYudkowsky\".\n\u2193\n1550055784494645248 [2022-07-21] @mechanical_monk \ud83d\udc9c 29\n5) export results to CSV to search, filter, and sort in google spreadsheets\n\nselect the whole sheet, click the filter icon, and off you go\n\n(i didn't include in the CSV export whether they have the default profile pic, but i can add that later)\n\nhttps://t.co/aw44N8kkOX https://t.co/IBTVzcA618\n  [Quoting @visakanv: Really wish Twitter would let me toggle filtering out the following from my follower list:   - no profile pic - locked - no bio   it remains ridiculous that Twitter doesn\u2019t do anything to make it easier for people to find interesting potential friends amongst their follower lists]\nImages:\n  - [Image #0] The image is a screenshot of a Google Sheets document displaying a list of Twitter user data. The spreadsheet has 18 columns and 20 rows, with the columns labeled \"ID\", \"Username\", \"Name\", \"Locked\", \"Verified\", \"Bio\", \"Location\", \"URL\", \"Following\", \"Followers\", \"Tweets\", \"Created at\", and others.\n    \n    Two red arrows are pointing to specific parts of the image: one to the filter icon in the column headers and another to the filter button at the top right corner of the spreadsheet.\n\u2193\n1550055788177129475 [2022-07-21] @mechanical_monk \ud83d\udc9c 31\n2 interesting usecases for exporting to a spreadsheet:\n\n- if you're travelling, find followers (or mutuals) whose location you're travelling to, in order to meet irl\n- search bios for keywords to find people who share your interests\n\u2193\n1550055792665133057 [2022-07-21] @mechanical_monk \ud83d\udc9c 26\n6) export results to JSON to analyze them in whatever way you want in your programming language of choice\n\nthis exports the results exactly as they come from the twitter API https://t.co/O4gEog8yCp\nImages:\n  - [Image #0] The image shows a screenshot of a JSON file containing Twitter user data, with a red box highlighting the \"home\" button at the top left corner. The JSON data is displayed in a text editor, listing three Twitter users with their profile information, including names, usernames, profile images, and public metrics.\n    \n    Here is the text from the image, transcribed in full:\n    \n    ```\n    {\n      \"protected\": false,\n      \"profile_image_url\": \"https://pbs.twimg.com/profile_images/1377482962275549184/y6lQJCNB_normal.jpg\",\n      \"verified\": false,\n      \"id\": \"1376942785060802563\",\n      \"name\": \"baesrule\",\n      \"public_metrics\": {\n        \"followers_count\": 4,\n        \"following_count\": 189,\n        \"tweet_count\": 77,\n        \"listed_count\": 0\n      },\n      \"url\": \"\",\n      \"description\": \"Seeking and sometimes finding\",\n      \"location\": \"Drewry Lane\",\n      \"created_at\": \"2021-03-30T17:02:14.000Z\",\n      \"username\": \"baesrule1\"\n    },\n    {\n      \"protected\": false,\n      \"profile_image_url\": \"https://pbs.twimg.com/profile_images/1513145270141337600/g6RwA2BD_normal.jpg\",\n      \"verified\": false,\n      \"id\": \"139826562089951238\",\n      \"name\": \"Judith Taylor\",\n      \"public_metrics\": {\n        \"followers_count\": 23,\n        \"following_count\": 83,\n        \"tweet_count\": 8,\n        \"listed_count\": 0\n      },\n      \"url\": \"\",\n      \"description\": \"Exclusive Acct manager Expert in trading Fx/bitcoin mining investor Make $100k in 7days Join my fast\",\n      \"location\": \"New York, USA\",\n      \"created_at\": \"2021-05-28T23:51:23.000Z\",\n      \"username\": \"Judithtaylor_fx\"\n    },\n    {\n      \"protected\": false,\n      \"profile_image_url\": \"https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png\",\n      \"verified\": false,\n      \"id\": \"1545002371101879552\",\n      \"name\": \"CompressedArch\",\n      \"public_metrics\": {\n        \"followers_count\": 0,\n        \"following_count\": 8,\n    \n\u2193\n1550055795357884417 [2022-07-21] @mechanical_monk \ud83d\udc9c 37\nlet me know if you find other ways to use this\n\nalso DM me if you get bugs or unexpected behavior or have feature requests\n\nthank\n\u2193\n1550057762788413442 [2022-07-21] @mechanical_monk \ud83d\udc9c 43\nthis is when i got the idea for this project\n\nlong long time ago\n\ni didn't implement this feature (get follows of follows) in the end bc that would make it several times more complex, but possibly now i could start working on v2 which would enable this\n\nhttps://t.co/uNh3SEOp7O\n  [Quoting @mechanical_monk: found a guy who is followed by 60 of my follows and yet i've never seen him around before  now i'm curious who the people are who are followed by most of my follows and who i'm not following  might fuck around with twitter api again later]\n\u2193\n1550087130080329728 [2022-07-21] @mechanical_monk \ud83d\udc9c 35 \ud83d\udd01 3\nif you find this useful and want me to focus more of my efforts towards making things, consider:\n\nhttps://t.co/sKiRYhYCU7\n\n\u2764\n\u2193\n1550571579746226180 [2022-07-22] @mechanical_monk \ud83d\udc9c 10 [(SEED) type=quote_of_semantic_search]\nan update\n\nhttps://t.co/91wEfFqqVA\n  [Quoting @mechanical_monk: https://t.co/dJZdQ9HuFT gets an update!  you can now search in the fetched results  find followers in your city, mutuals with common interests, and more!  you can also search using regular expressions if you're into that kind of stuff \ud83d\ude0e https://t.co/3ZYHEoGciV]\n\u2193\n1550805777132277761 [2022-07-23] @RichDecibels \ud83d\udc9c 4\n@mechanical_monk feature request: I want to boost high quality small accounts. can you help me identify lowbies I've had good interactions with lately? eg can you pull data about how many times we've commented on each other's stuff?\n\n===\n\n1550541255683317761 [2022-07-22] @mechanical_monk \ud83d\udc9c 31 \ud83d\udd01 3 [(SEED) type=semantic_search]\nhttps://t.co/dJZdQ9HuFT gets an update!\n\nyou can now search in the fetched results\n\nfind followers in your city, mutuals with common interests, and more!\n\nyou can also search using regular expressions if you're into that kind of stuff \ud83d\ude0e https://t.co/3ZYHEoGciV\nImages:\n  - [Image #0] The image is a screenshot of the website ListFollowers.com, which allows users to search for and analyze their Twitter followers. \n    \n    *   The top-left corner of the page displays the website's name, \"ListFollowers.com,\" along with a brief description of its features and functionality.\n    *   Below this, there is a section titled \"User 1\" where users can enter their Twitter username and select the type of list they want to generate (e.g., followers, followings, or mutuals).\n    *   A red oval highlights a search bar with the text \"athens\" and several checkboxes labeled \"Username,\" \"Display name,\" \"Bio,\" \"Location,\" and \"Url.\" \n    *   The main content area of the page displays a table with information about the user's followers, including their usernames, bios, locations, URLs, and other relevant data.\n    *   The table includes columns for \"User,\" \"Bio,\" \"Location,\" \"URL,\" \"F.ws,\" \"F.wers,\" \"Tweets,\" \"F/F,\" \"F/T,\" and \"Created.\"\n    *   The \"User\" column lists the usernames of the followers, along with their profile pictures and bios.\n    *   The \"Bio\" column provides a brief description of each follower's bio.\n    *   The \"Location\" column shows the location listed in each follower's profile.\n    *   The \"URL\" column displays the URL associated with each follower's profile.\n    *   The \"F.ws,\" \"F.wers,\" \"Tweets,\" \"F/F,\" \"F/T,\" and \"Created\" columns provide additional metrics about each follower, such as the number of followers they have, the number of accounts they follow, the number of tweets they've posted, and the date they created their account.\n    \n    Overall, the image suggests that ListFollowers.com is a useful tool for Twitter users who want to gain insights into their followers and better understand their online presence.\n\u251c\u2500\u2500 1550542634305097729 [2022-07-22] @mechanical_monk \ud83d\udc9c 11\n\u2502   coming soon (maybe):\n\u2502   \n\u2502   - filtering: verified accounts, locked accounts, default profile pics, empty bios (only show these/exclude these)\n\u2502   - export filtered results\n\u2502   \n\u2502   let me know if these features would be useful to you\n\u2502   \u2193\n\u2502   1550543145116524545 [2022-07-22] @mechanical_monk \ud83d\udc9c 7\n\u2502   cc @visakanv my archetypal target customer\n\u2502   \u2193\n\u2502   1550543766712250369 [2022-07-22] @visakanv \ud83d\udc9c 5\n\u2502   @mechanical_monk looks good to me... i'm still delighted that I could export my followers to a csv at all, lol\n\u2514\u2500\u2500 1550543485866225665 [2022-07-22] @RichDecibels \ud83d\udc9c 3\n    @mechanical_monk is it possible to add unfollow button via api?\n    \u2193\n    1550545390260436993 [2022-07-22] @mechanical_monk \ud83d\udc9c 3\n    @RichDecibels it is, i'd just have to change the permission from \"read only\" to \"read &amp; write\" which i'm hesitant to do\n    \n    if there's enough demand i'll do it\n    \u2193\n    1550545659048013824 [2022-07-22] @mechanical_monk \ud83d\udc9c 2\n    @RichDecibels also in order to know whether to display a \"follow\" button or an \"unfollow\" button, i'd have to pull in your follows, so if you haven't requested your follows in the first place, that will be 1 extra request to the follows endpoint\n    \n    hmm that's a lot of extra work on the backend\n    \u2193\n    1550546049571639297 [2022-07-22] @RichDecibels \ud83d\udc9c 2\n    @mechanical_monk I know it is a bit out of scope. just thought about it because this tool makes me notice accounts I don't wanna be following anymore\n\n===\n\n1815569882119065694 [2024-07-23] @relic_radiation \ud83d\udc9c 100\nsomething I miss about college is: the pacing.\n\nlife moved at semester speed max, calibrated by more-experienced people who gauged what amount of work fit in what time\n\nvs now as a solopreneur, it\u2019s too easy to set myself too-fast timelines &amp; then be disappointed. please advise\n\u2193\n1815576195276415361 [2024-07-23] @relic_radiation \ud83d\udc9c 14 [(SEED) type=semantic_search]\nare there founder communities I can join for help with things like this\n\n===\n\n1824881129842671976 [2024-08-17] @exgenesis \ud83d\udc9c 8 [(SEED) type=semantic_search]\ncommunity archive log:been grinding for days against supabase and authentication to make sure the community archive is secure and not obviously attackable and the schema is solidno work that moves the needle is beyond menext I need a little interface and it ships\n\n===\n\n1828542813438648794 [2024-08-27] @PrinceVogel \ud83d\udc9c 73 [(SEED) type=semantic_search]\ncrazy how they nuked this search feature to make it impossible to find your mutuals https://t.co/FsykAY2pUc\nImages:\n  - [Image #0] The image shows a screenshot of a Twitter search results page for the term \"zoe\". \n    \n    The top navigation bar features a back arrow, a search bar with the term \"zoe\", a filter button, and a three-dot menu. Below this, a tab bar displays the options \"Top\", \"Latest\", \"People\", \"Media\", and \"Lists\", with \"People\" highlighted in blue. The main content area lists seven Twitter profiles matching the search term, each with a profile picture, name, handle, and bio. The profiles are:\n    \n    * Zoe Volf (@ZoeVolf) - \"My name is Zoe and I'm cosplayer and a designer. Here I share my cosplay journey an...\"\n    * Zoe Moore (@zooe_moore) - \"18 \u2022 homebody probably watching anime.. \u2764\ufe0f\u2601\ufe0f IG - ZoeTheMilk\"\n    * zoe (@girlinthealps) - \"soft as the rain, pretty as a vine \u2764\ufe0f\"\n    * ZO\u00c9 (@zoetheband) - \"@DiscosPanoram\"\n    * zoe zoe (@zoeee0777)\n    * Zoe Zoe (@ZoeZoe183031)\n    * zoe (@zoe_lixx) - \"\ub315\ub0e5\uc988 \uc88b\uc544\ud568\"\n    \n    Each profile has a \"Follow\" button next to it. The background of the image is black.\n\u2193\n1828542816366272861 [2024-08-27] @PrinceVogel \ud83d\udc9c 20\nMost of the good Twitter does for the world is driven by social networking but most of the views probably come from social media, and in a cash crunch they're forced to follow the incentives\n\n===\n\n1834176218674950506 [2024-09-12] @DefenderOfBasic \ud83d\udc9c 13 [(SEED) type=semantic_search]\nsimilarly: I should be able to simply search: \"show me everyone who follows me who works as an editor/publisher\" (based on their bio/account info)\n\n(like if I had questions/wanted to get advice)\n  [Quoting @DefenderOfBasic: see this is why having our little community archive is gonna change everything. Imagine if you could just, filter search by this??? \"Show me everyone whose bio is an @AREdotNA link\"  https://t.co/KFwTpoVA8c]\n\u2193\n1834176220528803935 [2024-09-12] @DefenderOfBasic \ud83d\udc9c 3\n(and then I should be able to make that into a little collection that I then continue to filter/search through, or sort by \"people I've interacted with most\" or sort by \"those who liked a lot of my tweets\")\n\n===\n\n1854516157425872964 [2024-11-07] @DefenderOfBasic \ud83d\udc9c 167 \ud83d\udd01 8\nif I become famous for anything I really really want it to be for popularizing this idea that, if you want to get really good user data, you don't have to trick or coerce people, you can just ask them\n\u2193\n1854516158809944253 [2024-11-07] @DefenderOfBasic \ud83d\udc9c 20 \ud83d\udd01 1\npeople will give you data if it benefits them. If you can't convince them that it benefits them...that's the system working as intended\n\u2193\n1854711235226358131 [2024-11-08] @DefenderOfBasic \ud83d\udc9c 8 \ud83d\udd01 2\ncontext for this is i wanted access to twitter API to analyze our culture &amp; language and we realized we can just share our data with each other &amp; anyway we have an open database of 3 million tweets so far \n\nhttps://t.co/kMX9HZgJmV https://t.co/Yi1ER8D5my\nImages:\n  - [Image #0] The image is a promotional graphic for an open database and API called the \"Community Archive.\" The title, \"Upload to the Community Archive!\", is prominently displayed at the top in large white text. Below it, a subtitle reads, \"An open database and API anyone can build on.\"\n    \n    The main section of the image features a list of six Twitter profile pictures, accompanied by their corresponding usernames and follower counts. The profiles are arranged in a horizontal row, with the following information:\n    \n    * eshear (106.2K followers)\n    * visakanv (75K followers)\n    * eigenrobot (78K followers)\n    * DanielleFong1guelpf (84K followers)\n    * QiaochuYuaRichDecibels (78K followers)\n    * [partial username] (71K followers)\n    \n    Below the profile pictures, a statistic is displayed: \"3.6M tweets and 7.2M liked tweets contributed from 132 accounts.\" This information is presented in white text on a dark blue background.\n    \n    Overall, the image effectively promotes the Community Archive as a valuable resource for developers and researchers, highlighting its open nature and the contributions of its users.\n\u2193\n1854711529452507254 [2024-11-08] @DefenderOfBasic \ud83d\udc9c 5 [(SEED) type=semantic_search]\nhttps://t.co/5inXYGmOVZ\n  [Quoting @exgenesis: community archive trends app is live!it's a streamlit app - anyone can do this - do you get it anon?link below https://t.co/Rzq5JgSbgs]\n\n===\n\n1864322137479098468 [2024-12-04] @DefenderOfBasic \ud83d\udc9c 581 \ud83d\udd01 32\nsemantic search is really fucking powerful I love it so much, I can never go back. It's instant, it could be real time, it could include all my blogs and journals and messages. This is the fucking future https://t.co/jPGh8pj1Ma\nImages:\n  - [Image #0] The image shows a screenshot of a search result for a tweet from the user @defenderofbasic, with the text \"don't tell people to read the thing, just tell them the thing\" in a search box. \n    \n    * The top of the image displays the username \"defenderofbasic\" in large black text, with \"216,047 words - 3,741 threads\" written below it in smaller gray text.\n    * Below this is a white search box outlined in blue, containing the text \"don't tell people to read the thing, just tell them the thing\" in black text.\n    * Underneath the search box, the text \"similarity score: 0.84458876\" is displayed in black.\n    * A tweet from the user @defenderofbasic is shown below, with the text \"telling people 'have you read X? It explains this really well' doesn't work nearly as well as just telling them the thing directly\" and the timestamp \"10/27/2024, 12:34:49 PM\".\n    * The tweet has 101 likes and 2 replies, indicated by a heart icon and a reply icon, respectively.\n\u2193\n1864386843887980625 [2024-12-04] @AskYatharth \ud83d\udc9c 1 [(SEED) type=semantic_search]\n@DefenderOfBasic please try to add mine \ud83d\ude2d dying out here with neither twitter Latest search, nor Community Archive search always reliably working\n\n===\n\n1923841727376380073 [2025-05-17] @TylerAlterman \ud83d\udc9c 9\nI def have several books worth of content on here now. Is there any way to do semantic search so I can find all tweets I've written on a particular topic?\n\u2193\n1923842232072700082 [2025-05-17] @VitreousSolid \ud83d\udc9c 5 [(SEED) type=semantic_search]\n@TylerAlterman Have you uploaded your twitter  to the community archive that @exgenesis &amp; @DefenderOfBasic work on? That has semantic search I believe\n\u2193\n1923842914364350493 [2025-05-17] @TylerAlterman \ud83d\udc9c 3\n@VitreousSolid @exgenesis @DefenderOfBasic oh I will try altho it looks like I need to do some sort of fancy github thing\n\u2193\n1923843746728222761 [2025-05-17] @exgenesis \ud83d\udc9c 3\n@TylerAlterman @VitreousSolid @DefenderOfBasic Your Birdseye could be a cool first exploration - all your twitter clusters w some analysishttps://t.co/hgsjK0ElYs\n\u2193\n1923844182755459326 [2025-05-17] @TylerAlterman \ud83d\udc9c 4\n@exgenesis @VitreousSolid @DefenderOfBasic This is amazing\n\n===\n\n1949182242271429059 [2025-07-26] @jia_seed \ud83d\udc9c 5332 \ud83d\udd01 208\ni\u2019m looking for a non-technical co-founder, whose idea I can build out. they can have 70% equity, and I can have 30%. \n\ncomment if interested, must be non-technical\n\ni prev won hackathons at upenn and princeton, got software engineering offer from disney\n\u2193\n1949267655862755597 [2025-07-27] @mrink0 \ud83d\udc9c 10 [(SEED) type=semantic_search]\n@jia_seed happy to chat. we have a cofounder matching tool @colosseum with &gt;1000 builders that might be helpful\n\u2193\n1949271569085223419 [2025-07-27] @jia_seed \ud83d\udc9c 2\n@mrink0 @colosseum Ima dm u\n\n===\n\n1954208332979273844 [2025-08-09] @Tangrenin \ud83d\udc9c 7\nSomeone can help me find the @nosilverv where it's something like: he parses not doing / not (doing) (or something similar?, maybe with the \u00ac symbol?\n\u2193\n1954216914328187305 [2025-08-09] @Tangrenin \ud83d\udc9c 1 [(SEED) type=semantic_search]\n@exgenesis would be nice to be able to search symbols (like \u00ac, emojis, etc) or any chains of character in the community archive\n\n===\n\n1962519165513748601 [2025-09-01] @sofvanh \ud83d\udc9c 107 \ud83d\udd01 13 [(SEED) type=semantic_search]\nI'm really scared of sharing unfinished work but here goes: I'm working on a little project built on Community Archive, for searching across all users. The idea is that you can put very specific queries for people and the results will be so fitting it will feel like \u2728 magic \u2728 https://t.co/GyakVFT69W\nImages:\n  - [Image #0] The image is a screenshot of a webpage titled \"Magic Search\" with a subtitle \"For Community Archive\" in green text at the top-left corner. The page has a white background and features a prominent heading that reads, \"Who do you need right now?\" followed by the phrase \"Find the best person for cofounding an ML startup\" in black text, with the latter part highlighted in a light green box.\n    \n    Below this, there is a large text box with the question \"What are you searching for?\" in gray text. A smaller line of text underneath the text box reads, \"Search the entire Community Archive for your niche need.\" At the bottom of the page, it is stated that the site was \"Created by Sofia Vanhanen | @sofvanh\" and that the \"Data [is] from the Community Archive,\" with both the creator's name and the data source highlighted in green.\n    \n    The top-right corner of the page features a navigation menu with links to \"Home,\" \"About,\" and \"Data\" in green text.\n\u251c\u2500\u2500 1962519168592355794 [2025-09-01] @sofvanh \ud83d\udc9c 17\n\u2502   Query examples:People to follow: \"wholesome and vibey analysis of world economy with a rationalist take\"Collaborators: \"writer-philosopher to help with my network systems project\"Gigs: \"an impressionist painter-photographer who could photograph AND paint our Oslo wedding\"\n\u2502   \u2193\n\u2502   1962519170563670168 [2025-09-01] @sofvanh \ud83d\udc9c 14\n\u2502   I'm curious about the future of the job market, and this project explores 'Live Markets', drawing from Live Theory / autostructures. Some in my fellowship think this is just the natural continuation of the (human) economy: a better, worldwide offers/asks platform.\n\u2502   \u2193\n\u2502   1962519173080240400 [2025-09-01] @sofvanh \ud83d\udc9c 13\n\u2502   This project is just a demo/prototype - with a dataset of less than 300 people, it's not going to change the world. But I think it might be cool/useful for TPOT!\n\u2502   \u2193\n\u2502   1962519174992769519 [2025-09-01] @sofvanh \ud83d\udc9c 11\n\u2502   In particular, I would love to facilitate value creation from skills that normally aren't recognised as being of value in the job market. Aesthetic taste, skills from hobbies, knowledge of some niche science - in the right project, your idiosyncratic skillset might be key!\n\u2502   \u2193\n\u2502   1962519177123516557 [2025-09-01] @sofvanh \ud83d\udc9c 8\n\u2502   My DMs are open for thoughts/feedback and interested collaborators.Also - You can be included in the dataset by contributing (uploading your tweets) to Community Archive!https://t.co/rgnqJlYZSe\n\u2502     [Quoting @exgenesis: highlights of builds and research on community archive data  first there's the website itself you can upload your archive and search and browse the complete archive  community-archive dot org https://t.co/IpRrbUrVKD]\n\u2502   \u251c\u2500\u2500 1962533505742549255 [2025-09-01] @exgenesis \ud83d\udc9c 1\n\u2502   \u2502   @sofvanh let me use iiiiiiiiit\n\u2502   \u2502   \u2193\n\u2502   \u2502   1962534839690706994 [2025-09-01] @sofvanh \ud83d\udc9c 1\n\u2502   \u2502   @exgenesis sooon :)\n\u2502   \u2514\u2500\u2500 1962561593272566117 [2025-09-01] @sofvanh \ud83d\udc9c 3\n\u2502       Oops I just fixed my DM settings - NOW they're open :)\n\u2502       \u2193\n\u2502       1962573854024573188 [2025-09-01] @LexerLux \ud83d\udc9c 2\n\u2502       @sofvanh Hmm, I've been wanting to add my tweets to the archive but they delete themselves after a week. Is there some way to keep a rolling archive and then bundle them all together?\n\u2502       \u2193\n\u2502       1962575074029949179 [2025-09-01] @sofvanh \ud83d\udc9c 2\n\u2502       @LexerLux I hear there's a browser extension in the works that might fit this use case? @exgenesis @IaimforGOAT\n\u251c\u2500\u2500 1962548550098649150 [2025-09-01] @qwweryo \ud83d\udc9c 2\n\u2502   @sofvanh Sick, let me know when I can try it!\n\u2502   \n\u2502   I just uploaded my data yesterday, so I can try it on very specific queries I think I'd fit\n\u2502   \u2193\n\u2502   1962553366036332995 [2025-09-01] @sofvanh \ud83d\udc9c 2\n\u2502   @qwweryo yess perfect :)\n\u251c\u2500\u2500 1962625709333008581 [2025-09-01] @albustime \ud83d\udc9c 2\n\u2502   @sofvanh @DefenderOfBasic So is this a rag over resumes or\n\u2502   \u2193\n\u2502   1962808103570727271 [2025-09-02] @sofvanh \n\u2502   @albustime @DefenderOfBasic It's over all your tweets (that you've uploaded to CA)\n\u2502   \u2193\n\u2502   1962808870151041093 [2025-09-02] @sofvanh \ud83d\udc9c 1\n\u2502   @albustime @DefenderOfBasic Though I'm currently building it on summaries of all your tweets so you lose some depth. I'm hoping it'll still give good results! still WIP\n\u251c\u2500\u2500 1962643514983891175 [2025-09-01] @louisvarge \ud83d\udc9c 2\n\u2502   @sofvanh super cool!\n\u251c\u2500\u2500 1962646400107454509 [2025-09-01] @zrkrlc \ud83d\udc9c 3\n\u2502   @sofvanh wait, i didn\u2019t know you were in this corner of twt!\n\u2502   \n\u2502   hello \ud83d\udc4b (we met at epistea)\n\u2514\u2500\u2500 1962711607248855506 [2025-09-02] @alex_with_ease \ud83d\udc9c 2\n    @sofvanh I so want to try this!\n\n===\n\n1962533621526323497 [2025-09-01] @exgenesis \ud83d\udc9c 25 \ud83d\udd01 2 [(SEED) type=semantic_search]\na dream project of mine on CA data \ud83d\ude0c\n  [Quoting @sofvanh: I'm really scared of sharing unfinished work but here goes: I'm working on a little project built on Community Archive, for searching across all users. The idea is that you can put very specific queries for people and the results will be so fitting it will feel like \u2728 magic \u2728 https://t.co/GyakVFT69W]\n\n===\n",
+  "seeds": [
+    {
+      "tweet_id": 1978455670220361896,
+      "source_type": "root"
+    },
+    {
+      "tweet_id": 1978463844889420088,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1978457840101531734,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1978757491052679461,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1979052614852473013,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1978606136501715053,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1978511312515690774,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1978515290280337825,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1978461431403081890,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1978456637837832479,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1978517078102417634,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1978461056398659764,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1979526116676108587,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1845537521062625772,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1962533621526323497,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1864386843887980625,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1954216914328187305,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1824881129842671976,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1923842232072700082,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1828542813438648794,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1367509846375989260,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1519598569552072705,
+      "source_type": "quote_of_semantic_search"
+    },
+    {
+      "tweet_id": 1517639805093482496,
+      "source_type": "quote_of_semantic_search"
+    },
+    {
+      "tweet_id": 1520125645250039808,
+      "source_type": "quote_of_semantic_search"
+    },
+    {
+      "tweet_id": 1949267655862755597,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1352719366698147840,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1863746133488758995,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1815576195276415361,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1854711529452507254,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1516387723724087297,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1863568641125417163,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1962519165513748601,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1975179662545289415,
+      "source_type": "quote_of_semantic_search"
+    },
+    {
+      "tweet_id": 1978455682174062831,
+      "source_type": "quote_of_semantic_search"
+    },
+    {
+      "tweet_id": 1550541255683317761,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1550571579746226180,
+      "source_type": "quote_of_semantic_search"
+    },
+    {
+      "tweet_id": 1550541378891010049,
+      "source_type": "quote_of_semantic_search"
+    },
+    {
+      "tweet_id": 1834176218674950506,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1525625085284872192,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1964953839628595392,
+      "source_type": "semantic_search"
+    }
+  ],
+  "rating": {
+    "reasoning_summary": "This strand documents the evolution of Twitter search and discovery tools from feature requests (2021) to a functional community-built infrastructure (2025). The boundary object is the Community Archive\u2014an open database of user-contributed tweets with semantic search capabilities. The arc moves from scattered complaints about Twitter's poor native search, through mechanical_monk's ListFollowers tool (2022) for analyzing follower networks, to DefenderOfBasic and exgenesis building the Community Archive (2024), and finally to sofvanh's Magic Search prototype (2025) that enables natural language queries across the entire dataset. This is constructive discourse: each iteration adds capabilities rather than debating approaches. The strand demonstrates real knowledge production (moving from 'Twitter search sucks' to 'we built our own queryable infrastructure') and creates durable artifacts that the community actively uses.",
+    "rating": 8,
+    "evolution": "high",
+    "cohesion": "high",
+    "utility": "high",
+    "essential_tweets": [
+      {
+        "tweet_id": 1367509843448315906,
+        "annotation": "The aspiration: Early complaint about Twitter's poor search functionality establishing the problem space"
+      },
+      {
+        "tweet_id": 1550055763317506050,
+        "annotation": "First major artifact: mechanical_monk ships ListFollowers tool for analyzing follower/following networks"
+      },
+      {
+        "tweet_id": 1550055770808496129,
+        "annotation": "Key use case: Using set operations to find follow recommendations and mutual connections"
+      },
+      {
+        "tweet_id": 1550541255683317761,
+        "annotation": "Evolution: Adding regex search to follower lists, moving toward semantic capabilities"
+      },
+      {
+        "tweet_id": 1854711235226358131,
+        "annotation": "The paradigm shift: DefenderOfBasic announces Community Archive with 3M+ tweets as open database"
+      },
+      {
+        "tweet_id": 1864322137479098468,
+        "annotation": "Validation moment: Semantic search working in production, demonstrating the power of the approach"
+      },
+      {
+        "tweet_id": 1923842232072700082,
+        "annotation": "Adoption signal: Community members directing each other to use the Archive for their search needs"
+      },
+      {
+        "tweet_id": 1962519165513748601,
+        "annotation": "Next evolution: sofvanh's Magic Search prototype for natural language queries across all users"
+      },
+      {
+        "tweet_id": 1962519174992769519,
+        "annotation": "Vision articulation: Recognizing niche skills and idiosyncratic value through semantic matching"
+      },
+      {
+        "tweet_id": 1962533621526323497,
+        "annotation": "Community validation: exgenesis (co-creator) endorsing the derivative project built on their infrastructure"
+      }
+    ]
+  }
+}
