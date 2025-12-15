@@ -147,7 +147,7 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
                             </div>
                         )}
                         <div className="text-xs bg-blue-50 border border-blue-200 px-3 py-2 rounded mt-2 text-blue-700">
-                            ℹ️ Data snapshot from late November 2024
+                            ℹ️ Data snapshot from early December 2025
                         </div>
                     </header>
                     
