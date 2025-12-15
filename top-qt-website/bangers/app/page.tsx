@@ -60,11 +60,19 @@ async function fetchTweetsByPeriod() {
   
   console.log(`year tweets: ${yearTweets.length}`);
   console.log(`sample 3 year tweets: ${JSON.stringify(yearTweets.slice(0, 3), null, 2)}`);
-  
-  // Calculate date ranges
-  const now = new Date();
-  const lastWeekDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const lastMonthDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+  // Calculate date ranges relative to the latest tweet in the dataset
+  // (since data is a snapshot, using current date would find nothing)
+  const { data: maxDateData } = await supabaseTopQt
+    .from('community_archive_tweets')
+    .select('created_at')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  const latestDate = maxDateData?.created_at ? new Date(maxDateData.created_at) : new Date();
+  const lastWeekDate = new Date(latestDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const lastMonthDate = new Date(latestDate.getTime() - 30 * 24 * 60 * 60 * 1000);
   
   // Fetch last month tweets
   const { data: lastMonthTweets } = await supabaseTopQt

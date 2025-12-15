@@ -9,6 +9,7 @@ import { fetchTweetDetails, getThread, getConversationId } from '@/lib/api';
 interface StrandDetailProps {
   strand: StrandWithTweet;
   onBack: () => void;
+  onSelectTweet?: (tweet: Tweet) => void;
 }
 
 interface EssentialTweetWithData extends EssentialTweet {
@@ -27,10 +28,42 @@ const getLevelBadge = (level: 'high' | 'medium' | 'low') => {
   }
 };
 
-export function StrandDetail({ strand, onBack }: StrandDetailProps) {
+const getSourceTypeStyle = (sourceType: string) => {
+  switch (sourceType) {
+    case 'root':
+      return 'bg-purple-100 text-purple-700 border-purple-300';
+    case 'semantic_search':
+      return 'bg-blue-100 text-blue-700 border-blue-300';
+    case 'quote_of_root':
+      return 'bg-orange-100 text-orange-700 border-orange-300';
+    case 'quote_of_semantic_search':
+      return 'bg-teal-100 text-teal-700 border-teal-300';
+    default:
+      return 'bg-gray-100 text-gray-600 border-gray-300';
+  }
+};
+
+const formatSourceType = (sourceType: string) => {
+  switch (sourceType) {
+    case 'root': return 'Root';
+    case 'semantic_search': return 'Semantic';
+    case 'quote_of_root': return 'Qt of Root';
+    case 'quote_of_semantic_search': return 'Qt of Semantic';
+    default: return sourceType;
+  }
+};
+
+export function StrandDetail({ strand, onBack, onSelectTweet }: StrandDetailProps) {
   const [essentialTweetsData, setEssentialTweetsData] = useState<EssentialTweetWithData[]>([]);
   const [loading, setLoading] = useState(true);
   const [columnWidth, setColumnWidth] = useState(380);
+  const [copied, setCopied] = useState(false);
+
+  const copyPlainText = async () => {
+    await navigator.clipboard.writeText(strand.thread_text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   useEffect(() => {
     async function loadEssentialTweets() {
@@ -94,110 +127,140 @@ export function StrandDetail({ strand, onBack }: StrandDetailProps) {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="bg-white border-b-2 border-black p-4 flex-shrink-0">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
+      <header className="bg-white border-b-2 border-black p-3 flex-shrink-0">
+        <div className="max-w-full mx-auto">
+          {/* Top row: navigation and actions */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
               <button
                 onClick={onBack}
-                className="p-2 hover:bg-gray-100 transition-colors border border-transparent hover:border-black"
+                className="p-1.5 hover:bg-gray-100 transition-colors border border-transparent hover:border-black"
                 title="Back to strands"
               >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M19 12H5" />
                   <path d="M12 19l-7-7 7-7" />
                 </svg>
               </button>
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight">Strand Detail</h1>
-                <p className="text-sm text-gray-600">
-                  {strand.rating.essential_tweets.length} essential tweets
-                </p>
-              </div>
+              <h1 className="text-lg font-bold tracking-tight">Strand Detail</h1>
+              <span className="text-sm text-gray-500">
+                {strand.rating.essential_tweets.length} essential tweets
+              </span>
             </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <label className="text-xs text-gray-500 uppercase">Column Width</label>
+
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <label className="text-xs text-gray-500">Width</label>
                 <input
                   type="range"
                   min={300}
                   max={600}
                   value={columnWidth}
                   onChange={e => setColumnWidth(Number(e.target.value))}
-                  className="w-24"
+                  className="w-20"
                 />
-                <span className="text-xs font-mono w-12">{columnWidth}px</span>
+                <span className="text-xs font-mono w-10">{columnWidth}</span>
               </div>
-              
+
+              <button
+                onClick={copyPlainText}
+                className="px-3 py-1.5 border border-black text-xs font-bold uppercase hover:bg-gray-100 transition-colors flex items-center gap-1.5"
+                title="Copy plain text"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+                {copied ? 'Copied!' : 'Copy Text'}
+              </button>
+
               <a
                 href={`/multi-thread-visualizer?seed=${strand.seed_tweet_id}`}
-                className="px-4 py-2 bg-black text-white font-bold text-sm uppercase hover:bg-gray-800 transition-colors"
+                className="px-3 py-1.5 bg-black text-white text-xs font-bold uppercase hover:bg-gray-800 transition-colors flex items-center gap-1.5"
               >
-                Recreate Strand
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 3v12" />
+                  <circle cx="18" cy="6" r="3" />
+                  <circle cx="6" cy="18" r="3" />
+                  <path d="M18 9a9 9 0 0 1-9 9" />
+                </svg>
+                Explore
               </a>
             </div>
           </div>
 
-          {/* Strand Info */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Seed Tweet */}
-            <div className="bg-gray-50 border border-gray-200 p-4">
-              <h3 className="text-xs uppercase font-bold text-gray-500 mb-3">Seed Tweet</h3>
+          {/* Compact info row: seed tweet, score, metrics, seeds */}
+          <div className="flex items-stretch gap-3 border border-gray-200 bg-gray-50 p-2">
+            {/* Seed Tweet - compact */}
+            <div
+              className={`flex items-center gap-2 flex-shrink-0 max-w-xs border-r border-gray-200 pr-3 ${onSelectTweet ? 'cursor-pointer hover:bg-gray-100' : ''}`}
+              onClick={() => strand.seedTweet && onSelectTweet?.(strand.seedTweet)}
+            >
               {strand.seedTweet ? (
-                <TweetCard tweet={strand.seedTweet} />
+                <>
+                  {strand.seedTweet.avatar_media_url && (
+                    <img src={strand.seedTweet.avatar_media_url} alt="" className="w-8 h-8 rounded-full flex-shrink-0" />
+                  )}
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold">@{strand.seedTweet.username}</div>
+                    <div className="text-xs text-gray-600 truncate max-w-[200px]">
+                      {strand.seedTweet.full_text.slice(0, 60)}{strand.seedTweet.full_text.length > 60 ? '...' : ''}
+                    </div>
+                  </div>
+                </>
               ) : (
-                <p className="text-sm text-gray-500">Tweet not found</p>
+                <span className="text-xs text-gray-400">No seed tweet</span>
               )}
             </div>
 
-            {/* Summary */}
-            <div className="bg-gray-50 border border-gray-200 p-4">
-              <h3 className="text-xs uppercase font-bold text-gray-500 mb-3">Analysis</h3>
-              <p className="text-sm leading-relaxed text-gray-700">
-                {strand.rating.reasoning_summary}
-              </p>
+            {/* Overall Score */}
+            <div className="flex items-center gap-2 border-r border-gray-200 pr-3">
+              <div className="text-2xl font-bold">{strand.rating.rating}</div>
+              <div className="text-xs uppercase text-gray-500">/10</div>
             </div>
 
-            {/* Scores */}
-            <div className="bg-gray-50 border border-gray-200 p-4">
-              <h3 className="text-xs uppercase font-bold text-gray-500 mb-3">Scores</h3>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="text-center">
-                  <div className="text-3xl font-bold">{strand.rating.rating}</div>
-                  <div className="text-xs uppercase text-gray-500">Overall</div>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs uppercase text-gray-500">Evolution</span>
-                    <span className={`px-2 py-0.5 text-xs font-semibold uppercase border rounded ${getLevelBadge(strand.rating.evolution)}`}>
-                      {strand.rating.evolution}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs uppercase text-gray-500">Cohesion</span>
-                    <span className={`px-2 py-0.5 text-xs font-semibold uppercase border rounded ${getLevelBadge(strand.rating.cohesion)}`}>
-                      {strand.rating.cohesion}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs uppercase text-gray-500">Utility</span>
-                    <span className={`px-2 py-0.5 text-xs font-semibold uppercase border rounded ${getLevelBadge(strand.rating.utility)}`}>
-                      {strand.rating.utility}
-                    </span>
-                  </div>
-                </div>
-              </div>
+            {/* Metrics badges */}
+            <div className="flex items-center gap-2 border-r border-gray-200 pr-3">
+              <span className={`px-1.5 py-0.5 text-xs font-semibold uppercase border rounded ${getLevelBadge(strand.rating.evolution)}`}>
+                E:{strand.rating.evolution}
+              </span>
+              <span className={`px-1.5 py-0.5 text-xs font-semibold uppercase border rounded ${getLevelBadge(strand.rating.cohesion)}`}>
+                C:{strand.rating.cohesion}
+              </span>
+              <span className={`px-1.5 py-0.5 text-xs font-semibold uppercase border rounded ${getLevelBadge(strand.rating.utility)}`}>
+                U:{strand.rating.utility}
+              </span>
             </div>
+
+            {/* Seeds breakdown */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs text-gray-500">Seeds ({strand.seeds?.length || 0}):</span>
+              {strand.seeds && strand.seeds.length > 0 ? (
+                Object.entries(
+                  strand.seeds.reduce((acc, s) => {
+                    acc[s.source_type] = (acc[s.source_type] || 0) + 1;
+                    return acc;
+                  }, {} as Record<string, number>)
+                ).map(([type, count]) => (
+                  <span
+                    key={type}
+                    className={`px-1.5 py-0.5 text-xs font-semibold border rounded ${getSourceTypeStyle(type)}`}
+                  >
+                    {formatSourceType(type)}: {count}
+                  </span>
+                ))
+              ) : (
+                <span className="text-xs text-gray-400">none</span>
+              )}
+            </div>
+          </div>
+
+          {/* Analysis - full width below */}
+          <div className="mt-2 p-2 bg-white border border-gray-200">
+            <p className="text-sm leading-relaxed text-gray-700">
+              <span className="font-semibold text-gray-500 uppercase text-xs mr-2">Analysis:</span>
+              {strand.rating.reasoning_summary}
+            </p>
           </div>
         </div>
       </header>
@@ -241,11 +304,16 @@ export function StrandDetail({ strand, onBack }: StrandDetailProps) {
                       <ThreadView
                         tweets={etData.threadTweets}
                         focusedTweetId={etData.tweet_id}
-                        onSelectTweet={() => {}}
+                        onSelectTweet={onSelectTweet || (() => {})}
                         onSelectQuotedTweet={async () => {}}
                       />
                     ) : etData.tweet ? (
-                      <TweetCard tweet={etData.tweet} />
+                      <div
+                        className={onSelectTweet ? 'cursor-pointer hover:opacity-80' : ''}
+                        onClick={() => etData.tweet && onSelectTweet?.(etData.tweet)}
+                      >
+                        <TweetCard tweet={etData.tweet} />
+                      </div>
                     ) : (
                       <div className="text-sm text-gray-500 text-center py-8">
                         Tweet not found

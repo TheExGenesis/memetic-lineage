@@ -131,11 +131,17 @@ export const ThreadView = ({
 
   const { tweetMap, childrenMap, focusedPath, rootIds } = treeData
 
+  // Render a node in the thread tree
+  // - depth: visual indentation depth (only increases when branching)
+  // - isLastChild: whether this is the last child of its parent
+  // - ancestorLines: which ancestor levels need vertical lines
+  // - isSequentialChild: true if parent had only one child (no branching)
   const renderNode = (
     tweetId: string,
     depth: number,
     isLastChild: boolean,
-    ancestorLines: boolean[]
+    ancestorLines: boolean[],
+    isSequentialChild: boolean = false
   ): React.ReactNode => {
     const tweet = tweetMap.get(tweetId)
     if (!tweet) return null
@@ -143,12 +149,30 @@ export const ThreadView = ({
     let children = childrenMap.get(tweetId) || []
     children = reorderForFocusedBranch(children, focusedPath)
     const hasChildren = children.length > 0
+    const hasMultipleChildren = children.length > 1
     const isCollapsed = collapsed.has(tweetId)
     const isFocused = focusedSet.has(tweetId)
 
     return (
       <div key={tweetId} className="relative">
+        {/* Subtle continuation line for sequential tweets (single-child chains) */}
+        {isSequentialChild && (
+          <div
+            className="flex justify-start ml-[10px] mb-1"
+            style={{ paddingLeft: depth * INDENT_PX }}
+          >
+            <div
+              style={{
+                width: 1,
+                height: 12,
+                backgroundColor: LINE_COLOR,
+              }}
+            />
+          </div>
+        )}
+
         <div className="flex items-stretch">
+          {/* Render ancestor vertical lines for indented nodes */}
           {ancestorLines.map((showLine, i) => (
             <div
               key={i}
@@ -168,7 +192,8 @@ export const ThreadView = ({
             </div>
           ))}
 
-          {depth > 0 && (
+          {/* Render L-connector only for branching nodes (depth > 0 means parent had multiple children) */}
+          {depth > 0 && !isSequentialChild && (
             <div
               className="flex-shrink-0 relative"
               style={{ width: INDENT_PX }}
@@ -204,6 +229,7 @@ export const ThreadView = ({
             </div>
           )}
 
+          {/* Collapse/expand button - only show if node has children that can branch */}
           {hasChildren ? (
             <button
               onClick={e => {
@@ -235,11 +261,17 @@ export const ThreadView = ({
           <div>
             {children.map((childId, idx) => {
               const isLast = idx === children.length - 1
-              const nextAncestorLines =
-                depth > 0
-                  ? [...ancestorLines, !isLastChild]
+              // Only indent and track ancestor lines when there's actual branching
+              const shouldIndent = hasMultipleChildren
+              const nextDepth = shouldIndent ? depth + 1 : depth
+              const nextAncestorLines = shouldIndent && depth > 0
+                ? [...ancestorLines, !isLastChild]
+                : shouldIndent
+                  ? [...ancestorLines, !isLast]
                   : ancestorLines
-              return renderNode(childId, depth + 1, isLast, nextAncestorLines)
+              const nextIsSequential = !hasMultipleChildren
+
+              return renderNode(childId, nextDepth, isLast, nextAncestorLines, nextIsSequential)
             })}
           </div>
         )}

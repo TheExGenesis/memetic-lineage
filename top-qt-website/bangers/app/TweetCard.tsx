@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { decode } from 'he'
 import { Tweet } from '@/lib/types'
 
@@ -37,12 +38,14 @@ export const TweetCard = ({ tweet, onQuotedTweetClick }: TweetCardProps) => {
   return (
     <div className="border-b border-black pb-4 mb-4 last:border-b-0 break-inside-avoid">
       <div className="flex items-start gap-3 mb-2">
-        <div className="w-8 h-8 bg-gray-200 rounded-full overflow-hidden flex-shrink-0 border border-black">
+        <div className="w-8 h-8 bg-gray-200 rounded-full overflow-hidden flex-shrink-0 border border-black relative">
           {tweet.avatar_media_url && (
-            <img
+            <Image
               src={tweet.avatar_media_url}
               alt={tweet.username}
-              className="w-full h-full object-cover"
+              fill
+              sizes="32px"
+              className="object-cover"
             />
           )}
         </div>
@@ -107,12 +110,14 @@ export const TweetCard = ({ tweet, onQuotedTweetClick }: TweetCardProps) => {
             {uniqueUrls.map((url, i) => (
               <div
                 key={i}
-                className="rounded-lg overflow-hidden border border-gray-200"
+                className="rounded-lg overflow-hidden border border-gray-200 relative aspect-video"
               >
-                <img
+                <Image
                   src={url}
                   alt="Tweet media"
-                  className="w-full h-auto object-cover max-h-96"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 360px"
+                  className="object-cover"
                 />
               </div>
             ))}
@@ -131,12 +136,14 @@ export const TweetCard = ({ tweet, onQuotedTweetClick }: TweetCardProps) => {
           }}
         >
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-5 h-5 bg-gray-200 rounded-full overflow-hidden flex-shrink-0">
+            <div className="w-5 h-5 bg-gray-200 rounded-full overflow-hidden flex-shrink-0 relative">
               {tweet.quoted_tweet.avatar_media_url && (
-                <img
+                <Image
                   src={tweet.quoted_tweet.avatar_media_url}
                   alt={tweet.quoted_tweet.username}
-                  className="w-full h-full object-cover"
+                  fill
+                  sizes="20px"
+                  className="object-cover"
                 />
               )}
             </div>
@@ -152,11 +159,13 @@ export const TweetCard = ({ tweet, onQuotedTweetClick }: TweetCardProps) => {
           </div>
           {tweet.quoted_tweet.media_urls &&
             tweet.quoted_tweet.media_urls.length > 0 && (
-              <div className="rounded overflow-hidden border border-gray-200">
-                <img
+              <div className="rounded overflow-hidden border border-gray-200 relative h-32">
+                <Image
                   src={tweet.quoted_tweet.media_urls[0]}
                   alt="Quoted media"
-                  className="w-full h-32 object-cover"
+                  fill
+                  sizes="300px"
+                  className="object-cover"
                 />
               </div>
             )}

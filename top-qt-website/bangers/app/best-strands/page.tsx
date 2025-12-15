@@ -17,7 +17,18 @@ function parseStrandJson(jsonText: string): Strand {
     .replace(/"seed_tweet_id":\s*(\d+)/g, '"seed_tweet_id": "$1"')
     .replace(/"tweet_id":\s*(\d+)/g, '"tweet_id": "$1"');
   
-  return JSON.parse(fixedJson);
+  const parsed = JSON.parse(fixedJson);
+  
+  // Handle both old format (seed_ids: number[]) and new format (seeds: {tweet_id, source_type}[])
+  if (!parsed.seeds && parsed.seed_ids) {
+    parsed.seeds = parsed.seed_ids.map((id: string | number) => ({
+      tweet_id: String(id),
+      source_type: 'root' as const, // Old data doesn't have source_type
+    }));
+  }
+  parsed.seeds = parsed.seeds || [];
+  
+  return parsed;
 }
 
 async function loadStrandsWithTweets(): Promise<StrandWithTweet[]> {

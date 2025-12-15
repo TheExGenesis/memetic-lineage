@@ -33,6 +33,13 @@ export interface EssentialTweet {
   annotation: string;
 }
 
+export type StrandSeedSourceType = 'root' | 'semantic_search' | 'quote_of_root' | 'quote_of_semantic_search';
+
+export interface StrandSeed {
+  tweet_id: string;
+  source_type: StrandSeedSourceType;
+}
+
 export interface StrandRating {
   reasoning_summary: string;
   rating: number;
@@ -45,6 +52,7 @@ export interface StrandRating {
 export interface Strand {
   seed_tweet_id: string; // String to preserve precision for large Twitter IDs
   thread_text: string;
+  seeds: StrandSeed[];
   rating: StrandRating;
 }
 

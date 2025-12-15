@@ -1,12 +1,16 @@
 'use client';
 
-import { useState } from 'react';
-import { StrandWithTweet } from '@/lib/types';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { StrandWithTweet, Tweet } from '@/lib/types';
 import { StrandDetail } from './StrandDetail';
+import { TweetPane } from '../TweetPane';
+import { VerticalSpine } from '../VerticalSpine';
 
 interface BestStrandsClientProps {
   strands: StrandWithTweet[];
 }
+
+const SPINE_WIDTH_PX = 48;
 
 const formatDate = (dateStr?: string) => {
   if (!dateStr) return 'Unknown';
@@ -36,16 +40,118 @@ const getLevelBadge = (level: 'high' | 'medium' | 'low') => {
 
 export function BestStrandsClient({ strands }: BestStrandsClientProps) {
   const [selectedStrand, setSelectedStrand] = useState<StrandWithTweet | null>(null);
+  const [selectedTweets, setSelectedTweets] = useState<Tweet[]>([]);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  // Calculate pane width based on selected tweets
+  const collapsedWidth = selectedTweets.length > 0 ? selectedTweets.length * SPINE_WIDTH_PX : 0;
+  const activePaneStyle = {
+    width: selectedTweets.length > 0 ? `calc(100vw - ${collapsedWidth}px)` : '500px',
+    minWidth: '500px',
+  };
+
+  // Auto-scroll when new panes are added
+  useEffect(() => {
+    if (scrollContainerRef.current && selectedTweets.length > 0) {
+      setTimeout(() => {
+        scrollContainerRef.current?.scrollTo({
+          left: scrollContainerRef.current.scrollWidth,
+          behavior: 'smooth',
+        });
+      }, 100);
+    }
+  }, [selectedTweets.length]);
+
+  const handleTweetClick = useCallback((tweet: Tweet, depth: number) => {
+    const newStack = depth === -1 ? [] : selectedTweets.slice(0, depth + 1);
+    newStack.push(tweet);
+    setSelectedTweets(newStack);
+  }, [selectedTweets]);
+
+  const handleClosePane = useCallback((index: number) => {
+    setSelectedTweets(selectedTweets.slice(0, index));
+  }, [selectedTweets]);
+
+  const handleSpineClick = useCallback((index: number) => {
+    const newStack = index === -1 ? [] : selectedTweets.slice(0, index + 1);
+    setSelectedTweets(newStack);
+  }, [selectedTweets]);
+
+  const handleBackFromStrand = useCallback(() => {
+    setSelectedStrand(null);
+    setSelectedTweets([]);
+  }, []);
+
+  // When viewing a strand with tweet panes
   if (selectedStrand) {
+    const hasSelectedTweets = selectedTweets.length > 0;
+
     return (
-      <StrandDetail 
-        strand={selectedStrand} 
-        onBack={() => setSelectedStrand(null)} 
-      />
+      <div className="h-screen flex flex-col bg-white text-black overflow-hidden">
+        <div
+          ref={scrollContainerRef}
+          className="flex flex-1 overflow-x-auto overflow-y-hidden scrollbar-hide"
+        >
+          {/* Strand Detail as main pane or spine */}
+          {hasSelectedTweets ? (
+            <VerticalSpine
+              label={`Strand: ${selectedStrand.seedTweet?.username || 'Unknown'}`}
+              onClick={() => setSelectedTweets([])}
+            />
+          ) : (
+            <div className="flex-shrink-0 h-full w-full">
+              <StrandDetail
+                strand={selectedStrand}
+                onBack={handleBackFromStrand}
+                onSelectTweet={(tweet) => handleTweetClick(tweet, -1)}
+              />
+            </div>
+          )}
+
+          {/* Stacked Tweet Panes */}
+          {selectedTweets.map((tweet, index) => {
+            const isLast = index === selectedTweets.length - 1;
+
+            if (!isLast) {
+              return (
+                <VerticalSpine
+                  key={`${tweet.tweet_id}-${index}`}
+                  tweet={tweet}
+                  onClick={() => handleSpineClick(index)}
+                />
+              );
+            }
+
+            return (
+              <div
+                key={`${tweet.tweet_id}-${index}`}
+                className="flex-shrink-0 h-full"
+                style={activePaneStyle}
+              >
+                <TweetPane
+                  tweet={tweet}
+                  onClose={() => handleClosePane(index)}
+                  onSelectTweet={(t) => handleTweetClick(t, index)}
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        <style jsx global>{`
+          .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+          }
+          .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
+        `}</style>
+      </div>
     );
   }
 
+  // Strand list view
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -80,7 +186,7 @@ export function BestStrandsClient({ strands }: BestStrandsClientProps) {
         </header>
 
         <div className="mb-4 bg-blue-50 border border-blue-200 rounded px-4 py-2 text-sm text-blue-800">
-          <span className="font-semibold">ℹ️ Note:</span> Data is from a static snapshot taken in late November 2024. 
+          <span className="font-semibold">Note:</span> Data is from a static snapshot taken in late November 2024.
           Strand ratings are generated by AI analysis of conversation threads.
         </div>
 
@@ -95,15 +201,16 @@ export function BestStrandsClient({ strands }: BestStrandsClientProps) {
                 <th className="text-center p-4 font-bold text-sm uppercase tracking-wide w-24">Cohesion</th>
                 <th className="text-center p-4 font-bold text-sm uppercase tracking-wide w-24">Utility</th>
                 <th className="text-center p-4 font-bold text-sm uppercase tracking-wide w-28">Date</th>
+                <th className="text-center p-4 font-bold text-sm uppercase tracking-wide w-24">Seeds</th>
               </tr>
             </thead>
             <tbody>
               {strands.map((strand, idx) => {
                 const seedTweet = strand.seedTweet;
-                const tweetPreview = seedTweet 
+                const tweetPreview = seedTweet
                   ? seedTweet.full_text.slice(0, 100) + (seedTweet.full_text.length > 100 ? '...' : '')
                   : 'Tweet not found';
-                const summaryPreview = strand.rating.reasoning_summary.slice(0, 120) + 
+                const summaryPreview = strand.rating.reasoning_summary.slice(0, 120) +
                   (strand.rating.reasoning_summary.length > 120 ? '...' : '');
 
                 return (
@@ -157,6 +264,11 @@ export function BestStrandsClient({ strands }: BestStrandsClientProps) {
                     <td className="p-4 text-center">
                       <span className="text-sm font-mono text-gray-600">
                         {formatDate(seedTweet?.created_at)}
+                      </span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="text-sm font-mono text-gray-600">
+                        {strand.seeds?.length || 0}
                       </span>
                     </td>
                   </tr>
