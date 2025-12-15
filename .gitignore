@@ -1,6 +1,8 @@
 # Cache directory for UMAP and K-Means results
 cache/
 cluster_reports/
+*.diskcache/
+
 # Python
 __pycache__/
 
@@ -19,5 +21,8 @@ py/.venv
 *.next
 *node_modules
 scratchpads/*.txt
+scratchpads/data/debug_responses
+scratchpads/data/example_strands
+scratchpads/data/*_old
 cluster_reports.zip
 cluster_volume_evolution.png
