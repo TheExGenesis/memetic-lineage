@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { fetchTweetDetails } from '@/lib/api';
-import { Strand, StrandWithTweet } from '@/lib/types';
+import { Strand, StrandWithTweet, GraphData, GraphNode } from '@/lib/types';
 import { BestStrandsClient } from './BestStrandsClient';
 
 // Path to rated strands in scratchpads
@@ -10,6 +10,9 @@ const RATED_STRANDS_DIR = path.join(
   process.cwd(), 
   '../../scratchpads/data/rated_strands'
 );
+
+// Path to graph data in public folder
+const GRAPH_DATA_PATH = path.join(process.cwd(), 'public/graph-data.json');
 
 // Parse a single strand JSON, fixing large integer tweet IDs
 function parseStrandJson(jsonText: string): Strand {
@@ -79,8 +82,47 @@ async function loadStrandsWithTweets(): Promise<StrandWithTweet[]> {
   return strandsWithTweets;
 }
 
+async function loadGraphData(): Promise<GraphData | null> {
+  try {
+    const jsonText = await fs.readFile(GRAPH_DATA_PATH, 'utf-8');
+    const graphData: GraphData = JSON.parse(jsonText);
+    
+    // Extract all unique tweet IDs from nodes
+    const tweetIds = graphData.nodes.map(n => n.tweet_id);
+    
+    // Fetch tweet details in batch
+    const tweets = await fetchTweetDetails(tweetIds);
+    const tweetMap = new Map(tweets.map(t => [t.tweet_id, t]));
+    
+    // Enrich nodes with tweet data
+    graphData.nodes = graphData.nodes.map((node: GraphNode) => {
+      const tweet = tweetMap.get(node.tweet_id);
+      if (tweet) {
+        return {
+          ...node,
+          avatar_url: tweet.avatar_media_url,
+          username: tweet.username,
+          full_text: tweet.full_text,
+          created_at: tweet.created_at,
+          media_urls: tweet.media_urls,
+        };
+      }
+      return node;
+    });
+    
+    return graphData;
+  } catch (e) {
+    console.error('Could not load graph data:', e);
+    return null;
+  }
+}
+
 export default async function BestStrandsPage() {
-  const strands = await loadStrandsWithTweets();
+  // Load both strands and graph data in parallel
+  const [strands, graphData] = await Promise.all([
+    loadStrandsWithTweets(),
+    loadGraphData(),
+  ]);
   
   if (strands.length === 0) {
     return (
@@ -92,7 +134,7 @@ export default async function BestStrandsPage() {
   
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading strands...</div>}>
-      <BestStrandsClient strands={strands} />
+      <BestStrandsClient strands={strands} graphData={graphData} />
     </Suspense>
   );
 }
