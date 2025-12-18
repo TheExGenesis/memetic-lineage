@@ -2,6 +2,7 @@
 
 import json
 import re
+import requests
 from pathlib import Path
 from typing import Optional
 
@@ -92,22 +93,43 @@ def load_rated_strand(filepath: Path) -> dict:
     return json.loads(fixed)
 
 
-def build_embedding_text(tweet_text: str, annotation: str) -> str:
+def extract_all_tweet_ids_from_thread(thread_text: str) -> list[int]:
+    """Extract all tweet IDs from thread_text."""
+    lines = thread_text.split('\n')
+    tweet_ids = []
+    
+    # Pattern to match tweet headers: optional tree chars, then tweet_id, then space and [
+    tweet_header_pattern = re.compile(r'^[│├└─\s]*(\d{15,})\s+\[')
+    
+    for line in lines:
+        match = tweet_header_pattern.match(line)
+        if match:
+            tweet_id = int(match.group(1))
+            tweet_ids.append(tweet_id)
+    
+    return tweet_ids
+
+
+def build_embedding_text(tweet_text: str, annotation: str = None) -> str:
     """Combine tweet text and annotation for embedding."""
-    return f"""Tweet:
+    if annotation:
+        return f"""Tweet:
 {tweet_text}
 
 Annotation:
 {annotation}"""
+    else:
+        return f"""Tweet:
+{tweet_text}"""
 
 # %%
 
 # Cell 1: Print text to be embedded for 5 strands
 
-strand_files = sorted(RATED_DIR.glob("*.json"))[:5]
+strand_files = sorted(RATED_DIR.glob("*.json"))
 print(f"Loading {len(strand_files)} strands...\n")
 
-all_embedding_texts = {}  # {strand_id: [{tweet_id, text_to_embed, annotation}, ...]}
+all_embedding_texts = {}  # {strand_id: [{tweet_id, text_to_embed, annotation, tweet_type}, ...]}
 
 for filepath in strand_files:
     strand = load_rated_strand(filepath)
@@ -121,42 +143,62 @@ for filepath in strand_files:
     print(f"Essential tweets: {len(essential_tweets)}")
     print(f"{'='*80}\n")
     
+    # Extract all tweet IDs from the thread
+    all_tweet_ids = extract_all_tweet_ids_from_thread(thread_text)
+    print(f"Total tweets in thread: {len(all_tweet_ids)}")
+    
+    # Create lookup for essential tweets
+    essential_lookup = {et['tweet_id']: et['annotation'] for et in essential_tweets}
+    
     strand_embeddings = []
     
-    for et in essential_tweets:
-        tweet_id = et['tweet_id']
-        annotation = et['annotation']
+    for tweet_id in all_tweet_ids:
+        tweet_id_str = str(tweet_id)
         
         # Extract tweet text from thread_text
-        tweet_text = parse_tweet_from_thread_text(thread_text, int(tweet_id))
+        tweet_text = parse_tweet_from_thread_text(thread_text, tweet_id)
         
         if tweet_text:
-            text_to_embed = build_embedding_text(tweet_text, annotation)
-            strand_embeddings.append({
-                'tweet_id': tweet_id,
-                'annotation': annotation,
-                'text_to_embed': text_to_embed
-            })
+            # Determine tweet type and annotation
+            if tweet_id_str in essential_lookup:
+                tweet_type = "essential"
+                annotation = essential_lookup[tweet_id_str]
+                text_to_embed = build_embedding_text(tweet_text, annotation)
+            else:
+                tweet_type = "regular"
+                annotation = None
+                text_to_embed = build_embedding_text(tweet_text)
             
-            print(f"--- Tweet {tweet_id} ---")
-            print(f"Annotation: {annotation}")
-            print(f"Tweet text:\n{tweet_text[:500]}{'...' if len(tweet_text) > 500 else ''}")
-            print()
+            # Check if it's the root tweet
+            if tweet_id_str == strand_id:
+                tweet_type = "root_essential" if tweet_type == "essential" else "root_regular"
+            
+            strand_embeddings.append({
+                'tweet_id': tweet_id_str,
+                'annotation': annotation,
+                'text_to_embed': text_to_embed,
+                'tweet_type': tweet_type
+            })
+
         else:
             print(f"[WARN] Could not find tweet {tweet_id} in thread_text")
     
     all_embedding_texts[strand_id] = strand_embeddings
-    print(f"\n")
+    print(f"Processed {len(strand_embeddings)} tweets ({len(essential_tweets)} essential, {len(strand_embeddings) - len(essential_tweets)} regular)\n")
 
 # Summary
 total_tweets = sum(len(v) for v in all_embedding_texts.values())
+essential_count = sum(len([t for t in v if t['tweet_type'] in ['essential', 'root_essential']]) for v in all_embedding_texts.values())
+regular_count = total_tweets - essential_count
+
 print(f"\n{'='*80}")
-print(f"Total: {len(all_embedding_texts)} strands, {total_tweets} essential tweets to embed")
+print(f"Total: {len(all_embedding_texts)} strands, {total_tweets} tweets to embed")
+print(f"  - Essential tweets: {essential_count}")
+print(f"  - Regular tweets: {regular_count}")
 
 # %%
 
 # Cell 2: Generate embeddings and save results
-
 import os
 from openai import OpenAI
 from dotenv import load_dotenv
@@ -205,23 +247,42 @@ for filepath in tqdm(all_strand_files, desc="Strands"):
     if output_path.exists():
         continue
     
+    # Extract all tweet IDs from the thread
+    all_tweet_ids = extract_all_tweet_ids_from_thread(thread_text)
+    
+    # Create lookup for essential tweets
+    essential_lookup = {et['tweet_id']: et['annotation'] for et in essential_tweets}
+    
     # Build texts to embed
     results = []
     texts_to_embed = []
     
-    for et in essential_tweets:
-        tweet_id = et['tweet_id']
-        annotation = et['annotation']
-        tweet_text = parse_tweet_from_thread_text(thread_text, int(tweet_id))
+    for tweet_id in all_tweet_ids:
+        tweet_id_str = str(tweet_id)
+        tweet_text = parse_tweet_from_thread_text(thread_text, tweet_id)
         
         if tweet_text:
-            text_to_embed = build_embedding_text(tweet_text, annotation)
+            # Determine tweet type and annotation
+            if tweet_id_str in essential_lookup:
+                tweet_type = "essential"
+                annotation = essential_lookup[tweet_id_str]
+                text_to_embed = build_embedding_text(tweet_text, annotation)
+            else:
+                tweet_type = "regular"
+                annotation = None
+                text_to_embed = build_embedding_text(tweet_text)
+            
+            # Check if it's the root tweet
+            if tweet_id_str == strand_id:
+                tweet_type = "root_essential" if tweet_type == "essential" else "root_regular"
+            
             texts_to_embed.append(text_to_embed)
             results.append({
-                'tweet_id': tweet_id,
+                'tweet_id': tweet_id_str,
                 'annotation': annotation,
                 'tweet_text': tweet_text,
                 'text_embedded': text_to_embed,
+                'tweet_type': tweet_type,
                 'embedding': None  # Will be filled
             })
     
@@ -240,7 +301,7 @@ for filepath in tqdm(all_strand_files, desc="Strands"):
     output_data = {
         'seed_tweet_id': strand_id,
         'model': EMBEDDING_MODEL,
-        'essential_tweet_embeddings': results
+        'all_tweet_embeddings': results  # Renamed from 'essential_tweet_embeddings'
     }
     
     with open(output_path, 'w') as f:
@@ -261,13 +322,33 @@ if embedding_files:
     print(f"\nSample file: {embedding_files[0].name}")
     print(f"  seed_tweet_id: {sample['seed_tweet_id']}")
     print(f"  model: {sample['model']}")
-    print(f"  essential_tweets: {len(sample['essential_tweet_embeddings'])}")
     
-    if sample['essential_tweet_embeddings']:
-        first = sample['essential_tweet_embeddings'][0]
+    # Handle both old and new format
+    if 'all_tweet_embeddings' in sample:
+        embeddings = sample['all_tweet_embeddings']
+        print(f"  all_tweets: {len(embeddings)}")
+        
+        # Count by type
+        type_counts = {}
+        for emb in embeddings:
+            tweet_type = emb.get('tweet_type', 'unknown')
+            type_counts[tweet_type] = type_counts.get(tweet_type, 0) + 1
+        
+        print(f"  tweet types: {dict(type_counts)}")
+        
+    else:
+        # Old format fallback
+        embeddings = sample['essential_tweet_embeddings']
+        print(f"  essential_tweets: {len(embeddings)}")
+    
+    if embeddings:
+        first = embeddings[0]
         print(f"\n  First embedding:")
         print(f"    tweet_id: {first['tweet_id']}")
-        print(f"    annotation: {first['annotation'][:80]}...")
+        print(f"    tweet_type: {first.get('tweet_type', 'N/A')}")
+        annotation = first.get('annotation')
+        if annotation:
+            print(f"    annotation: {annotation[:80]}...")
         print(f"    embedding dim: {len(first['embedding'])}")
         print(f"    embedding sample: {first['embedding'][:5]}...")
 
@@ -307,11 +388,18 @@ for filepath in embedding_files:
     data = json.loads(filepath.read_text())
     strand_id = data['seed_tweet_id']
     
-    for item in data['essential_tweet_embeddings']:
+    # Handle both old and new format
+    if 'all_tweet_embeddings' in data:
+        embeddings = data['all_tweet_embeddings']
+    else:
+        # Old format fallback
+        embeddings = data['essential_tweet_embeddings']
+    
+    for item in embeddings:
         all_embeddings.append(item['embedding'])
         all_strand_ids.append(strand_id)
         all_tweet_ids.append(item['tweet_id'])
-        all_annotations.append(item['annotation'][:50] + "...")
+        all_annotations.append(item.get('annotation', 'No annotation'))
         # Add wrapped text for hover
         text_embedded = item.get('text_embedded', item.get('tweet_text', ''))
         all_texts.append(wrap_text(text_embedded))
@@ -445,368 +533,449 @@ else:
 
 # %%
 
-# Cell: Compute strand-level UMAP positions for visualization initialization
-# Average the embeddings per strand, then UMAP to 2D
+# Cell: Generate strand titles using Groq
+from groq import Groq
 
-print("Computing strand-level UMAP positions...")
+# Initialize Groq client
+groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-# Load all embeddings and group by strand
-strand_embeddings = {}  # {strand_id: [embeddings]}
-
-embedding_files = sorted(EMBEDDINGS_DIR.glob("*.json"))
-for filepath in embedding_files:
-    data = json.loads(filepath.read_text())
-    strand_id = data['seed_tweet_id']
-    embeddings = [item['embedding'] for item in data['essential_tweet_embeddings']]
-    strand_embeddings[strand_id] = embeddings
-
-print(f"Loaded embeddings for {len(strand_embeddings)} strands")
-
-# Compute average embedding per strand
-strand_ids = list(strand_embeddings.keys())
-avg_embeddings = []
-
-for strand_id in strand_ids:
-    embs = strand_embeddings[strand_id]
-    avg = np.mean(embs, axis=0)
-    avg_embeddings.append(avg)
-
-avg_embeddings = np.array(avg_embeddings)
-print(f"Average embedding matrix shape: {avg_embeddings.shape}")
-
-# Run UMAP on the 100 strand-level embeddings
-print("Running UMAP on strand-level embeddings...")
-strand_reducer = umap.UMAP(
-    n_components=2,
-    n_neighbors=10,  # Smaller since we only have 100 points
-    min_dist=0.3,    # More spread out
-    metric='cosine',
-    random_state=42
-)
-strand_positions_2d = strand_reducer.fit_transform(avg_embeddings)
-print(f"UMAP output shape: {strand_positions_2d.shape}")
-
-# Scale to reasonable pixel coordinates for visualization
-# Target: spread across ~3000x2000 canvas with some margin
-x_min, x_max = strand_positions_2d[:, 0].min(), strand_positions_2d[:, 0].max()
-y_min, y_max = strand_positions_2d[:, 1].min(), strand_positions_2d[:, 1].max()
-
-# Normalize to [0, 1] then scale
-CANVAS_WIDTH = 3500
-CANVAS_HEIGHT = 2000
-MARGIN = 200
-
-x_scaled = (strand_positions_2d[:, 0] - x_min) / (x_max - x_min) * (CANVAS_WIDTH - 2*MARGIN) + MARGIN
-y_scaled = (strand_positions_2d[:, 1] - y_min) / (y_max - y_min) * (CANVAS_HEIGHT - 2*MARGIN) + MARGIN
-
-# Build output: {strand_id: {x, y}}
-strand_umap_positions = {}
-for i, strand_id in enumerate(strand_ids):
-    strand_umap_positions[strand_id] = {
-        'x': float(x_scaled[i]),
-        'y': float(y_scaled[i]),
-        'umap_raw_x': float(strand_positions_2d[i, 0]),
-        'umap_raw_y': float(strand_positions_2d[i, 1]),
-    }
-
-# Save to JSON
-output_path = DATA_DIR / "strand_umap_positions.json"
-with open(output_path, 'w') as f:
-    json.dump(strand_umap_positions, f, indent=2)
-
-print(f"\nSaved strand UMAP positions to {output_path}")
-print(f"Canvas size: {CANVAS_WIDTH}x{CANVAS_HEIGHT}")
-print(f"X range: {x_scaled.min():.0f} - {x_scaled.max():.0f}")
-print(f"Y range: {y_scaled.min():.0f} - {y_scaled.max():.0f}")
-
-# Quick visualization
-plt.figure(figsize=(12, 8))
-plt.scatter(x_scaled, y_scaled, c=range(len(strand_ids)), cmap='tab20', s=100, alpha=0.7)
-plt.xlabel('X (pixels)')
-plt.ylabel('Y (pixels)')
-plt.title(f'Strand UMAP Positions ({len(strand_ids)} strands)')
-plt.gca().invert_yaxis()  # Invert Y to match screen coordinates
-plt.tight_layout()
-plt.savefig(DATA_DIR / "strand_umap_positions.png", dpi=150)
-plt.show()
-
-# %%
-
-# Cell: Force-directed graph simulation in Python
-# Create worm-like strand visualization using NetworkX force layout
-
-import networkx as nx
-from scipy.spatial.distance import cosine
-
-print("Building force-directed graph...")
-
-# Load graph data
-embedding_files = sorted(EMBEDDINGS_DIR.glob("*.json"))
-all_nodes = []
-all_embeddings = {}
-intra_edges = []
-strand_to_nodes = {}
-
-# Build nodes and intra-strand edges
-for filepath in embedding_files:
-    data = json.loads(filepath.read_text())
-    strand_id = data['seed_tweet_id']
-    strand_to_nodes[strand_id] = []
+def generate_strand_title(tweet_texts_and_annotations: list[tuple[str, str]], strand_id: str) -> str:
+    """Generate a concise title for a strand based on tweet texts and annotations."""
     
-    for i, tweet in enumerate(data['essential_tweet_embeddings']):
-        node_id = tweet['tweet_id']
-        all_nodes.append(node_id)
-        all_embeddings[node_id] = tweet['embedding']
-        strand_to_nodes[strand_id].append(node_id)
+    # Build content for the prompt
+    content_parts = []
+    for i, (tweet_text, annotation) in enumerate(tweet_texts_and_annotations, 1):
+        content_parts.append(f"Tweet {i}:")
+        content_parts.append(f"Text: {tweet_text[:2000]}...")
+        content_parts.append(f"Annotation: {annotation}")
+        content_parts.append("")
+    
+    content = "\n".join(content_parts)
+    
+    system_prompt = """You are a content curator. Given a collection of tweets and their annotations from a Twitter thread, generate a concise title that captures the main theme or topic. The title should be 3 words or less and capture the essence of what this thread is about.
+
+Focus on the juice of the topic, use the words from the tweets, not generic terms. Simply output the title, no formatting or punctuation. Don't think for very long."""
+
+    user_prompt = f"""Here are the essential tweets and annotations from a Twitter thread:
+
+{content}
+
+Generate a title for this thread in 3 words or less that captures its main theme:"""
+
+    try:
+        completion = groq_client.chat.completions.create(
+            model="openai/gpt-oss-20b",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.5,
+            max_tokens=500
+        )
+        print(f"User prompt: {user_prompt}")
+        print(f"Completion: {completion.choices[0]}")
+        title = completion.choices[0].message.content
+        print(f"Title: {title}")
+        # Clean up title - remove quotes, periods, etc.
+        title = title.strip('"\'.,!?')
+        return title
         
-        # Intra-strand edge to previous tweet
-        if i > 0:
-            prev_node = data['essential_tweet_embeddings'][i-1]['tweet_id']
-            intra_edges.append((prev_node, node_id, {'type': 'intra', 'weight': 2.0}))
+    except Exception as e:
+        print(f"Error generating title for strand {strand_id}: {e}")
+        return "Thread"
 
-print(f"Nodes: {len(all_nodes)}, Intra-strand edges: {len(intra_edges)}")
+# Generate titles for all strands
+print("Generating titles for strands...")
+strand_titles = {}
 
-# Build inter-strand edges (k=3 nearest neighbors)
-K = 3
-inter_edges = []
-node_to_strand = {node: strand for strand, nodes in strand_to_nodes.items() for node in nodes}
-
-print("Computing k-nearest neighbors for inter-strand edges (vectorized)...")
-
-# Create embedding matrix and strand array
-embedding_matrix = np.array([all_embeddings[node] for node in all_nodes])
-node_strands = np.array([node_to_strand[node] for node in all_nodes])
-
-# Normalize embeddings for cosine similarity
-embedding_matrix_norm = embedding_matrix / np.linalg.norm(embedding_matrix, axis=1, keepdims=True)
-
-# Compute all pairwise cosine similarities at once
-similarity_matrix = np.dot(embedding_matrix_norm, embedding_matrix_norm.T)
-
-nb_sim_edges = 0
-# For each node, find k nearest neighbors from different strands
-for i, node in enumerate(all_nodes):
-    node_strand = node_to_strand[node]
+# Group tweets by strand
+strands_content = {}
+for i, (tweet_id, strand_id, text) in enumerate(zip(all_tweet_ids, all_strand_ids, all_texts)):
+    if strand_id not in strands_content:
+        strands_content[strand_id] = []
     
-    # Mask out same-strand nodes and self
-    same_strand_mask = node_strands == node_strand
-    same_strand_mask[i] = True  # Also mask self
-    
-    # Get similarities for this node
-    sims = similarity_matrix[i].copy()
-    sims[same_strand_mask] = -np.inf  # Mask out same-strand nodes
-    
-    # Get top K indices
-    top_k_indices = np.argsort(sims)[-K:][::-1]
-    
-    # Add edges
-    for j in top_k_indices:
-        if sims[j] != -np.inf:  # Valid neighbor
-            other_node = all_nodes[j]
-            sim = sims[j]
-            inter_edges.append((node, other_node, {'type': 'inter', 'weight': sim if sim > 0.60 else 0.0}))
-            if sim > 0.60:
-                nb_sim_edges +=1
+    # Get annotation for this tweet
+    annotation = all_annotations[i]
+    # Remove <br> tags and clean up text
+    clean_text = text.replace('<br>', ' ').strip()
+    strands_content[strand_id].append((clean_text, annotation))
 
-print(f"Number of inter-strand edges: {nb_sim_edges}")
-# %%
-print(f"Inter-strand edges: {len(inter_edges)}")
+# Generate titles
+for strand_id, content_list in list(strands_content.items()):
+    print(f"Generating title for strand {strand_id}...")
+    title = generate_strand_title(content_list, strand_id)
+    strand_titles[strand_id] = title
+    print(f"  → {title}")
 
-# Create NetworkX graph
-G = nx.Graph()
-G.add_nodes_from(all_nodes)
-G.add_edges_from(intra_edges)
-G.add_edges_from(inter_edges)
+print(f"\nGenerated {len(strand_titles)} strand titles")
 
-# Use UMAP positions as initial layout
-initial_pos = {}
-strand_umap_positions_data = json.loads((DATA_DIR / 'strand_umap_positions.json').read_text())
-
-for strand_id, nodes in strand_to_nodes.items():
-    umap_pos = strand_umap_positions_data.get(strand_id, {'x': 1500, 'y': 1000})
-    center_x = umap_pos['x']
-    center_y = umap_pos['y']
-    
-    # Spread nodes horizontally around UMAP position
-    num_nodes = len(nodes)
-    node_spacing = 28
-    chain_width = (num_nodes - 1) * node_spacing
-    start_x = center_x - chain_width / 2
-    
-    for i, node in enumerate(nodes):
-        initial_pos[node] = np.array([start_x + i * node_spacing, center_y])
-
-print("Running force-directed layout...")
-
-# Run spring layout with custom parameters
-# We'll use spring_layout but configure it to match our D3 forces
-# k controls the optimal distance between nodes - smaller k = more repulsion
-pos = nx.spring_layout(
-    G,
-    pos=initial_pos,
-    k=25.0,  # Increased from 20.0 - larger k = stronger repulsion between nodes
-    iterations=200,  # Number of iterations
-    weight='weight',  # Use edge weights
-    scale=None,  # Don't scale the output
-    center=(1750, 1000),  # Center of canvas
-    seed=42,
-)
-
-print("Layout complete!")
-
-# %%
-# Save positions
-node_positions = {}
-for node, (x, y) in pos.items():
-    node_positions[node] = {'x': float(x), 'y': float(y)}
-
-output_path = DATA_DIR / 'force_layout_positions.json'
-with open(output_path, 'w') as f:
-    json.dump(node_positions, f, indent=2)
-
-print(f"Saved positions to {output_path}")
-
-# %%
-# Visualize
-fig, ax = plt.subplots(figsize=(16, 10))
-
-# Assign colors by strand
-strand_ids = list(strand_to_nodes.keys())
-strand_colors = plt.cm.tab20(np.linspace(0, 1, min(20, len(strand_ids))))
-node_colors = []
-for node in all_nodes:
-    strand = node_to_strand[node]
-    strand_idx = strand_ids.index(strand) % 20
-    node_colors.append(strand_colors[strand_idx])
-
-# Draw inter-strand edges (very faint)
-inter_edge_list = [(u, v) for u, v, d in G.edges(data=True) if d.get('type') == 'inter']
-nx.draw_networkx_edges(
-    G, pos, edgelist=inter_edge_list,
-    alpha=0.05, width=0.3, edge_color='gray', ax=ax
-)
-
-# Draw intra-strand edges (clear)
-intra_edge_list = [(u, v) for u, v, d in G.edges(data=True) if d.get('type') == 'intra']
-for u, v in intra_edge_list:
-    strand = node_to_strand[u]
-    strand_idx = strand_ids.index(strand) % 20
-    color = strand_colors[strand_idx]
-    x_vals = [pos[u][0], pos[v][0]]
-    y_vals = [pos[u][1], pos[v][1]]
-    ax.plot(x_vals, y_vals, color=color, alpha=0.8, linewidth=2, zorder=1)
-
-# Draw nodes
-xs = [pos[node][0] for node in all_nodes]
-ys = [pos[node][1] for node in all_nodes]
-ax.scatter(xs, ys, c=node_colors, s=50, alpha=0.9, edgecolors='white', linewidths=0.5, zorder=2)
-
-ax.set_xlim(0, 3500)
-ax.set_ylim(0, 2000)
-ax.invert_yaxis()
-ax.set_aspect('equal')
-ax.set_title(f'Force-Directed Strand Graph ({len(all_nodes)} nodes, {len(strand_ids)} strands)', fontsize=14)
-ax.axis('off')
-
-plt.tight_layout()
-plt.savefig(DATA_DIR / 'force_layout_graph.png', dpi=150, bbox_inches='tight')
-plt.show()
-
-print("Visualization saved to force_layout_graph.png")
 
 # %%
 
-# %%
 
 # %%
-# Create interactive Plotly version
+
+# Cell: Get embedding from Qdrant database by tweet ID
+
+import sys
+import requests
+sys.path.append('../')  # Add parent directory to path for lib imports
+
 try:
-    import plotly.graph_objects as go
+    from lib.semantic_search import _search_embeddings_request
+    print("Using existing search functions from lib")
+except ImportError:
+    print("Creating standalone search function...")
     
-    print("\nCreating interactive visualization...")
+    def _search_embeddings_request(payload: dict) -> dict:
+        """Make the HTTP request to search API. Raises on failure."""
+        url = 'http://embed.tweetstack.app/embeddings/'
+        response = requests.post(url, json=payload, headers={'Content-Type': 'application/json'}, timeout=30)
+        response.raise_for_status()
+        return response.json()
+
+
+def get_embedding_by_tweet_id(tweet_id: str) -> Optional[dict]:
+    """
+    Retrieve embedding from Qdrant database by tweet ID.
     
-    fig = go.Figure()
-    
-    # Add inter-strand edges (very faint)
-    for u, v, d in G.edges(data=True):
-        if d.get('type') == 'inter':
-            x0, y0 = pos[u]
-            x1, y1 = pos[v]
-            fig.add_trace(go.Scatter(
-                x=[x0, x1, None],
-                y=[y0, y1, None],
-                mode='lines',
-                line=dict(color='lightgray', width=0.3),
-                opacity=0.15,
-                hoverinfo='skip',
-                showlegend=False
-            ))
-    
-    # Add intra-strand edges (colored by strand)
-    for strand_id, nodes in strand_to_nodes.items():
-        strand_idx = strand_ids.index(strand_id) % 20
-        color = f'rgb({int(strand_colors[strand_idx][0]*255)}, {int(strand_colors[strand_idx][1]*255)}, {int(strand_colors[strand_idx][2]*255)})'
+    Args:
+        tweet_id: The tweet ID to search for
         
-        edge_x = []
-        edge_y = []
-        for i in range(len(nodes) - 1):
-            u, v = nodes[i], nodes[i+1]
-            x0, y0 = pos[u]
-            x1, y1 = pos[v]
-            edge_x.extend([x0, x1, None])
-            edge_y.extend([y0, y1, None])
-        
-        if edge_x:
-            fig.add_trace(go.Scatter(
-                x=edge_x,
-                y=edge_y,
-                mode='lines',
-                line=dict(color=color, width=2),
-                opacity=0.8,
-                hoverinfo='skip',
-                showlegend=False
-            ))
+    Returns:
+        Dictionary with embedding data if found, None otherwise
+        Format: {
+            'key': str,
+            'vector': list[float],
+            'metadata': dict
+        }
+    """
+    # Try to get the embedding by filtering for the specific tweet_id
+    # We'll use an empty search term and filter by tweet_id
+    payload = {
+        'searchTerm': '',  # Empty search term
+        'k': 1,  # Only need one result
+        'threshold': 0.0,  # Accept any distance since we're looking for exact match
+        'filter': {
+            'must': [
+                {
+                    'key': 'tweet_id',
+                    'match': {'value': tweet_id}
+                }
+            ]
+        }
+    }
     
-    # Add nodes (colored by strand)
-    for strand_id, nodes in strand_to_nodes.items():
-        strand_idx = strand_ids.index(strand_id) % 20
-        color = f'rgb({int(strand_colors[strand_idx][0]*255)}, {int(strand_colors[strand_idx][1]*255)}, {int(strand_colors[strand_idx][2]*255)})'
+    try:
+        print(f"Searching for tweet_id: {tweet_id}")
+        response = _search_embeddings_request(payload)
         
-        node_x = [pos[node][0] for node in nodes]
-        node_y = [pos[node][1] for node in nodes]
-        node_text = [f"Tweet: {node}<br>Strand: {strand_id[:8]}..." for node in nodes]
+        if not response.get('success'):
+            print(f"API returned success=False: {response}")
+            return None
+            
+        results = response.get('results', [])
+        if not results:
+            print(f"No results found for tweet_id: {tweet_id}")
+            return None
+            
+        # Get the first result
+        result = results[0]
+        print(f"Found embedding for tweet_id: {tweet_id}")
+        print(f"  Key: {result.get('key')}")
+        print(f"  Distance: {result.get('distance')}")
+        print(f"  Metadata keys: {list(result.get('metadata', {}).keys())}")
         
-        fig.add_trace(go.Scatter(
-            x=node_x,
-            y=node_y,
-            mode='markers',
-            marker=dict(
-                size=8,
-                color=color,
-                line=dict(color='white', width=0.5)
-            ),
-            text=node_text,
-            hoverinfo='text',
-            showlegend=False
-        ))
+        return {
+            'key': result.get('key'),
+            'distance': result.get('distance'),
+            'metadata': result.get('metadata', {}),
+            # Note: The search API doesn't return the actual vector, just similarity results
+        }
+        
+    except Exception as e:
+        print(f"Error retrieving embedding for tweet_id {tweet_id}: {e}")
+        return None
+
+
+# First, let's explore the API endpoints
+print("Exploring embeddings API endpoints...")
+
+def test_embeddings_api():
+    """Test different endpoints to understand the API structure."""
+    base_url = 'http://embed.tweetstack.app'
     
-    fig.update_layout(
-        title=f'Interactive Force-Directed Strand Graph ({len(all_nodes)} nodes, {len(strand_ids)} strands)',
-        width=1400,
-        height=900,
-        xaxis=dict(range=[0, 3500], showgrid=False, zeroline=False, showticklabels=False),
-        yaxis=dict(range=[2000, 0], showgrid=False, zeroline=False, showticklabels=False, scaleanchor='x'),
-        plot_bgcolor='white',
-        hovermode='closest'
+    endpoints_to_test = [
+        '/embeddings/',
+        '/embeddings',
+        '/embeddings/keys',
+        '/embeddings/metadata'
+    ]
+    
+    for endpoint in endpoints_to_test:
+        try:
+            print(f"\nTesting GET {endpoint}")
+            response = requests.post(f"{base_url}{endpoint}", timeout=10)
+            print(f"Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                try:
+                    data = response.json()
+                    print(f"Response type: {type(data)}")
+                    if isinstance(data, dict):
+                        print(f"Keys: {list(data.keys())}")
+                    elif isinstance(data, list):
+                        print(f"List length: {len(data)}")
+                        if data:
+                            print(f"First item: {data[0]}")
+                    else:
+                        print(f"Response: {data}")
+                except:
+                    text = response.text[:200]
+                    print(f"Response (text): {text}...")
+            else:
+                print(f"Error: {response.text[:100]}")
+                
+        except requests.RequestException as e:
+            print(f"Request failed: {e}")
+
+test_embeddings_api()
+
+# Test with one tweet ID from our data
+print("\n" + "="*60)
+print("Testing embedding retrieval from Qdrant...")
+
+# Get a tweet ID from our processed data to test with
+if 'all_tweet_ids' in locals() and all_tweet_ids:
+    test_tweet_id = "1486704973840855041"
+    print(f"\nTesting with tweet_id: {test_tweet_id}")
+    
+    result = get_embedding_by_tweet_id(test_tweet_id)
+    
+    if result:
+        print(f"\n✓ Successfully retrieved embedding!")
+        print(f"Key: {result['key']}")
+        print(f"Distance: {result['distance']}")
+        print(f"Metadata: {result['metadata']}")
+    else:
+        print(f"\n✗ Could not retrieve embedding for tweet_id: {test_tweet_id}")
+        print("This might mean:")
+        print("- The tweet is not in the Qdrant database")
+        print("- The metadata field name is different")
+        print("- The API endpoint structure is different")
+else:
+    print("No tweet IDs available for testing. Run the previous cells first.")
+
+# %%
+
+# %%
+
+# MANUAL EXPORT CELL - Run this after reviewing plots above
+# Exports UMAP positions with metadata for frontend visualization
+
+def export_umap_positions(
+    embedding_2d,
+    all_tweet_ids,
+    all_strand_ids,
+    all_texts,
+    all_annotations,
+    output_path=None
+):
+    """
+    Export UMAP positions to JSON for frontend.
+    Includes position relaxation to avoid overlaps and space for envelopes.
+    """
+    if output_path is None:
+        output_path = Path("../top-qt-website/bangers/public/umap_tweets.json")
+    
+    print("Preparing export data...")
+    
+    # Load rated strands for metadata
+    rated_cache = {}
+    for rf in RATED_DIR.glob("*.json"):
+        rated_cache[rf.stem] = load_rated_strand(rf)
+    
+    def has_image_in_thread(strand_id: str, tweet_id: str) -> bool:
+        s = rated_cache.get(str(strand_id))
+        if not s:
+            return False
+        tid = str(tweet_id)
+        lines = s['thread_text'].split('\n')
+        found = False
+        for i, l in enumerate(lines):
+            if tid in l:
+                found = True
+            if found:
+                window = lines[i:i+8]
+                if any(x.strip().startswith('Images:') for x in window):
+                    return True
+                if any(x.strip().startswith('[Image #') for x in window):
+                    return True
+                break
+        return False
+    
+    # Normalize UMAP coords to [0,1]
+    x_min, x_max = embedding_2d[:, 0].min(), embedding_2d[:, 0].max()
+    y_min, y_max = embedding_2d[:, 1].min(), embedding_2d[:, 1].max()
+    norm_x = (embedding_2d[:, 0] - x_min) / (x_max - x_min + 1e-9)
+    norm_y = (embedding_2d[:, 1] - y_min) / (y_max - y_min + 1e-9)
+    
+    # Relax positions to avoid overlaps
+    print("Relaxing positions to avoid overlaps...")
+    pts = list(zip(norm_x, norm_y))
+    
+    def relax_positions(points, min_dist=0.02, iterations=300, step=0.4):
+        pts = np.array(points)
+        n = len(pts)
+        
+        # Pre-calculate tweet types for distance adjustments
+        is_root = np.array([str(all_tweet_ids[i]) == str(all_strand_ids[i]) for i in range(n)])
+        has_image = np.array([has_image_in_thread(str(all_strand_ids[i]), str(all_tweet_ids[i])) for i in range(n)])
+        
+        for iteration in range(iterations):
+            if iteration % 10 == 0:
+                print(f"Iteration {iteration} of {iterations}")
+            
+            # Vectorized distance calculation
+            diff = pts[:, np.newaxis, :] - pts[np.newaxis, :, :]  # (n, n, 2)
+            dist_sq = np.sum(diff**2, axis=2)  # (n, n)
+            
+            # Avoid division by zero
+            dist_sq = np.maximum(dist_sq, 1e-6)
+            dist = np.sqrt(dist_sq)
+            
+            # Calculate dynamic minimum distances based on tweet types
+            base_dist_matrix = np.full((n, n), min_dist)
+            
+            # Special tweet multiplier (same for root and image tweets)
+            special_multiplier = 1.
+            special_mask = (has_image[:, np.newaxis]) | (has_image[np.newaxis, :])
+            base_dist_matrix[special_mask] *= special_multiplier
+            
+            # Zero out diagonal to ignore self-interactions
+            np.fill_diagonal(base_dist_matrix, 0)
+            np.fill_diagonal(dist, np.inf)
+            
+            # Calculate repulsion forces
+            overlap_mask = dist < base_dist_matrix
+            push_strength = np.zeros_like(dist)
+            push_strength[overlap_mask] = (base_dist_matrix[overlap_mask] - dist[overlap_mask]) / dist[overlap_mask]
+            
+            # Force vectors
+            force_x = np.sum(diff[:, :, 0] * push_strength, axis=1)
+            force_y = np.sum(diff[:, :, 1] * push_strength, axis=1)
+            
+            # Apply forces
+            displacement = np.column_stack([force_x, force_y]) * step
+            pts += displacement
+            
+            # Check convergence
+            total_movement = np.sum(np.abs(displacement))
+            if total_movement < 1e-6:
+                print(f"Converged at iteration {iteration}")
+                break
+        
+        return [(x, y) for x, y in pts]
+    
+    relaxed_pts = relax_positions(pts)
+    
+    # Add padding
+    pad = 0.03
+    relaxed_pts = [(
+        pad + (1 - 2*pad) * x,
+        pad + (1 - 2*pad) * y
+    ) for x, y in relaxed_pts]
+    
+    # Build output records
+    records = []
+    for i, (x, y) in enumerate(relaxed_pts):
+        tid = str(all_tweet_ids[i])
+        sid = str(all_strand_ids[i])
+        rated = rated_cache.get(sid)
+        
+        records.append({
+            'tweet_id': tid,
+            'strand_id': sid,
+            'umap_x': float(x),
+            'umap_y': float(y),
+            'has_image': has_image_in_thread(sid, tid),
+            'is_root': tid == sid,
+            'media_url': None,  # Fallback; frontend will use if missing
+            'text_snippet': all_texts[i].replace('<br>', ' '),
+            'annotation': all_annotations[i],
+            'username': rated.get('seedTweet', {}).get('username') if rated else None,
+            'avatar_media_url': rated.get('seedTweet', {}).get('avatar_media_url') if rated else None,
+            'strand_title': strand_titles.get(sid, '')
+        })
+    
+    # Write output
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, 'w') as f:
+        json.dump({'points': records}, f, indent=2)
+    
+    print(f"✓ Exported {len(records)} tweet positions to {output_path}")
+    return records
+
+# %%
+# Uncomment and run this cell after viewing plots:
+exported = export_umap_positions(embedding_2d, all_tweet_ids, all_strand_ids, all_texts, all_annotations)
+
+# %%
+
+# Plot the exported (relaxed) positions
+def plot_relaxed_positions(records):
+    """Visualize the relaxed tweet positions colored by strand."""
+    import matplotlib.pyplot as plt
+    
+    # Extract data
+    xs = [r['umap_x'] for r in records]
+    ys = [r['umap_y'] for r in records]
+    strand_ids = [r['strand_id'] for r in records]
+    
+    # Color mapping
+    unique_strands = sorted(set(strand_ids))
+    strand_to_idx = {s: i for i, s in enumerate(unique_strands)}
+    colors = [strand_to_idx[s] for s in strand_ids]
+    
+    # Plot
+    fig, ax = plt.subplots(figsize=(14, 10))
+    scatter = ax.scatter(
+        xs, ys,
+        c=colors,
+        cmap='tab20',
+        alpha=0.7,
+        s=60,
+        edgecolors='white',
+        linewidths=0.5
     )
     
-    # Save interactive HTML
-    fig.write_html(DATA_DIR / 'force_layout_graph_interactive.html')
-    print("Interactive visualization saved to force_layout_graph_interactive.html")
+    # Highlight root tweets
+    root_xs = [r['umap_x'] for r in records if r['is_root']]
+    root_ys = [r['umap_y'] for r in records if r['is_root']]
+    ax.scatter(root_xs, root_ys, s=120, facecolors='none', edgecolors='black', linewidths=2, alpha=0.8, label='Root tweets')
     
-    fig.show()
+    # Highlight tweets with images
+    img_xs = [r['umap_x'] for r in records if r['has_image']]
+    img_ys = [r['umap_y'] for r in records if r['has_image']]
+    ax.scatter(img_xs, img_ys, s=40, marker='s', facecolors='none', edgecolors='red', linewidths=1, alpha=0.6, label='Has image')
     
-except ImportError:
-    print("Plotly not available for interactive visualization")
+    ax.set_xlim(-0.05, 1.05)
+    ax.set_ylim(-0.05, 1.05)
+    ax.set_aspect('equal')
+    ax.set_xlabel('X (normalized & relaxed)')
+    ax.set_ylabel('Y (normalized & relaxed)')
+    ax.set_title(f'Relaxed Tweet Positions\n({len(records)} tweets, {len(unique_strands)} strands)', fontsize=14)
+    ax.legend(loc='upper right')
+    ax.grid(alpha=0.2)
+    
+    plt.tight_layout()
+    plt.savefig(DATA_DIR / "essential_tweets_relaxed.png", dpi=150, bbox_inches='tight')
+    plt.show()
+    
+    print(f"Plot saved to {DATA_DIR / 'essential_tweets_relaxed.png'}")
+    print(f"Root tweets: {len(root_xs)}, Tweets with images: {len(img_xs)}")
+
+# Uncomment to plot after export:
+plot_relaxed_positions(exported)
 
 # %%

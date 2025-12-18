@@ -8,9 +8,10 @@ import { Tweet } from '@/lib/types'
 type TweetCardProps = {
   tweet: Tweet;
   onQuotedTweetClick?: (quotedTweetId: string) => void;
+  annotation?: string;
 };
 
-export const TweetCard = ({ tweet, onQuotedTweetClick }: TweetCardProps) => {
+export const TweetCard = ({ tweet, onQuotedTweetClick, annotation }: TweetCardProps) => {
   const [expanded, setExpanded] = useState(false)
   const tweetUrl = `https://twitter.com/${tweet.username}/status/${tweet.tweet_id}`
   // Only truncate if significantly longer to avoid close calls
@@ -177,6 +178,16 @@ export const TweetCard = ({ tweet, onQuotedTweetClick }: TweetCardProps) => {
         <span>↻ {tweet.retweet_count}</span>
         {tweet.quote_count !== undefined && <span>❝ {tweet.quote_count}</span>}
       </div>
+
+      {/* Annotation section */}
+      {annotation && (
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <div className="text-xs text-gray-500 uppercase font-semibold mb-2">Annotation</div>
+          <p className="text-sm text-gray-700 italic leading-relaxed whitespace-pre-wrap">
+            {annotation}
+          </p>
+        </div>
+      )}
     </div>
   )
 }
