@@ -75,9 +75,6 @@ def parse_tweet_from_thread_text(thread_text: str, tweet_id: int) -> Optional[st
     
     text = '\n'.join(content_lines).strip()
     
-    # Remove [Quoting @...] blocks
-    text = re.sub(r'\[Quoting @[^\]]+\]', '', text)
-    
     # Clean up any resulting double newlines
     text = re.sub(r'\n{3,}', '\n\n', text)
     
@@ -162,38 +159,66 @@ def parse_likes_retweets_from_thread_text(thread_text: str, tweet_id: int) -> tu
     return None, None
 
 
+def clean_tweet_text(tweet_text: str) -> str:
+    """Clean tweet text for embedding."""
+    import re
+    
+    # First, remove tree connectors and whitespace at start
+    text = re.sub(r'^[│├└─\s]+', '', tweet_text, flags=re.MULTILINE)
+    text = text.strip()
+    
+    # Remove all @mentions from the beginning until we hit a non-mention word
+    text = re.sub(r'^(@\w+\s*)+', '', text)
+    
+    # Remove URLs/links (http/https)
+    text = re.sub(r'https?://\S+', '', text)
+    
+    # Remove down arrow (↓) 
+    text = re.sub(r'↓', '', text)
+    
+    # Clean up multiple whitespace
+    text = re.sub(r'\s+', ' ', text)
+    
+    # Strip leading/trailing whitespace
+    text = text.strip()
+    
+    return text
+
+
 def build_embedding_text(tweet_text: str, annotation: str = None) -> str:
     """Combine tweet text and annotation for embedding."""
+    # Clean the tweet text first
+    cleaned_text = clean_tweet_text(tweet_text)
+    
+    # Skip if less than 10 characters after cleaning
+    if len(cleaned_text) < 10:
+        return None
+    
     if annotation:
         return f"""Tweet:
-{tweet_text}
+{cleaned_text}
 
 Annotation:
 {annotation}"""
     else:
         return f"""Tweet:
-{tweet_text}"""
+{cleaned_text}"""
 
 # %%
 
-# Cell 1: Print text to be embedded for 5 strands
+# Cell 1: Get all the text to embed for the atlas
 
 strand_files = sorted(RATED_DIR.glob("*.json"))
 print(f"Loading {len(strand_files)} strands...\n")
 
 all_embedding_texts = {}  # {strand_id: [{tweet_id, text_to_embed, annotation, tweet_type}, ...]}
 
-for filepath in strand_files:
+for filepath in tqdm(strand_files, desc="Loading strands"):
     strand = load_rated_strand(filepath)
     strand_id = strand['seed_tweet_id']
     thread_text = strand['thread_text']
     essential_tweets = strand['rating']['essential_tweets']
-    
-    print(f"{'='*80}")
-    print(f"STRAND: {strand_id}")
-    print(f"Summary: {strand['rating']['reasoning_summary'][:100]}...")
-    print(f"Essential tweets: {len(essential_tweets)}")
-    print(f"{'='*80}\n")
+
     
     # Extract all tweet IDs from the thread
     all_tweet_ids = extract_all_tweet_ids_from_thread(thread_text)
@@ -221,6 +246,10 @@ for filepath in strand_files:
                 annotation = None
                 text_to_embed = build_embedding_text(tweet_text)
             
+            # Skip if text is too short after cleaning
+            if text_to_embed is None:
+                continue
+            
             # Check if it's the root tweet
             if tweet_id_str == strand_id:
                 tweet_type = "root_essential" if tweet_type == "essential" else "root_regular"
@@ -228,6 +257,7 @@ for filepath in strand_files:
             strand_embeddings.append({
                 'tweet_id': tweet_id_str,
                 'annotation': annotation,
+                'original_tweet_text': tweet_text,
                 'text_to_embed': text_to_embed,
                 'tweet_type': tweet_type
             })
@@ -236,7 +266,6 @@ for filepath in strand_files:
             print(f"[WARN] Could not find tweet {tweet_id} in thread_text")
     
     all_embedding_texts[strand_id] = strand_embeddings
-    print(f"Processed {len(strand_embeddings)} tweets ({len(essential_tweets)} essential, {len(strand_embeddings) - len(essential_tweets)} regular)\n")
 
 # Summary
 total_tweets = sum(len(v) for v in all_embedding_texts.values())
@@ -247,6 +276,106 @@ print(f"\n{'='*80}")
 print(f"Total: {len(all_embedding_texts)} strands, {total_tweets} tweets to embed")
 print(f"  - Essential tweets: {essential_count}")
 print(f"  - Regular tweets: {regular_count}")
+
+# %%
+
+# Cell 1.5: Show 100 random cleaned texts
+import random
+
+# Gather all text to embed from all strands
+all_texts = []
+for strand_id, strand_embeddings in all_embedding_texts.items():
+    for item in strand_embeddings:
+        all_texts.append(item['text_to_embed'])
+
+print(f"Total texts after cleaning: {len(all_texts)}")
+
+# Show 100 random texts
+random.seed(42)  # For reproducibility
+sample_texts = random.sample(all_texts, min(100, len(all_texts)))
+
+print(f"\n{'='*80}")
+print(f"SHOWING {len(sample_texts)} RANDOM CLEANED TEXTS:")
+print(f"{'='*80}\n")
+
+for i, text in enumerate(sample_texts, 1):
+    print(f"--- {i:3d} ---")
+    print(text)
+    print()
+
+# %%
+
+# Cell 1.6: Generate embeddings and save results
+import os
+from openai import OpenAI
+from dotenv import load_dotenv
+from tqdm import tqdm
+
+# Load environment variables
+load_dotenv(Path("..") / ".env")
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+EMBEDDING_MODEL = "text-embedding-3-large"  # or "text-embedding-3-large" for higher quality
+
+def get_embeddings_batch(texts: list[str], batch_size: int = 500) -> list[list[float]]:
+    """Get embeddings for multiple texts in batches."""
+    all_embeddings = []
+    for i in range(0, len(texts), batch_size):
+        batch = texts[i:i + batch_size]
+        response = client.embeddings.create(
+            model=EMBEDDING_MODEL,
+            input=batch
+        )
+        all_embeddings.extend([d.embedding for d in response.data])
+    return all_embeddings
+
+# Create all_tweet_embeddings directory
+ALL_EMBEDDINGS_DIR = DATA_DIR / "all_tweet_embeddings"
+ALL_EMBEDDINGS_DIR.mkdir(parents=True, exist_ok=True)
+
+print(f"Processing {len(all_embedding_texts)} strands for embedding...")
+
+for strand_id, strand_embeddings in tqdm(all_embedding_texts.items(), desc="Strands"):
+    # Skip if already processed
+    output_path = ALL_EMBEDDINGS_DIR / f"{strand_id}.json"
+    if output_path.exists():
+        print(f"[SKIP] {strand_id} already exists")
+        continue
+    
+    if not strand_embeddings:
+        print(f"[WARN] No texts to embed for strand {strand_id}")
+        continue
+    
+    # Extract texts to embed
+    texts_to_embed = [item['text_to_embed'] for item in strand_embeddings]
+    
+    # Get embeddings in batch
+    print(f"Embedding {len(texts_to_embed)} texts for strand {strand_id}")
+    embeddings = get_embeddings_batch(texts_to_embed)
+    
+    # Build results with embeddings
+    results = []
+    for i, item in enumerate(strand_embeddings):
+        results.append({
+            'tweet_id': item['tweet_id'],
+            'annotation': item['annotation'],
+            'tweet_text': clean_tweet_text(item['original_tweet_text']),
+            'text_embedded': item['text_to_embed'],
+            'tweet_type': item['tweet_type'],
+            'embedding': embeddings[i]
+        })
+    
+    # Save to file
+    output_data = {
+        'seed_tweet_id': strand_id,
+        'model': EMBEDDING_MODEL,
+        'all_tweet_embeddings': results
+    }
+    
+    with open(output_path, 'w') as f:
+        json.dump(output_data, f, indent=2)
+
+print(f"\nDone! Embeddings saved to {ALL_EMBEDDINGS_DIR}/")
 
 # %%
 
@@ -323,18 +452,44 @@ print(f"Loaded {len(all_embeddings)} embeddings from {len(embedding_files)} file
 # Convert to numpy array for UMAP
 X = np.array(all_embeddings)
 print(f"Embedding matrix shape: {X.shape}")
+# %%
+# Choose projection method: 'umap', 'tsne', or 'pacmap'
+projection_method = 'umap'
 
-# Run UMAP
-print("Running UMAP projection...")
-reducer = umap.UMAP(
-    n_components=2,
-    n_neighbors=15,
-    min_dist=0.1,
-    metric='cosine',
-    random_state=42,
-    verbose=True
-)
-embedding_2d = reducer.fit_transform(X)
+if projection_method == 'umap':
+    print("Running UMAP projection...")
+    reducer = umap.UMAP(
+        n_components=2,
+        n_neighbors=10,
+        min_dist=0.1,
+        random_state=42,
+        verbose=True,
+    )
+    embedding_2d = reducer.fit_transform(X)
+elif projection_method == 'tsne':
+    print("Running t-SNE projection...")
+    from sklearn.manifold import TSNE
+    reducer = TSNE(
+        n_components=2,
+        perplexity=10,          # Controls local vs global structure (5-50 typical)
+        learning_rate=200,      # Higher = faster convergence (10-1000 typical)
+        n_iter=1000,           # Number of iterations
+        random_state=42,
+        verbose=1
+    )
+    embedding_2d = reducer.fit_transform(X)
+elif projection_method == 'pacmap':
+    print("Running PaCMAP projection...")
+    import pacmap
+    reducer = pacmap.PaCMAP(
+        n_components=2,
+        n_neighbors=10,         # Number of neighbors to consider
+        MN_ratio=0.5,          # Mid-near point ratio (0.5 = balanced)
+        FP_ratio=2.0,          # Further point ratio (2.0 = good separation)
+        random_state=42
+    )
+    # PaCMAP recommends PCA initialization for better results
+    embedding_2d = reducer.fit_transform(X, init="pca")
 
 # Create DataFrame with all data
 print("Creating DataFrame...")
@@ -375,5 +530,70 @@ print(df[['tweet_id', 'strand_id', 'tweet_type', 'date', 'likes', 'retweets', 's
 
 print(f"\nTo visualize with embedding-atlas, run:")
 print(f"uvx embedding-atlas {output_parquet} --x projection_x --y projection_y --text text")
+
+# %%
+
+# Cell 3: Import parquet and create plotly scatter plot
+import plotly.graph_objects as go
+import plotly.express as px
+
+# Load the parquet file
+parquet_path = DATA_DIR / "tweet_embeddings_atlas.parquet"
+df_viz = pd.read_parquet(parquet_path)
+
+print(f"Loaded {len(df_viz)} points from parquet")
+
+# Create scatter plot with plotly, colored by strand_id
+fig = go.Figure()
+
+fig.add_trace(go.Scattergl(
+    x=df_viz['projection_x'],
+    y=df_viz['projection_y'],
+    mode='markers',
+    marker=dict(
+        color=df_viz['strand_id'].astype('category').cat.codes,
+        colorscale='viridis',
+        size=6,
+        opacity=0.7,
+        showscale=True,
+        colorbar=dict(title="Strand ID")
+    ),
+    text=df_viz['text'],
+    hovertemplate='<b>%{text}</b><br>' +
+                 'Tweet ID: %{customdata[0]}<br>' +
+                 'Strand ID: %{customdata[1]}<br>' +
+                 'Type: %{customdata[2]}<br>' +
+                 'Date: %{customdata[3]}<br>' +
+                 'Likes: %{customdata[4]}<br>' +
+                 'Retweets: %{customdata[5]}<br>' +
+                 '<extra></extra>',
+    customdata=df_viz[['tweet_id', 'strand_id', 'tweet_type', 'date', 'likes', 'retweets']].values,
+    showlegend=False
+))
+
+method_name = projection_method.upper()
+fig.update_layout(
+    title=f'Tweet Embeddings {method_name} Projection (Colored by Strand ID)',
+    xaxis_title=f'{method_name} Dimension 1',
+    yaxis_title=f'{method_name} Dimension 2',
+    width=1000,
+    height=700,
+    dragmode='pan'
+)
+
+# Configure scroll wheel zoom
+config = {
+    'scrollZoom': True,
+    'displayModeBar': True,
+    'toImageButtonOptions': {
+        'format': 'png',
+        'filename': 'tweet_embeddings_umap',
+        'height': 700,
+        'width': 1000,
+        'scale': 1
+    }
+}
+
+fig.show(config=config)
 
 # %%
