@@ -1,6 +1,26 @@
 import { supabaseCa } from './supabase';
 import { Tweet } from './types';
 
+// Simple in-memory caches to avoid redundant fetches
+const tweetCache = new Map<string, Tweet>();
+const threadCache = new Map<string, Tweet[]>();
+const quotesCache = new Map<string, Tweet[]>();
+const conversationIdCache = new Map<string, string | null>();
+
+// Cache TTL in milliseconds (5 minutes)
+const CACHE_TTL = 5 * 60 * 1000;
+const cacheTimestamps = new Map<string, number>();
+
+function isCacheValid(key: string): boolean {
+  const timestamp = cacheTimestamps.get(key);
+  if (!timestamp) return false;
+  return Date.now() - timestamp < CACHE_TTL;
+}
+
+function setCacheTimestamp(key: string) {
+  cacheTimestamps.set(key, Date.now());
+}
+
 // Generic batch fetcher - reduces duplicate batching logic
 async function batchFetch<T, R>(
   ids: T[],
@@ -46,8 +66,26 @@ async function fetchUserDetails(accountIds: string[]) {
 export async function fetchTweetDetails(tweetIds: string[]): Promise<Tweet[]> {
   if (tweetIds.length === 0) return [];
 
-  // Fetch tweets in batches
-  const allTweets = await batchFetch(tweetIds, async (batch) => {
+  // Check cache for already-fetched tweets
+  const cachedTweets: Tweet[] = [];
+  const missingIds: string[] = [];
+
+  for (const id of tweetIds) {
+    const cacheKey = `tweet:${id}`;
+    if (tweetCache.has(id) && isCacheValid(cacheKey)) {
+      cachedTweets.push(tweetCache.get(id)!);
+    } else {
+      missingIds.push(id);
+    }
+  }
+
+  // If all tweets are cached, return them in order
+  if (missingIds.length === 0) {
+    return tweetIds.map(id => tweetCache.get(id)!);
+  }
+
+  // Fetch only missing tweets in batches
+  const allTweets = await batchFetch(missingIds, async (batch) => {
     const { data, error } = await supabaseCa
       .from('tweets')
       .select(`
@@ -121,7 +159,7 @@ export async function fetchTweetDetails(tweetIds: string[]): Promise<Tweet[]> {
     });
   }
 
-  return allTweets.map((t: any) => {
+  const newTweets = allTweets.map((t: any) => {
     const quotedId = quoteMap.get(t.tweet_id);
     return {
         tweet_id: t.tweet_id,
@@ -139,9 +177,24 @@ export async function fetchTweetDetails(tweetIds: string[]): Promise<Tweet[]> {
         quoted_tweet: quotedId ? quotedTweetsMap.get(quotedId) : undefined
     };
   }) as Tweet[];
+
+  // Cache the newly fetched tweets
+  newTweets.forEach(tweet => {
+    tweetCache.set(tweet.tweet_id, tweet);
+    setCacheTimestamp(`tweet:${tweet.tweet_id}`);
+  });
+
+  // Return all tweets in original order (cached + new)
+  return tweetIds.map(id => tweetCache.get(id) || newTweets.find(t => t.tweet_id === id)!);
 }
 
 export async function getThread(conversationId: string): Promise<Tweet[]> {
+  // Check cache first
+  const cacheKey = `thread:${conversationId}`;
+  if (threadCache.has(conversationId) && isCacheValid(cacheKey)) {
+    return threadCache.get(conversationId)!;
+  }
+
   const { data: convData, error: convError } = await supabaseCa
     .from('conversations')
     .select('tweet_id')
@@ -153,18 +206,29 @@ export async function getThread(conversationId: string): Promise<Tweet[]> {
   }
 
   if (!convData || convData.length === 0) {
-      // console.log(`No tweets found for conversation_id: ${conversationId}`);
       return [];
   }
 
   const tweetIds = convData.map((c: any) => c.tweet_id);
   const tweets = await fetchTweetDetails(tweetIds);
-  
+
   // Add conversation_id to all
-  return tweets.map(t => ({ ...t, conversation_id: conversationId }));
+  const result = tweets.map(t => ({ ...t, conversation_id: conversationId }));
+
+  // Cache result
+  threadCache.set(conversationId, result);
+  setCacheTimestamp(cacheKey);
+
+  return result;
 }
 
 export async function getQuotes(tweetId: string): Promise<Tweet[]> {
+  // Check cache first
+  const cacheKey = `quotes:${tweetId}`;
+  if (quotesCache.has(tweetId) && isCacheValid(cacheKey)) {
+    return quotesCache.get(tweetId)!;
+  }
+
   const { data: quotesData, error: quotesError } = await supabaseCa
     .from('quote_tweets')
     .select('tweet_id')
@@ -174,16 +238,31 @@ export async function getQuotes(tweetId: string): Promise<Tweet[]> {
     console.error('Error fetching quotes:', quotesError);
     return [];
   }
-  
+
   if (!quotesData || quotesData.length === 0) {
-      return [];
+    // Cache empty results too
+    quotesCache.set(tweetId, []);
+    setCacheTimestamp(cacheKey);
+    return [];
   }
-  
+
   const tweetIds = quotesData.map((q: any) => q.tweet_id);
-  return fetchTweetDetails(tweetIds);
+  const result = await fetchTweetDetails(tweetIds);
+
+  // Cache result
+  quotesCache.set(tweetId, result);
+  setCacheTimestamp(cacheKey);
+
+  return result;
 }
 
 export async function getConversationId(tweetId: string): Promise<string | null> {
+  // Check cache first
+  const cacheKey = `convId:${tweetId}`;
+  if (conversationIdCache.has(tweetId) && isCacheValid(cacheKey)) {
+    return conversationIdCache.get(tweetId)!;
+  }
+
   const { data, error } = await supabaseCa
     .from('conversations')
     .select('conversation_id')
@@ -195,8 +274,12 @@ export async function getConversationId(tweetId: string): Promise<string | null>
     console.error('Error fetching conversation_id:', error);
     return null;
   }
-  
-  if (!data || data.length === 0) return null;
 
-  return data[0].conversation_id || null;
+  const result = (!data || data.length === 0) ? null : (data[0].conversation_id || null);
+
+  // Cache result
+  conversationIdCache.set(tweetId, result);
+  setCacheTimestamp(cacheKey);
+
+  return result;
 }

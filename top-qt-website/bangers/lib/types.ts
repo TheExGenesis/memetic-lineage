@@ -54,6 +54,8 @@ export interface Strand {
   thread_text: string;
   seeds: StrandSeed[];
   rating: StrandRating;
+  title?: string;
+  summary?: string; // Markdown-formatted summary
 }
 
 // Extended strand with fetched tweet data for display
