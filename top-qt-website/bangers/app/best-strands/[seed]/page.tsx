@@ -1,9 +1,11 @@
 import { Suspense } from 'react'
 import { promises as fs } from 'fs'
 import path from 'path'
+import { notFound } from 'next/navigation'
 import { fetchTweetDetails } from '@/lib/api'
 import { Strand, StrandWithTweet } from '@/lib/types'
-import { BestStrandsClient } from '../BestStrandsClient'
+import { StrandDetail } from '../StrandDetail'
+import { BackButton } from '../../components/BackButton'
 
 // Path to rated strands in scratchpads
 const RATED_STRANDS_DIR = path.join(
@@ -29,58 +31,54 @@ function parseStrandJson(jsonText: string): Strand {
   return parsed
 }
 
-async function loadStrandsWithTweets(): Promise<StrandWithTweet[]> {
-  let files: string[]
+async function loadSingleStrand(seedId: string): Promise<StrandWithTweet | null> {
+  const filePath = path.join(RATED_STRANDS_DIR, `${seedId}.json`)
+
   try {
-    files = await fs.readdir(RATED_STRANDS_DIR)
-  } catch (e) {
-    console.error('Could not read rated_strands directory:', e)
-    return []
-  }
+    const jsonText = await fs.readFile(filePath, 'utf-8')
+    const strand = parseStrandJson(jsonText)
 
-  const jsonFiles = files.filter(f => f.endsWith('.json'))
-  const strands: Strand[] = []
-  for (const file of jsonFiles) {
-    try {
-      const filePath = path.join(RATED_STRANDS_DIR, file)
-      const jsonText = await fs.readFile(filePath, 'utf-8')
-      const strand = parseStrandJson(jsonText)
-      strands.push(strand)
-    } catch (e) {
-      console.error(`Error parsing ${file}:`, e)
+    // Fetch only this strand's seed tweet
+    const seedTweets = await fetchTweetDetails([strand.seed_tweet_id])
+    const seedTweet = seedTweets[0]
+
+    return {
+      ...strand,
+      seedTweet,
     }
+  } catch (e) {
+    console.error(`Error loading strand ${seedId}:`, e)
+    return null
   }
-
-  if (strands.length === 0) return []
-
-  const seedTweetIds = strands.map(s => s.seed_tweet_id)
-  const seedTweets = await fetchTweetDetails(seedTweetIds)
-  const tweetMap = new Map(seedTweets.map(t => [t.tweet_id, t]))
-
-  const strandsWithTweets: StrandWithTweet[] = strands.map(strand => ({
-    ...strand,
-    seedTweet: tweetMap.get(strand.seed_tweet_id),
-  }))
-
-  strandsWithTweets.sort((a, b) => b.rating.rating - a.rating.rating)
-  return strandsWithTweets
 }
 
-export default async function BestStrandBySeedPage() {
-  const strands = await loadStrandsWithTweets()
+interface PageProps {
+  params: Promise<{ seed: string }>
+}
 
-  if (strands.length === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>No strands found.</p>
-      </div>
-    )
+export default async function StrandByIdPage({ params }: PageProps) {
+  const { seed } = await params
+  const strand = await loadSingleStrand(seed)
+
+  if (!strand) {
+    notFound()
   }
 
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading strands...</div>}>
-      <BestStrandsClient strands={strands} />
-    </Suspense>
+    <div className="h-screen flex flex-col bg-white text-black overflow-hidden">
+      <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading strand...</div>}>
+        <StrandDetailWrapper strand={strand} />
+      </Suspense>
+    </div>
   )
 }
 
+// Client wrapper to handle the back navigation
+function StrandDetailWrapper({ strand }: { strand: StrandWithTweet }) {
+  return (
+    <StrandDetail
+      strand={strand}
+      onBack={() => {}} // Will use BackButton inside StrandDetail
+    />
+  )
+}

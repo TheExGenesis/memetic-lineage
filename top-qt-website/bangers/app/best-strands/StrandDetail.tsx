@@ -7,7 +7,7 @@ import { StrandWithTweet, Tweet, EssentialTweet } from '@/lib/types';
 import { TweetCard } from '../TweetCard';
 import { ThreadView } from '../ThreadView';
 import { BackButton } from '../components/BackButton';
-import { fetchTweetDetails, getThread, getConversationId } from '@/lib/api';
+import { fetchTweetDetails, getConversationIds, getThreadsBatch } from '@/lib/api';
 import { StrandHistogram, HistogramData } from './StrandHistogram';
 
 interface StrandDetailProps {
@@ -105,50 +105,58 @@ export function StrandDetail({ strand, onBack, onSelectTweet, onHorizontalScroll
   useEffect(() => {
     async function loadEssentialTweets() {
       setLoading(true);
-      
+
       // Get all essential tweet IDs (already strings from parsed JSON)
       const tweetIds = strand.rating.essential_tweets.map(et => et.tweet_id);
-      
+
       // Fetch all tweets at once
       const tweets = await fetchTweetDetails(tweetIds);
       const tweetMap = new Map(tweets.map(t => [t.tweet_id, t]));
-      
-      // For each essential tweet, get its thread context
-      const essentialData: EssentialTweetWithData[] = await Promise.all(
-        strand.rating.essential_tweets.map(async (et) => {
-          const tweetId = et.tweet_id;
-          const tweet = tweetMap.get(tweetId);
-          
-          let threadTweets: Tweet[] = [];
-          if (tweet) {
-            // Try to get conversation context
-            const convId = await getConversationId(tweetId);
-            if (convId) {
-              threadTweets = await getThread(convId);
-            } else {
-              threadTweets = [tweet];
-            }
-          }
-          
-          return {
-            ...et,
-            tweet,
-            threadTweets,
-          };
-        })
-      );
-      
+
+      // Batch fetch all conversation IDs at once (instead of N+1 queries)
+      const convIdMap = await getConversationIds(tweetIds);
+
+      // Get unique conversation IDs that exist
+      const uniqueConvIds = Array.from(new Set(
+        Array.from(convIdMap.values()).filter((id): id is string => id !== null)
+      ));
+
+      // Batch fetch all threads at once
+      const threadsMap = uniqueConvIds.length > 0
+        ? await getThreadsBatch(uniqueConvIds)
+        : new Map<string, Tweet[]>();
+
+      // Build essential data with thread context
+      const essentialData: EssentialTweetWithData[] = strand.rating.essential_tweets.map((et) => {
+        const tweetId = et.tweet_id;
+        const tweet = tweetMap.get(tweetId);
+        const convId = convIdMap.get(tweetId);
+
+        let threadTweets: Tweet[] = [];
+        if (convId && threadsMap.has(convId)) {
+          threadTweets = threadsMap.get(convId)!;
+        } else if (tweet) {
+          threadTweets = [tweet];
+        }
+
+        return {
+          ...et,
+          tweet,
+          threadTweets,
+        };
+      });
+
       // Sort by tweet creation date
       essentialData.sort((a, b) => {
         const dateA = a.tweet?.created_at ? new Date(a.tweet.created_at).getTime() : 0;
         const dateB = b.tweet?.created_at ? new Date(b.tweet.created_at).getTime() : 0;
         return dateA - dateB;
       });
-      
+
       setEssentialTweetsData(essentialData);
       setLoading(false);
     }
-    
+
     loadEssentialTweets();
   }, [strand]);
 

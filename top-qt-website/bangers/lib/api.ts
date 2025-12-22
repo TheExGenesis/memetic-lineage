@@ -283,3 +283,119 @@ export async function getConversationId(tweetId: string): Promise<string | null>
 
   return result;
 }
+
+// Batch fetch conversation IDs for multiple tweets at once
+export async function getConversationIds(tweetIds: string[]): Promise<Map<string, string | null>> {
+  const result = new Map<string, string | null>();
+  const missingIds: string[] = [];
+
+  // Check cache first
+  for (const id of tweetIds) {
+    const cacheKey = `convId:${id}`;
+    if (conversationIdCache.has(id) && isCacheValid(cacheKey)) {
+      result.set(id, conversationIdCache.get(id)!);
+    } else {
+      missingIds.push(id);
+    }
+  }
+
+  if (missingIds.length === 0) {
+    return result;
+  }
+
+  // Batch fetch missing IDs
+  const data = await batchFetch(missingIds, async (batch) => {
+    const { data, error } = await supabaseCa
+      .from('conversations')
+      .select('tweet_id, conversation_id')
+      .in('tweet_id', batch);
+
+    if (error) {
+      console.error('Error batch fetching conversation_ids:', error);
+      return [];
+    }
+    return data || [];
+  });
+
+  // Build map from results
+  const fetchedMap = new Map<string, string>();
+  data.forEach((row: any) => {
+    fetchedMap.set(row.tweet_id, row.conversation_id);
+  });
+
+  // Update cache and result for all missing IDs
+  for (const id of missingIds) {
+    const convId = fetchedMap.get(id) || null;
+    conversationIdCache.set(id, convId);
+    setCacheTimestamp(`convId:${id}`);
+    result.set(id, convId);
+  }
+
+  return result;
+}
+
+// Batch fetch threads for multiple conversation IDs at once
+export async function getThreadsBatch(conversationIds: string[]): Promise<Map<string, Tweet[]>> {
+  const result = new Map<string, Tweet[]>();
+  const missingConvIds: string[] = [];
+
+  // Check cache first
+  for (const convId of conversationIds) {
+    const cacheKey = `thread:${convId}`;
+    if (threadCache.has(convId) && isCacheValid(cacheKey)) {
+      result.set(convId, threadCache.get(convId)!);
+    } else {
+      missingConvIds.push(convId);
+    }
+  }
+
+  if (missingConvIds.length === 0) {
+    return result;
+  }
+
+  // Batch fetch all tweet IDs for all conversations
+  const convTweetData = await batchFetch(missingConvIds, async (batch) => {
+    const { data, error } = await supabaseCa
+      .from('conversations')
+      .select('conversation_id, tweet_id')
+      .in('conversation_id', batch);
+
+    if (error) {
+      console.error('Error batch fetching conversation tweets:', error);
+      return [];
+    }
+    return data || [];
+  });
+
+  // Group tweet IDs by conversation
+  const convToTweetIds = new Map<string, string[]>();
+  convTweetData.forEach((row: any) => {
+    if (!convToTweetIds.has(row.conversation_id)) {
+      convToTweetIds.set(row.conversation_id, []);
+    }
+    convToTweetIds.get(row.conversation_id)!.push(row.tweet_id);
+  });
+
+  // Fetch all tweets at once
+  const allTweetIds = Array.from(new Set(convTweetData.map((row: any) => row.tweet_id)));
+  const allTweets = await fetchTweetDetails(allTweetIds);
+  const tweetMap = new Map(allTweets.map(t => [t.tweet_id, t]));
+
+  // Build result map
+  for (const convId of missingConvIds) {
+    const tweetIds = convToTweetIds.get(convId) || [];
+    const tweets = tweetIds
+      .map(id => tweetMap.get(id))
+      .filter((t): t is Tweet => t !== undefined)
+      .map(t => ({ ...t, conversation_id: convId }));
+
+    // Sort by date
+    tweets.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+    result.set(convId, tweets);
+    threadCache.set(convId, tweets);
+    setCacheTimestamp(`thread:${convId}`);
+  }
+
+  return result;
+}
