@@ -22,14 +22,15 @@ interface EssentialTweetWithData extends EssentialTweet {
   threadTweets?: Tweet[];
 }
 
+// Subtle tints for score badges - warm to cool gradient
 const getLevelBadge = (level: 'high' | 'medium' | 'low') => {
   switch (level) {
     case 'high':
-      return 'bg-emerald-100 text-emerald-700 border-emerald-300';
+      return 'bg-stone-100 text-stone-700 border-stone-300'; // warm gray
     case 'medium':
-      return 'bg-amber-100 text-amber-700 border-amber-300';
+      return 'bg-gray-100 text-gray-600 border-gray-300'; // neutral
     case 'low':
-      return 'bg-slate-100 text-slate-600 border-slate-300';
+      return 'bg-slate-100 text-slate-500 border-slate-300'; // cool gray
   }
 };
 
@@ -206,7 +207,7 @@ export function StrandDetail({ strand, onBack, onSelectTweet, onHorizontalScroll
                   max={600}
                   value={columnWidth}
                   onChange={e => setColumnWidth(Number(e.target.value))}
-                  className="w-20"
+                  className="w-20 accent-gray-700"
                 />
                 <span className="text-xs font-mono w-10">{columnWidth}</span>
               </div>
@@ -292,57 +293,64 @@ export function StrandDetail({ strand, onBack, onSelectTweet, onHorizontalScroll
               </div>
             </div>
 
-            {/* Rating & Metrics - stacked vertically */}
-            <div className="flex flex-col gap-1.5 border-r border-gray-200 pr-3">
-              <div className="flex items-center gap-1">
-                <div className="text-2xl font-bold">{strand.rating.rating}</div>
-                <div className="text-xs text-gray-500">/10</div>
-              </div>
-              <span
-                className={`px-1.5 py-0.5 text-xs font-medium border rounded cursor-help ${getLevelBadge(strand.rating.cohesion)}`}
-                title="Cohesion: How coherent and unified is the strand's narrative?"
-              >
-                Cohesion: {strand.rating.cohesion}
-              </span>
-              <span
-                className={`px-1.5 py-0.5 text-xs font-medium border rounded cursor-help ${getLevelBadge(strand.rating.evolution)}`}
-                title="Evolution: How does the idea develop and progress over time?"
-              >
-                Evolution: {strand.rating.evolution}
-              </span>
-              <span
-                className={`px-1.5 py-0.5 text-xs font-medium border rounded cursor-help ${getLevelBadge(strand.rating.utility)}`}
-                title="Utility: How valuable and insightful are the perspectives?"
-              >
-                Utility: {strand.rating.utility}
-              </span>
-            </div>
-
-            {/* Seeds breakdown - stacked vertically */}
-            <div className="flex flex-col gap-1 border-r border-gray-200 pr-3">
-              <span className="text-xs text-gray-500 font-medium">Seeds ({strand.seeds?.length || 0})</span>
-              {strand.seeds && strand.seeds.length > 0 ? (
-                Object.entries(
-                  strand.seeds.reduce((acc, s) => {
-                    acc[s.source_type] = (acc[s.source_type] || 0) + 1;
-                    return acc;
-                  }, {} as Record<string, number>)
-                ).map(([type, count]) => (
+            {/* Rating & Seeds - merged into one column */}
+            <div className="flex flex-col gap-3 border-r border-gray-200 pr-3 w-40">
+              {/* Rating row */}
+              <div>
+                <div className="flex items-center gap-1 mb-1.5">
+                  <div className="text-2xl font-bold">{strand.rating.rating}</div>
+                  <div className="text-xs text-gray-500">/10</div>
+                </div>
+                <div className="flex flex-wrap gap-1">
                   <span
-                    key={type}
-                    className={`px-1.5 py-0.5 text-xs font-medium border rounded cursor-help ${getSourceTypeStyle(type)}`}
-                    title={getSourceTypeTooltip(type)}
+                    className={`px-1.5 py-0.5 text-[10px] font-medium border rounded cursor-help ${getLevelBadge(strand.rating.cohesion)}`}
+                    title="Cohesion: How coherent and unified is the strand's narrative?"
                   >
-                    {formatSourceType(type)}: {count}
+                    Cohesion: {strand.rating.cohesion}
                   </span>
-                ))
-              ) : (
-                <span className="text-xs text-gray-400">none</span>
-              )}
+                  <span
+                    className={`px-1.5 py-0.5 text-[10px] font-medium border rounded cursor-help ${getLevelBadge(strand.rating.evolution)}`}
+                    title="Evolution: How does the idea develop and progress over time?"
+                  >
+                    Evolution: {strand.rating.evolution}
+                  </span>
+                  <span
+                    className={`px-1.5 py-0.5 text-[10px] font-medium border rounded cursor-help ${getLevelBadge(strand.rating.utility)}`}
+                    title="Utility: How valuable and insightful are the perspectives?"
+                  >
+                    Utility: {strand.rating.utility}
+                  </span>
+                </div>
+              </div>
+
+              {/* Seeds row */}
+              <div>
+                <span className="text-[10px] text-gray-500 font-medium uppercase tracking-wide">Seeds ({strand.seeds?.length || 0})</span>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {strand.seeds && strand.seeds.length > 0 ? (
+                    Object.entries(
+                      strand.seeds.reduce((acc, s) => {
+                        acc[s.source_type] = (acc[s.source_type] || 0) + 1;
+                        return acc;
+                      }, {} as Record<string, number>)
+                    ).map(([type, count]) => (
+                      <span
+                        key={type}
+                        className={`px-1.5 py-0.5 text-[10px] font-medium border rounded cursor-help ${getSourceTypeStyle(type)}`}
+                        title={getSourceTypeTooltip(type)}
+                      >
+                        {formatSourceType(type)}: {count}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs text-gray-400">none</span>
+                  )}
+                </div>
+              </div>
             </div>
 
-            {/* Summary - as right card, fully expanded */}
-            <div className="flex-1 p-2 bg-white border border-gray-200 rounded">
+            {/* Summary - capped at 55% width */}
+            <div className="flex-1 max-w-[55%] p-2 bg-white border border-gray-200 rounded">
               <p className="text-xs font-medium text-gray-500 mb-1">Summary</p>
               <div className="text-sm leading-relaxed text-gray-700">
                 <Markdown
@@ -380,9 +388,9 @@ export function StrandDetail({ strand, onBack, onSelectTweet, onHorizontalScroll
 
       {/* Essential Tweets Visualization */}
       <div className="p-4 bg-gray-50">
-        <div className="mb-4">
-          <h2 className="text-lg font-bold">Essential Tweets Timeline</h2>
-          <p className="text-sm text-gray-600">Chronologically ordered key moments in this strand&apos;s evolution</p>
+        <div className="mb-5 pb-3 border-b-2 border-black">
+          <h2 className="text-xl font-bold tracking-tight">Essential Tweets Timeline</h2>
+          <p className="text-sm text-gray-600 mt-1">Chronologically ordered key moments in this strand&apos;s evolution</p>
         </div>
 
         {loading ? (
@@ -405,11 +413,11 @@ export function StrandDetail({ strand, onBack, onSelectTweet, onHorizontalScroll
                   style={{ width: columnWidth, height: '100%' }}
                 >
                   {/* Column Header with Annotation */}
-                  <div className="p-3 border-b border-gray-200 bg-blue-50 flex-shrink-0">
-                    <div className="text-xs text-blue-600 font-semibold uppercase mb-1">
+                  <div className="p-3 border-b border-gray-300 bg-gray-100 border-l-4 border-l-gray-400 flex-shrink-0">
+                    <div className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">
                       {formatDate(etData.tweet?.created_at)} • #{idx + 1}
                     </div>
-                    <div className="text-sm text-gray-700 leading-snug">
+                    <div className="text-sm text-gray-800 leading-snug font-medium">
                       {etData.annotation}
                     </div>
                   </div>
