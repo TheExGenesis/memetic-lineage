@@ -1,14 +1,117 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef, useTransition } from 'react'
 import { TweetCard } from './TweetCard'
 import { TweetPane } from './TweetPane'
 import { VerticalSpine } from './VerticalSpine'
 import { Tweet } from '@/lib/types'
 import { useUrlSync, useTweetSelection, usePaneNavigation } from './hooks'
+import { fetchMoreTweetsByYear } from './actions/tweets'
+
+const INITIAL_VISIBLE = 15;
+const LOAD_MORE_VISIBLE = 20;
+
+// Lazy loading column for tweets with server-side pagination
+function LazyTweetColumn({
+  column,
+  initialTweets,
+  onTweetClick
+}: {
+  column: string;
+  initialTweets: Tweet[];
+  onTweetClick: (tweet: Tweet) => void;
+}) {
+  const [tweets, setTweets] = useState(initialTweets);
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMoreOnServer, setHasMoreOnServer] = useState(true);
+  const [isPending, startTransition] = useTransition();
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  // Update tweets when initialTweets changes (e.g., on navigation)
+  useEffect(() => {
+    setTweets(initialTweets);
+    setVisibleCount(INITIAL_VISIBLE);
+    setHasMoreOnServer(true);
+  }, [initialTweets]);
+
+  useEffect(() => {
+    if (!loadMoreRef.current) return;
+
+    const observer = new IntersectionObserver(
+      async (entries) => {
+        if (!entries[0].isIntersecting) return;
+
+        // First, show more already-loaded tweets
+        if (visibleCount < tweets.length) {
+          setVisibleCount(prev => Math.min(prev + LOAD_MORE_VISIBLE, tweets.length));
+          return;
+        }
+
+        // Then, fetch more from server if available
+        if (hasMoreOnServer && !isLoadingMore && !isPending) {
+          setIsLoadingMore(true);
+          startTransition(async () => {
+            try {
+              const moreTweets = await fetchMoreTweetsByYear(column, tweets.length);
+              if (moreTweets.length === 0) {
+                setHasMoreOnServer(false);
+              } else {
+                setTweets(prev => [...prev, ...moreTweets]);
+                setVisibleCount(prev => prev + moreTweets.length);
+              }
+            } finally {
+              setIsLoadingMore(false);
+            }
+          });
+        }
+      },
+      { threshold: 0.1, rootMargin: '200px' }
+    );
+
+    observer.observe(loadMoreRef.current);
+    return () => observer.disconnect();
+  }, [visibleCount, tweets.length, hasMoreOnServer, isLoadingMore, isPending, column]);
+
+  const visibleTweets = tweets.slice(0, visibleCount);
+  const hasMore = visibleCount < tweets.length || hasMoreOnServer;
+
+  return (
+    <section className="flex flex-col flex-shrink-0 w-[360px]">
+      <h2 className="text-2xl font-bold mb-6 border-b-2 border-black pb-2 flex-shrink-0">
+        {column}
+      </h2>
+      <div className="flex flex-col gap-2 overflow-y-auto flex-1 scrollbar-hide pb-20">
+        {visibleTweets.map(tweet => (
+          <div
+            key={tweet.tweet_id}
+            onClick={() => onTweetClick(tweet)}
+            className="cursor-pointer hover:opacity-80 transition-opacity"
+          >
+            <TweetCard tweet={tweet} />
+          </div>
+        ))}
+        {hasMore && (
+          <div ref={loadMoreRef} className="py-4 text-center text-sm text-gray-400">
+            {isLoadingMore || isPending ? 'Loading more tweets...' : 'Scroll to load more'}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
 
 export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
-  const [showTip, setShowTip] = useState(true)
+  const [showTip, setShowTip] = useState(false) // Start hidden to avoid flash
+  const [showDataNote, setShowDataNote] = useState(false) // Start hidden to avoid flash
+
+  // Load dismissed states from localStorage
+  useEffect(() => {
+    const tipDismissed = localStorage.getItem('homeTipDismissed');
+    const dataDismissed = localStorage.getItem('homeDataNoteDismissed');
+    setShowTip(tipDismissed !== 'true');
+    setShowDataNote(dataDismissed !== 'true');
+  }, []);
 
   const {
     selectedTweets,
@@ -29,24 +132,21 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
     activePaneStyle,
   } = usePaneNavigation(selectedTweets.length)
 
-  // Wrap handlers to sync URL
+  // URL-first navigation: only update URL, let useUrlSync update state
+  // This prevents double-loading by making URL the single source of truth
   const onTweetClick = useCallback((tweet: Tweet, depth: number) => {
-    handleTweetClick(tweet, depth)
-    const newStack = depth === -1 ? [] : selectedTweets.slice(0, depth + 1)
-    newStack.push(tweet)
+    const newStack = depth === -1 ? [tweet] : [...selectedTweets.slice(0, depth + 1), tweet]
     updateUrl(newStack)
-  }, [handleTweetClick, selectedTweets, updateUrl])
+  }, [selectedTweets, updateUrl])
 
   const onClosePane = useCallback((index: number) => {
-    handleClosePane(index)
     updateUrl(selectedTweets.slice(0, index))
-  }, [handleClosePane, selectedTweets, updateUrl])
+  }, [selectedTweets, updateUrl])
 
   const onSpineClick = useCallback((index: number) => {
-    handleSpineClick(index)
     const newStack = index === -1 ? [] : selectedTweets.slice(0, index + 1)
     updateUrl(newStack)
-  }, [handleSpineClick, selectedTweets, updateUrl])
+  }, [selectedTweets, updateUrl])
 
   // Group tweets by column
   const groups: Record<string, Tweet[]> = {}
@@ -58,25 +158,15 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
     groups[col].push(tweet)
   })
 
+  // Sort columns by year (descending - most recent first)
   const sortColumns = (a: string, b: string) => {
     const aNum = Number(a)
     const bNum = Number(b)
-    
+
     if (!isNaN(aNum) && !isNaN(bNum)) {
       return bNum - aNum
     }
-    
-    const order = ['Last Week', 'Last Month']
-    const aIndex = order.indexOf(a)
-    const bIndex = order.indexOf(b)
-    
-    if (aIndex !== -1 && bIndex !== -1) {
-      return aIndex - bIndex
-    }
-    
-    if (aIndex !== -1) return -1
-    if (bIndex !== -1) return 1
-    
+
     return a.localeCompare(b)
   }
 
@@ -111,13 +201,13 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
                         <div className="flex items-center justify-between mb-2">
                             <h1 className="text-4xl font-bold tracking-tighter">bangers</h1>
                             <div className="flex items-center gap-4">
-                                <a 
+                                <a
                                     href="/best-strands"
                                     className="text-base font-bold underline hover:opacity-70 transition-opacity"
                                 >
-                                    Best strands
+                                    Strands
                                 </a>
-                                <a 
+                                <a
                                     href="/about"
                                     className="text-base font-bold underline hover:opacity-70 transition-opacity"
                                 >
@@ -137,8 +227,11 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
                                 <div>
                                     💡 <span className="font-semibold">Tip:</span> Click any tweet to open an explorer with quotes, replies, and context
                                 </div>
-                                <button 
-                                    onClick={() => setShowTip(false)}
+                                <button
+                                    onClick={() => {
+                                        setShowTip(false);
+                                        localStorage.setItem('homeTipDismissed', 'true');
+                                    }}
                                     className="text-yellow-700 hover:text-yellow-900 font-bold text-lg leading-none"
                                     aria-label="Close tip"
                                 >
@@ -146,25 +239,31 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
                                 </button>
                             </div>
                         )}
-                        <div className="text-xs bg-blue-50 border border-blue-200 px-3 py-2 rounded mt-2 text-blue-700">
-                            ℹ️ Data snapshot from early December 2025
-                        </div>
+                        {showDataNote && (
+                            <div className="text-xs bg-blue-50 border border-blue-200 px-3 py-2 rounded mt-2 text-blue-700 flex items-center justify-between gap-2">
+                                <span>ℹ️ Data snapshot from early December 2025</span>
+                                <button
+                                    onClick={() => {
+                                        setShowDataNote(false);
+                                        localStorage.setItem('homeDataNoteDismissed', 'true');
+                                    }}
+                                    className="text-blue-600 hover:text-blue-800 font-bold text-lg leading-none"
+                                    aria-label="Dismiss"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        )}
                     </header>
                     
                     <main className="flex gap-8 overflow-x-auto flex-1 scrollbar-hide">
-                        {tweetsByColumn.map(({ column, tweets }) => (
-                        <section key={column} className="flex flex-col flex-shrink-0 w-[360px]">
-                            <h2 className="text-2xl font-bold mb-6 border-b-2 border-black pb-2 flex-shrink-0">
-                            {column}
-                            </h2>
-                            <div className="flex flex-col gap-2 overflow-y-auto flex-1 scrollbar-hide pb-20">
-                            {tweets.map(tweet => (
-                                <div key={tweet.tweet_id} onClick={() => onTweetClick(tweet, -1)} className="cursor-pointer hover:opacity-80 transition-opacity">
-                                    <TweetCard tweet={tweet} />
-                                </div>
-                            ))}
-                            </div>
-                        </section>
+                        {tweetsByColumn.map(({ column, tweets: columnTweets }) => (
+                          <LazyTweetColumn
+                            key={column}
+                            column={column}
+                            initialTweets={columnTweets}
+                            onTweetClick={(tweet) => onTweetClick(tweet, -1)}
+                          />
                         ))}
                         
                         <section className="flex flex-col flex-shrink-0 w-[360px]">
@@ -211,15 +310,7 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
                                     >
                                     Chrome
                                     </a>
-                                    {' '}and{' '}
-                                    <a 
-                                    href="https://addons.mozilla.org/en-US/firefox/addon/community-archive/" 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="underline font-semibold hover:opacity-70"
-                                    >
-                                    Firefox
-                                    </a>.
+                                    .
                                 </p>
                                 </div>
 

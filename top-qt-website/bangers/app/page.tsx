@@ -33,14 +33,14 @@ async function fetchTweetsByPeriod() {
     years.push(year);
   }
 
-  // Fetch top 100 tweets for each year
+  // Fetch top 30 tweets for each year (more loaded on scroll)
   const tweetsByYearPromises = years.map(async (year) => {
     const { data, error } = await supabaseTopQt
       .from('community_archive_tweets')
       .select('*')
       .eq('year', year)
       .order('quote_count', { ascending: false })
-      .limit(100);
+      .limit(30);
 
     if (error) {
       console.error(`Error fetching tweets for year ${year}:`, error);
@@ -58,53 +58,8 @@ async function fetchTweetsByPeriod() {
     tweet.column = String(tweet.year);
   });
   
-  console.log(`year tweets: ${yearTweets.length}`);
-  console.log(`sample 3 year tweets: ${JSON.stringify(yearTweets.slice(0, 3), null, 2)}`);
-
-  // Calculate date ranges relative to the latest tweet in the dataset
-  // (since data is a snapshot, using current date would find nothing)
-  const { data: maxDateData } = await supabaseTopQt
-    .from('community_archive_tweets')
-    .select('created_at')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single();
-
-  const latestDate = maxDateData?.created_at ? new Date(maxDateData.created_at) : new Date();
-  const lastWeekDate = new Date(latestDate.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const lastMonthDate = new Date(latestDate.getTime() - 30 * 24 * 60 * 60 * 1000);
-  
-  // Fetch last month tweets
-  const { data: lastMonthTweets } = await supabaseTopQt
-    .from('community_archive_tweets')
-    .select('*')
-    .gte('created_at', lastMonthDate.toISOString())
-    .order('quote_count', { ascending: false })
-    .limit(100);
-  
-  // Add column field to last month tweets
-  (lastMonthTweets || []).forEach((tweet: any) => {
-    tweet.column = 'Last Month';
-  });
-  
-  // Fetch last week tweets
-  const { data: lastWeekTweets } = await supabaseTopQt
-    .from('community_archive_tweets')
-    .select('*')
-    .gte('created_at', lastWeekDate.toISOString())
-    .order('quote_count', { ascending: false })
-    .limit(100);
-  
-  // Add column field to last week tweets
-  (lastWeekTweets || []).forEach((tweet: any) => {
-    tweet.column = 'Last Week';
-  });
-  
-  console.log(`last week tweets: ${(lastWeekTweets || []).length}`);
-  console.log(`last month tweets: ${(lastMonthTweets || []).length}`);
-  
-  // Combine all tweets
-  const allTweets = [...yearTweets, ...(lastMonthTweets || []), ...(lastWeekTweets || [])];
+  // Use year-based tweets only (removed last week/last month as data is a static snapshot)
+  const allTweets = [...yearTweets];
 
   if (allTweets.length > 0) {
     // Convert IDs to string first to ensure compatibility
@@ -282,18 +237,7 @@ export default async function Home() {
 
     
 
-  console.log('CA Database test:');
-  console.log('Error:', error);
-  console.log('Tweet:', testTweet);
-
   const tweets = await fetchTweetsByPeriod();
-  console.log(`tweets: ${tweets.length}`);
-      if (tweets.length > 0) {
-        const tweetsWithMedia = tweets.filter((tweet) => tweet.media_urls !== undefined);
-        console.log(`Tweets with defined media_urls: ${tweetsWithMedia.length} out of ${tweets.length}`);
-      } else {
-        console.log('no tweets');
-      }
 
   if (tweets.length === 0) {
     return (
