@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, memo } from 'react'
 import Image from 'next/image'
 import { decode } from 'he'
 import { Tweet } from '@/lib/types'
@@ -11,7 +11,7 @@ type TweetCardProps = {
   annotation?: string;
 };
 
-export const TweetCard = ({ tweet, onQuotedTweetClick, annotation }: TweetCardProps) => {
+export const TweetCard = memo(function TweetCard({ tweet, onQuotedTweetClick, annotation }: TweetCardProps) {
   const [expanded, setExpanded] = useState(false)
   const tweetUrl = `https://twitter.com/${tweet.username}/status/${tweet.tweet_id}`
   // Only truncate if significantly longer to avoid close calls
@@ -190,4 +190,4 @@ export const TweetCard = ({ tweet, onQuotedTweetClick, annotation }: TweetCardPr
       )}
     </div>
   )
-}
+})
