@@ -19,13 +19,24 @@ export function useUrlSync({ tweets, onTweetsLoaded }: UseUrlSyncOptions) {
     tweetMapRef.current = map
   }, [tweets])
 
-  // Initialize from URL on mount
+  // Initialize from URL on mount and sync when URL changes
   useEffect(() => {
     const loadFromUrl = async () => {
       const ids = searchParams.get('tweets')
-      if (!ids) return
+
+      // If no tweets param, clear the selection
+      if (!ids) {
+        onTweetsLoaded([])
+        return
+      }
 
       const tweetIds = ids.split(',').filter(Boolean)
+
+      // Handle empty string case
+      if (tweetIds.length === 0) {
+        onTweetsLoaded([])
+        return
+      }
       const foundTweets: Tweet[] = []
       const missingIds: string[] = []
 
@@ -60,16 +71,23 @@ export function useUrlSync({ tweets, onTweetsLoaded }: UseUrlSyncOptions) {
   }, [searchParams, onTweetsLoaded])
 
   const updateUrl = (selectedTweets: Tweet[]) => {
-    const ids = selectedTweets.map(t => t.tweet_id).join(',')
-    const params = new URLSearchParams()
-    if (ids) {
-      params.set('tweets', ids)
+    // Add all tweets to the map so we don't need to fetch them later
+    selectedTweets.forEach(t => tweetMapRef.current.set(t.tweet_id, t))
+
+    if (selectedTweets.length === 0) {
+      // Clear URL params entirely
+      router.replace('/', { scroll: false })
+    } else {
+      const ids = selectedTweets.map(t => t.tweet_id).join(',')
+      router.replace(`?tweets=${ids}`, { scroll: false })
     }
-    router.replace(`?${params.toString()}`, { scroll: false })
   }
 
   return { updateUrl, tweetMapRef }
 }
+
+
+
 
 
 
