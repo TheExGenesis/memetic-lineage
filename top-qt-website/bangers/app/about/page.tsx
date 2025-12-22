@@ -3,14 +3,18 @@ export default function AboutPage() {
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
         <header className="mb-12 border-b-4 border-black pb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-5xl font-bold tracking-tighter">About</h1>
-            <a 
+          <div className="flex items-center gap-4 mb-4">
+            <a
               href="/"
-              className="text-base font-bold underline hover:opacity-70 transition-opacity"
+              className="p-2 hover:bg-gray-100 transition-colors border border-transparent hover:border-black"
+              title="Back to home"
             >
-              Home
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 12H5" />
+                <path d="M12 19l-7-7 7-7" />
+              </svg>
             </a>
+            <h1 className="text-5xl font-bold tracking-tighter">About</h1>
           </div>
         </header>
 

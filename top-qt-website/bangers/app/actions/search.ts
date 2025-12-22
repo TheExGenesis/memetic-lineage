@@ -156,8 +156,6 @@ export async function searchEmbeddings(searchTerm: string, baseTweetId?: string)
     const enrichedTweets = tweetIds.length > 0 ? await fetchTweetDetails(tweetIds) : [];
     const tweetMap = new Map(enrichedTweets.map((t) => [t.tweet_id, t]));
 
-    console.log('enrichedTweets', enrichedTweets);
-
     return rawResults
       .map((result) => {
         const tweetId = result.metadata?.tweet_id ?? result.key;
