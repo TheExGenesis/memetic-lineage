@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 interface StrandPoint {
   seed_tweet_id: string;
   title: string;
+  label?: string | null;  // Custom label for chart (overrides title)
   x: number;
   y: number;
   color: string;
@@ -64,7 +65,7 @@ export function StrandSemanticMap() {
 
     // Add padding
     const padding = 40;
-    const labelPadding = 30; // Extra top padding for labels
+    const labelPadding = 50; // Extra top padding for labels
 
     const scaleX = (containerWidth - padding * 2) / (xMax - xMin);
     const scaleY = (containerHeight - padding - labelPadding) / (yMax - yMin);
@@ -137,28 +138,105 @@ export function StrandSemanticMap() {
       ctx.globalAlpha = 1;
     });
 
-    // Draw labels for labeled points
+    // Draw labels for labeled points with collision detection
     ctx.font = '11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
 
-    data.labeled_indices.forEach(i => {
+    // Calculate all label bounding boxes first
+    interface LabelBox {
+      index: number;
+      text: string;
+      cx: number;
+      cy: number;
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      likes: number;
+    }
+
+    const labelBoxes: LabelBox[] = data.labeled_indices.map(i => {
       const point = data.points[i];
       const { cx, cy } = toCanvasCoords(point.x, point.y);
-
-      // Background for label
-      const text = point.title;
+      const text = point.label || point.title;
       const metrics = ctx.measureText(text);
-      const textWidth = metrics.width;
-      const textHeight = 14;
+      const textWidth = metrics.width + 8; // padding
+      const textHeight = 18;
+      const labelY = cy - 22 - textHeight;
 
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-      ctx.fillRect(cx - textWidth / 2 - 4, cy - 22 - textHeight, textWidth + 8, textHeight + 4);
-
-      // Label text
-      ctx.fillStyle = '#333';
-      ctx.fillText(text, cx, cy - 20);
+      return {
+        index: i,
+        text,
+        cx,
+        cy,
+        x: cx - textWidth / 2,
+        y: labelY,
+        width: textWidth,
+        height: textHeight,
+        likes: point.likes,
+      };
     });
+
+    // Sort by likes (highest first) to prioritize popular strands
+    labelBoxes.sort((a, b) => b.likes - a.likes);
+
+    // Check if two boxes overlap
+    const boxesOverlap = (a: LabelBox, b: LabelBox, padding = 4) => {
+      return !(a.x + a.width + padding < b.x ||
+               b.x + b.width + padding < a.x ||
+               a.y + a.height + padding < b.y ||
+               b.y + b.height + padding < a.y);
+    };
+
+    // Try alternative positions for a label
+    const tryPositions = (box: LabelBox, placed: LabelBox[]): LabelBox | null => {
+      // Positions to try: above (default), below, left, right
+      const offsets = [
+        { dx: 0, dy: 0 },           // above (default)
+        { dx: 0, dy: box.cy + 8 - box.y },  // below point
+        { dx: -box.width / 2 - 10, dy: box.height / 2 }, // left
+        { dx: box.width / 2 + 10, dy: box.height / 2 },  // right
+      ];
+
+      for (const offset of offsets) {
+        const testBox = {
+          ...box,
+          x: box.x + offset.dx,
+          y: box.y + offset.dy,
+        };
+
+        // Check if this position works
+        const hasCollision = placed.some(p => boxesOverlap(testBox, p));
+        if (!hasCollision) {
+          return testBox;
+        }
+      }
+
+      return null; // No valid position found
+    };
+
+    // Place labels, skipping those that would overlap
+    const placedLabels: LabelBox[] = [];
+
+    for (const box of labelBoxes) {
+      const positioned = tryPositions(box, placedLabels);
+      if (positioned) {
+        placedLabels.push(positioned);
+      }
+    }
+
+    // Draw the placed labels
+    for (const box of placedLabels) {
+      // Background
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.fillRect(box.x, box.y, box.width, box.height);
+
+      // Text
+      ctx.fillStyle = '#333';
+      ctx.textAlign = 'center';
+      ctx.fillText(box.text, box.x + box.width / 2, box.y + box.height - 4);
+    }
 
   }, [data, hoveredIndex, toCanvasCoords]);
 
@@ -237,7 +315,7 @@ export function StrandSemanticMap() {
 
   if (!data) {
     return (
-      <div className="w-full h-[300px] bg-gray-50 flex items-center justify-center text-gray-400 text-sm">
+      <div className="w-full h-[350px] bg-gray-50 flex items-center justify-center text-gray-400 text-sm">
         Loading semantic map...
       </div>
     );
@@ -247,7 +325,7 @@ export function StrandSemanticMap() {
     <div className="relative w-full mb-6">
       <div
         ref={containerRef}
-        className="w-full h-[300px] bg-[#fafafa] border-2 border-black shadow-[4px_4px_0_0_#000]"
+        className="w-full h-[350px] bg-[#fafafa] border-2 border-black shadow-[4px_4px_0_0_#000]"
       >
         <canvas
           ref={canvasRef}
