@@ -12,6 +12,7 @@ import { VerticalSpine } from '../VerticalSpine';
 import { BackButton } from '../components/BackButton';
 import { fetchTweetDetails } from '@/lib/api';
 import { StrandHistogram, HistogramData } from './StrandHistogram';
+import { StrandSemanticMap } from './StrandSemanticMap';
 
 interface BestStrandsClientProps {
   strands: StrandWithTweet[];
@@ -564,6 +565,9 @@ export function BestStrandsClient({ strands }: BestStrandsClientProps) {
             </button>
           </div>
         )}
+
+        {/* Semantic Map */}
+        <StrandSemanticMap />
 
         <div className="flex flex-col gap-4">
           {strands.slice(0, visibleStrandsCount).map((strand) => (

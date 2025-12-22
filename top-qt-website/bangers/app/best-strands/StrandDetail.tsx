@@ -241,26 +241,55 @@ export function StrandDetail({ strand, onBack, onSelectTweet, onHorizontalScroll
 
           {/* Info row: seed tweet, stats columns, analysis card */}
           <div className="flex gap-3 border border-gray-200 bg-gray-50 p-2">
-            {/* Seed Tweet */}
-            <div
-              className={`flex items-start gap-2 flex-shrink-0 w-64 border-r border-gray-200 pr-3 ${onSelectTweet ? 'cursor-pointer hover:bg-gray-100' : ''}`}
-              onClick={() => strand.seedTweet && onSelectTweet?.(strand.seedTweet)}
-            >
+            {/* Seed Tweet - Full render */}
+            <div className="flex-shrink-0 w-72 border-r border-gray-200 pr-3">
+              <div className="flex items-center gap-1.5 mb-2">
+                <span className="px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide bg-black text-white rounded">
+                  Strand Root
+                </span>
+              </div>
               {strand.seedTweet ? (
-                <>
-                  {strand.seedTweet.avatar_media_url && (
-                    <img src={strand.seedTweet.avatar_media_url} alt="" className="w-8 h-8 rounded-full flex-shrink-0" />
-                  )}
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold">@{strand.seedTweet.username}</div>
-                    <div className="text-xs text-gray-600 whitespace-pre-line line-clamp-4">
-                      {decode(strand.seedTweet.full_text)}
+                <div
+                  className={`${onSelectTweet ? 'cursor-pointer hover:bg-gray-100 rounded p-1 -m-1' : ''}`}
+                  onClick={() => strand.seedTweet && onSelectTweet?.(strand.seedTweet)}
+                >
+                  <div className="flex items-start gap-2 mb-1.5">
+                    {strand.seedTweet.avatar_media_url && (
+                      <img src={strand.seedTweet.avatar_media_url} alt="" className="w-8 h-8 rounded-full flex-shrink-0 border border-gray-200" />
+                    )}
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold">@{strand.seedTweet.username}</div>
+                      <a
+                        href={`https://twitter.com/${strand.seedTweet.username}/status/${strand.seedTweet.tweet_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-[10px] text-gray-500 font-mono hover:text-blue-600 hover:underline"
+                      >
+                        {formatDate(strand.seedTweet.created_at)}
+                      </a>
                     </div>
                   </div>
-                </>
+                  <div className="text-xs text-gray-700 whitespace-pre-line leading-relaxed">
+                    {decode(strand.seedTweet.full_text)}
+                  </div>
+                  {strand.seedTweet.media_urls && strand.seedTweet.media_urls.length > 0 && (
+                    <div className="mt-2 rounded overflow-hidden border border-gray-200">
+                      <img
+                        src={strand.seedTweet.media_urls[0]}
+                        alt=""
+                        className="w-full h-24 object-cover"
+                      />
+                    </div>
+                  )}
+                </div>
               ) : (
                 <span className="text-xs text-gray-400">No seed tweet</span>
               )}
+              {/* Derivation note */}
+              <div className="mt-2 pt-2 border-t border-gray-200 text-[10px] text-gray-500 leading-tight">
+                Strand tweets derived from quotes of this tweet + semantically similar tweets in the archive
+              </div>
             </div>
 
             {/* Rating & Metrics - stacked vertically */}
