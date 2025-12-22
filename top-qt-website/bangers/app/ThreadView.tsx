@@ -3,10 +3,6 @@
 import { Tweet } from '@/lib/types'
 import { TweetCard } from './TweetCard'
 import { useMemo, useState, useCallback } from 'react'
-import { pipe } from 'fp-ts/function'
-import * as A from 'fp-ts/Array'
-import * as Ord from 'fp-ts/Ord'
-import * as N from 'fp-ts/number'
 
 interface ThreadViewProps {
   tweets: Tweet[]
@@ -49,21 +45,13 @@ const buildTreeData = (tweets: Tweet[], focusedIds: string[]): TreeData => {
     }
   })
 
-  const byDate: Ord.Ord<{ id: string; tweet: Tweet | undefined }> = pipe(
-    N.Ord,
-    Ord.contramap((x: { id: string; tweet: Tweet | undefined }) =>
-      x.tweet ? new Date(x.tweet.created_at).getTime() : 0
-    )
-  )
-
-  const sortByDate = (ids: string[]) =>
-    pipe(
-      ids,
-      A.map(id => ({ id, tweet: tweetMap.get(id) })),
-      A.filter((x): x is { id: string; tweet: Tweet } => x.tweet !== undefined),
-      A.sort(byDate),
-      A.map(x => x.id)
-    )
+  const sortByDate = (ids: string[]): string[] => {
+    return ids
+      .map(id => ({ id, tweet: tweetMap.get(id) }))
+      .filter((x): x is { id: string; tweet: Tweet } => x.tweet !== undefined)
+      .sort((a, b) => new Date(a.tweet.created_at).getTime() - new Date(b.tweet.created_at).getTime())
+      .map(x => x.id)
+  }
 
   rootIds.sort((a, b) => {
     const ta = tweetMap.get(a)
