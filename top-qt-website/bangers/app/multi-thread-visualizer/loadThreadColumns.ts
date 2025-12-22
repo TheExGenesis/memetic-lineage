@@ -64,12 +64,18 @@ export async function loadThreadColumns(
     }
   }
 
-  // Fetch threads for each conversation
+  // Fetch threads for each conversation IN PARALLEL
+  const conversationEntries = Array.from(conversationGroups.entries());
+  const threadResults = await Promise.all(
+    conversationEntries.map(async ([convId, group]) => {
+      const threadTweets = await getThread(convId);
+      return { convId, group, threadTweets };
+    })
+  );
+
   const columns: ThreadColumn[] = [];
 
-  for (const [convId, group] of conversationGroups) {
-    const threadTweets = await getThread(convId);
-    
+  for (const { convId, group, threadTweets } of threadResults) {
     if (threadTweets.length === 0) continue;
 
     // Find root date (earliest tweet in thread)
