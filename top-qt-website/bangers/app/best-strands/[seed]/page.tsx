@@ -4,8 +4,7 @@ import path from 'path'
 import { notFound } from 'next/navigation'
 import { fetchTweetDetails } from '@/lib/api'
 import { Strand, StrandWithTweet } from '@/lib/types'
-import { StrandDetail } from '../StrandDetail'
-import { BackButton } from '../../components/BackButton'
+import { StrandDetailPage } from './StrandDetailPage'
 
 // Path to rated strands in scratchpads
 const RATED_STRANDS_DIR = path.join(
@@ -65,20 +64,8 @@ export default async function StrandByIdPage({ params }: PageProps) {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-white text-black overflow-hidden">
-      <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading strand...</div>}>
-        <StrandDetailWrapper strand={strand} />
-      </Suspense>
-    </div>
-  )
-}
-
-// Client wrapper to handle the back navigation
-function StrandDetailWrapper({ strand }: { strand: StrandWithTweet }) {
-  return (
-    <StrandDetail
-      strand={strand}
-      onBack={() => {}} // Will use BackButton inside StrandDetail
-    />
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading strand...</div>}>
+      <StrandDetailPage strand={strand} />
+    </Suspense>
   )
 }
