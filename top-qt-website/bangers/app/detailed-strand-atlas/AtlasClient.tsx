@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { Delaunay } from 'd3-delaunay';
+import { BackButton } from '../components/BackButton';
+
 
 // Dynamic import for Plotly to avoid SSR issues
 const Plot = dynamic(() => import('react-plotly.js'), { ssr: false });
@@ -28,6 +30,7 @@ interface Tweet {
   r: number;
   u: string;
   c: string;
+  a?: string;  // annotation for essential tweets
 }
 
 interface StrandMeta {
@@ -266,20 +269,23 @@ function formatHoverText(tweet: Tweet, strands: Record<string, StrandMeta>): str
     return lines.join('<br>');
   };
 
-  let hover = `<b>${wrapText(title, 35)}</b><br>`;
-  hover += `<span style="color:#555">@${tweet.u}</span>`;
+  let hover = `<b style="color:#000">${wrapText(title, 35)}</b><br>`;
+  hover += `<span style="color:#222">@${tweet.u}</span>`;
   if (tweet.dt) hover += ` · ${tweet.dt}`;
   hover += `<br>`;
 
   if (tweet.lk || tweet.rt) {
-    hover += `<span style="color:#555">${tweet.lk.toLocaleString()} likes · ${tweet.rt.toLocaleString()} RTs</span><br>`;
+    hover += `<span style="color:#333">${tweet.lk.toLocaleString()} likes · ${tweet.rt.toLocaleString()} RTs</span><br>`;
   }
 
-  hover += `<br>${wrapText(tweet.txt.replace(/\n/g, ' '), 40)}`;
+  hover += `<br><span style="color:#111">${wrapText(tweet.txt.replace(/\n/g, ' '), 40)}</span>`;
 
-  if (summary) {
+  // Show annotation for essential tweets, otherwise show strand summary
+  if (tweet.a && tweet.e) {
+    hover += `<br><br><span style="color:#1a5f1a; font-weight:500">${wrapText(tweet.a, 40)}</span>`;
+  } else if (summary) {
     const shortSummary = summary.slice(0, 150) + (summary.length > 150 ? '...' : '');
-    hover += `<br><br><span style="color:#777; font-style:italic">${wrapText(shortSummary, 40)}</span>`;
+    hover += `<br><br><span style="color:#444; font-style:italic">${wrapText(shortSummary, 40)}</span>`;
   }
 
   return hover;
@@ -295,6 +301,7 @@ function ControlPanel({
 }) {
   return (
     <div className="bg-white border-b border-gray-200 p-4 flex flex-wrap gap-6 items-center text-sm">
+      <BackButton fallbackHref="/best-strands" />
       {/* Edges */}
       <div className="flex items-center gap-2">
         <label className="flex items-center gap-1 cursor-pointer">
@@ -427,15 +434,16 @@ export function AtlasClient() {
   const [data, setData] = useState<AtlasData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedStrandId, setSelectedStrandId] = useState<string | null>(null);
   const [params, setParams] = useState<Parameters>({
     showEdges: true,
     edgeThreshold: 1.5,
-    showEnvelopes: false,
+    showEnvelopes: true,
     alphaValue: 1.5,
     showRootLabels: true,
     edgeOpacity: 0.25,
     envelopeFillOpacity: 0.15,
-    labelPercentile: 70,
+    labelPercentile: 80,
   });
 
   // Load data
@@ -519,7 +527,51 @@ export function AtlasClient() {
     return envelopes;
   }, [data, params.showEnvelopes, params.alphaValue]);
 
-  // Build plot traces
+  // Track if a point was clicked (to distinguish from background clicks)
+  const pointClickedRef = useRef(false);
+
+  // Handle Plotly initialization - attach native click events
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handlePlotInitialized = useCallback((figure: any, graphDiv: any) => {
+    // Point click - select/toggle strand
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    graphDiv.on('plotly_click', (event: any) => {
+      const point = event?.points?.[0];
+      if (point?.customdata) {
+        pointClickedRef.current = true;
+        const strandId = point.customdata;
+        setSelectedStrandId(prev => prev === strandId ? null : strandId);
+      }
+    });
+
+    // Background click - clear selection
+    // Use mousedown on the plot area to detect clicks that don't hit points
+    const plotArea = graphDiv.querySelector('.plotly');
+    if (plotArea) {
+      plotArea.addEventListener('click', () => {
+        // If a point was clicked, Plotly's handler already ran
+        if (pointClickedRef.current) {
+          pointClickedRef.current = false;
+          return;
+        }
+        // Background click - clear selection
+        setSelectedStrandId(null);
+      });
+    }
+  }, []);
+
+  // Simple click handler (backup for react-plotly.js onClick prop)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handlePlotClick = useCallback((event: any) => {
+    const point = event?.points?.[0];
+    if (point?.customdata) {
+      pointClickedRef.current = true;
+      const strandId = point.customdata;
+      setSelectedStrandId(prev => prev === strandId ? null : strandId);
+    }
+  }, []);
+
+  // Build plot traces - includes selection-based styling
   const traces = useMemo(() => {
     if (!data) return [];
 
@@ -531,16 +583,42 @@ export function AtlasClient() {
     const essential = tweets.filter((t) => t.e && !t.r);
     const root = tweets.filter((t) => t.r);
 
-    // 1. Envelopes
+    // Helper for opacity based on selection
+    const sel = selectedStrandId;
+
+    // 1. Envelopes - split into selected and non-selected for efficiency
     if (params.showEnvelopes && params.envelopeFillOpacity > 0) {
+      // If selection active, render selected envelope separately for highlighting
+      if (sel && strandEnvelopes.has(sel)) {
+        const envelope = strandEnvelopes.get(sel)!;
+        const color = getStrandColor(sel);
+        const rgbMatch = color.match(/rgb\((\d+),(\d+),(\d+)\)/);
+        if (rgbMatch) {
+          const [, r, g, b] = rgbMatch;
+          traces.push({
+            type: 'scatter',
+            x: envelope.map((c) => c[0]),
+            y: envelope.map((c) => c[1]),
+            mode: 'lines',
+            fill: 'toself',
+            fillcolor: `rgba(${r},${g},${b},${params.envelopeFillOpacity * 2})`,
+            line: { color: `rgba(${r},${g},${b},0.8)`, width: 2 },
+            showlegend: false,
+            hoverinfo: 'skip',
+            customdata: envelope.map(() => sel),
+          } as PlotlyTrace);
+        }
+      }
+
+      // All other envelopes in a single batch (dimmed if selection active)
+      const dimmedOpacity = sel ? params.envelopeFillOpacity * 0.2 : params.envelopeFillOpacity;
+      const borderOpacity = sel ? 0.15 : 0.5;
       for (const [strandId, envelope] of strandEnvelopes) {
+        if (sel === strandId) continue; // Already rendered above
         const color = getStrandColor(strandId);
         const rgbMatch = color.match(/rgb\((\d+),(\d+),(\d+)\)/);
         if (!rgbMatch) continue;
         const [, r, g, b] = rgbMatch;
-
-        const fillColor = `rgba(${r},${g},${b},${params.envelopeFillOpacity})`;
-        const borderColor = `rgba(${r},${g},${b},0.5)`;
 
         traces.push({
           type: 'scatter',
@@ -548,15 +626,16 @@ export function AtlasClient() {
           y: envelope.map((c) => c[1]),
           mode: 'lines',
           fill: 'toself',
-          fillcolor: fillColor,
-          line: { color: borderColor, width: 1 },
+          fillcolor: `rgba(${r},${g},${b},${dimmedOpacity})`,
+          line: { color: `rgba(${r},${g},${b},${borderOpacity})`, width: 1 },
           showlegend: false,
           hoverinfo: 'skip',
+          customdata: envelope.map(() => strandId),
         } as PlotlyTrace);
       }
     }
 
-    // 2. Edges
+    // 2. Edges - consolidated into 2 traces (selected + others) for performance
     if (params.showEdges && params.edgeOpacity > 0) {
       const strandImportant = new Map<string, Tweet[]>();
       for (const t of tweets) {
@@ -567,12 +646,20 @@ export function AtlasClient() {
         }
       }
 
+      // Collect all edges, separating selected strand if any
+      const selectedEdgeX: (number | null)[] = [];
+      const selectedEdgeY: (number | null)[] = [];
+      const otherEdgeX: (number | null)[] = [];
+      const otherEdgeY: (number | null)[] = [];
+      const otherEdgeColors: (string | null)[] = [];
+      const otherEdgeCustomdata: (string | null)[] = [];
+
       for (const [strandId, strandTweets] of strandImportant) {
         if (strandTweets.length < 2) continue;
 
         const sorted = [...strandTweets].sort((a, b) => a.dt.localeCompare(b.dt));
-        const edgeX: (number | null)[] = [];
-        const edgeY: (number | null)[] = [];
+        const color = getStrandColor(strandId);
+        const isSelected = sel === strandId;
 
         for (let i = 0; i < sorted.length - 1; i++) {
           const t1 = sorted[i];
@@ -580,24 +667,47 @@ export function AtlasClient() {
           const dist = Math.sqrt((t2.x - t1.x) ** 2 + (t2.y - t1.y) ** 2);
 
           if (dist <= params.edgeThreshold) {
-            edgeX.push(t1.x, t2.x, null);
-            edgeY.push(t1.y, t2.y, null);
+            if (isSelected) {
+              selectedEdgeX.push(t1.x, t2.x, null);
+              selectedEdgeY.push(t1.y, t2.y, null);
+            } else {
+              otherEdgeX.push(t1.x, t2.x, null);
+              otherEdgeY.push(t1.y, t2.y, null);
+              otherEdgeColors.push(color, color, null);
+              otherEdgeCustomdata.push(strandId, strandId, null);
+            }
           }
         }
+      }
 
-        if (edgeX.length > 0) {
-          const color = getStrandColor(strandId);
-          traces.push({
-            type: 'scattergl',
-            x: edgeX,
-            y: edgeY,
-            mode: 'lines',
-            line: { color, width: 1.5 },
-            opacity: params.edgeOpacity,
-            showlegend: false,
-            hoverinfo: 'skip',
-          } as PlotlyTrace);
-        }
+      // Non-selected edges in one trace
+      if (otherEdgeX.length > 0) {
+        traces.push({
+          type: 'scattergl',
+          x: otherEdgeX,
+          y: otherEdgeY,
+          mode: 'lines',
+          line: { color: otherEdgeColors, width: 1.5 },
+          opacity: sel ? params.edgeOpacity * 0.1 : params.edgeOpacity,
+          showlegend: false,
+          hoverinfo: 'skip',
+          customdata: otherEdgeCustomdata,
+        } as PlotlyTrace);
+      }
+
+      // Selected strand edges highlighted
+      if (sel && selectedEdgeX.length > 0) {
+        traces.push({
+          type: 'scattergl',
+          x: selectedEdgeX,
+          y: selectedEdgeY,
+          mode: 'lines',
+          line: { color: getStrandColor(sel), width: 3 },
+          opacity: Math.min(params.edgeOpacity * 3, 0.9),
+          showlegend: false,
+          hoverinfo: 'skip',
+          customdata: selectedEdgeX.map(() => sel),
+        } as PlotlyTrace);
       }
     }
 
@@ -610,11 +720,12 @@ export function AtlasClient() {
         mode: 'markers',
         name: 'Tweets',
         text: regular.map((t) => formatHoverText(t, strands)),
+        customdata: regular.map((t) => t.sid),
         hoverinfo: 'text',
         marker: {
           size: 5,
           color: regular.map(getColor),
-          opacity: 0.3,
+          opacity: sel ? regular.map(t => t.sid === sel ? 0.6 : 0.05) : 0.3,
         },
       } as PlotlyTrace);
     }
@@ -631,17 +742,18 @@ export function AtlasClient() {
       });
 
       traces.push({
-        type: 'scatter',
+        type: 'scattergl',
         x: essential.map((t) => t.x),
         y: essential.map((t) => t.y),
         mode: 'markers',
         name: 'Essential',
         text: essential.map((t) => formatHoverText(t, strands)),
+        customdata: essential.map((t) => t.sid),
         hoverinfo: 'text',
         marker: {
-          size: 10,
+          size: sel ? essential.map(t => t.sid === sel ? 14 : 6) : 10,
           color: colors,
-          opacity: 0.9,
+          opacity: sel ? essential.map(t => t.sid === sel ? 1.0 : 0.15) : 0.9,
           line: { color: 'rgba(0,0,0,0.3)', width: 1 },
         },
       } as PlotlyTrace);
@@ -650,25 +762,26 @@ export function AtlasClient() {
     // 5. Root tweets
     if (root.length > 0) {
       traces.push({
-        type: 'scatter',
+        type: 'scattergl',
         x: root.map((t) => t.x),
         y: root.map((t) => t.y),
         mode: 'markers',
         name: 'Root',
         text: root.map((t) => formatHoverText(t, strands)),
+        customdata: root.map((t) => t.sid),
         hoverinfo: 'text',
         marker: {
-          size: 14,
+          size: sel ? root.map(t => t.sid === sel ? 20 : 10) : 14,
           symbol: 'diamond',
           color: root.map(getColor),
-          opacity: 1.0,
+          opacity: sel ? root.map(t => t.sid === sel ? 1.0 : 0.15) : 1.0,
           line: { color: 'rgba(0,0,0,0.5)', width: 2 },
         },
       } as PlotlyTrace);
     }
 
     return traces;
-  }, [data, getColor, getStrandColor, params, strandEnvelopes]);
+  }, [data, getColor, getStrandColor, params, strandEnvelopes, selectedStrandId]);
 
   const layout: Partial<PlotlyLayout> = useMemo(() => {
     const rootTweets = data?.tweets.filter(t => t.r) || [];
@@ -717,7 +830,8 @@ export function AtlasClient() {
         const label = meta?.label || meta?.title || `@${t.u}`;
         return {
           x: t.x,
-          y: t.y + 0.4,
+          y: t.y,
+          yshift: 18,  // Pixel offset - stays constant regardless of zoom
           text: label,
           showarrow: false,
           font: { size: 10, color: '#2a2a2a', family: 'system-ui, sans-serif' },
@@ -733,7 +847,8 @@ export function AtlasClient() {
   const config: Partial<PlotlyConfig> = useMemo(() => ({
     scrollZoom: true,
     displayModeBar: true,
-    modeBarButtonsToAdd: ['drawline', 'drawrect', 'drawopenpath', 'eraseshape'],
+    displaylogo: false,
+    responsive: true,
     toImageButtonOptions: {
       format: 'png',
       filename: 'strand_atlas',
@@ -742,6 +857,11 @@ export function AtlasClient() {
       scale: 2,
     },
   }), []);
+
+  // Clear selection handler
+  const handleClearSelection = useCallback(() => {
+    setSelectedStrandId(null);
+  }, []);
 
   if (loading) {
     return (
@@ -765,16 +885,34 @@ export function AtlasClient() {
     );
   }
 
+  // Get selected strand info for display
+  const selectedStrandInfo = selectedStrandId && data ? data.strands[selectedStrandId] : null;
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <ControlPanel params={params} setParams={setParams} />
+      {selectedStrandInfo && (
+        <div className="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-4 text-sm">
+          <span className="font-medium text-gray-700">Selected:</span>
+          <span className="text-gray-900">{selectedStrandInfo.title}</span>
+          <span className="text-gray-500">@{selectedStrandInfo.username}</span>
+          <button
+            onClick={handleClearSelection}
+            className="ml-auto px-3 py-1 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded text-xs transition-colors"
+          >
+            Clear selection
+          </button>
+        </div>
+      )}
       <div className="flex-1 p-4">
         <Plot
           data={traces}
           layout={layout}
           config={config}
-          style={{ width: '100%', height: 'calc(100vh - 120px)' }}
+          style={{ width: '100%', height: selectedStrandInfo ? 'calc(100vh - 160px)' : 'calc(100vh - 120px)' }}
           useResizeHandler
+          onClick={handlePlotClick}
+          onInitialized={handlePlotInitialized}
         />
       </div>
     </div>

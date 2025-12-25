@@ -514,7 +514,15 @@ export function BestStrandsClient({ strands }: BestStrandsClientProps) {
             <div className="flex items-center gap-4">
               <BackButton fallbackHref="/" />
               <div>
-                <h1 className="text-3xl font-bold tracking-tight">Strands</h1>
+                <div className="flex items-center gap-4">
+                  <h1 className="text-3xl font-bold tracking-tight">Strands</h1>
+                  <a
+                    href="/detailed-strand-atlas"
+                    className="text-sm px-3 py-1 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded transition-colors"
+                  >
+                    View Atlas
+                  </a>
+                </div>
                 <div className="text-sm text-gray-600 max-w-4xl mt-2">
                   <p className="leading-relaxed">
                     <strong className="text-gray-900">Strands are units of narrative</strong>—stories worth telling that exist{' '}
