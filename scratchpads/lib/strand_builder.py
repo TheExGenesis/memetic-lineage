@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Literal, Optional, Set, Tuple
 
 from .conversation_explorer import (
-    ConversationTree, EnrichedTweet, 
+    ConversationTree, EnrichedTweet,
     filter_conversation_trees, render_conversation_trees,
     strand_header_print_factory, print_conversation_threads
 )
@@ -13,6 +13,25 @@ from diskcache import Cache
 from .semantic_search import search_embeddings
 from .image_describer import get_image_cache, get_image_descriptions_batch
 from .parallel import parallel_map_to_dict
+from .semantic_backups import load_semantic_backup, save_semantic_backup, cleanup_old_backups
+
+
+class SemanticSearchFailedError(Exception):
+    """Raised when semantic search returns no results for strands."""
+    def __init__(self, failed_ids: List[int], total_ids: int):
+        self.failed_ids = failed_ids
+        self.total_ids = total_ids
+        super().__init__(
+            f"Semantic search returned no results for {len(failed_ids)}/{total_ids} strands. "
+            f"First 5 failed IDs: {failed_ids[:5]}. "
+            f"This usually means the Qdrant server is down or embeddings are missing."
+        )
+
+
+def _has_semantic_seeds(seeds: List['StrandSeed']) -> bool:
+    """Check if a strand has any semantic search seeds."""
+    return any(s.source_type in ('semantic_search', 'quote_of_semantic_search') for s in seeds)
+
 
 # %%
 @dataclass
@@ -34,9 +53,26 @@ def _semantic_search_for_strands(
     tweet = tweet_dict.get(tweet_id)
     if not tweet:
         return []
-    
+
+    search_params = {
+        'k': k,
+        'threshold': threshold,
+        'exclude_keywords': exclude_keywords
+    }
+
+    # Try loading from backup first
+    backup_tweet_ids = load_semantic_backup(tweet_id, search_params)
+    if backup_tweet_ids is not None:
+        if debug:
+            print(f"[DEBUG] Loaded {len(backup_tweet_ids)} results from backup for tweet {tweet_id}")
+        # Reconstruct EnrichedTweet objects from IDs
+        backup_tweets = [tweet_dict.get(tid) for tid in backup_tweet_ids if tweet_dict.get(tid)]
+        backup_tweets = [t for t in backup_tweets if t is not None]
+        return sorted(backup_tweets, key=lambda x: x.get('quoted_count', 0) or 0, reverse=True)[:limit]
+
+    # No valid backup - perform search
     filter_obj = {"must_not": [{"key": "text", "match": {"text": kw}} for kw in exclude_keywords]} if exclude_keywords else None
-    
+
     start_time = time.time()
     results = search_embeddings(tweet['full_text'], k=k, threshold=threshold, exclude_tweet_id=str(tweet_id), filter=filter_obj)
     if debug:
@@ -45,7 +81,7 @@ def _semantic_search_for_strands(
     result_ids = [int(r['key']) for r in results]
     result_dicts = [tweet_dict.get(rid,None) for rid in result_ids]
     result_dicts = [t for t in result_dicts if t is not None]
-    
+
     # Filter out direct quotes of the seed tweet and retweets
     filtered = [
         t for t in result_dicts
@@ -54,6 +90,11 @@ def _semantic_search_for_strands(
     ]
     if debug:
         print(f"[DEBUG] Filtering completed in {time.time() - start_time:.3f}s, found {len(filtered)} results")
+
+    # Save backup of filtered tweet IDs
+    filtered_tweet_ids = [t['tweet_id'] for t in filtered]
+    save_semantic_backup(tweet_id, search_params, filtered_tweet_ids)
+
     return sorted(filtered, key=lambda x: x.get('quoted_count', 0) or 0, reverse=True)[:limit]
 
 def get_strand_seeds(
@@ -227,7 +268,12 @@ def build_strands_phased(
     
     print(f"[build_strands_phased] Starting with {len(tweet_ids)} tweet IDs")
     print(f"[build_strands_phased] Workers: seeds={seeds_workers}, trees={trees_workers}, images={images_workers}")
-    
+
+    # Cleanup old semantic search backups (older than 7 days)
+    removed_backups = cleanup_old_backups(max_age_hours=24 * 7)
+    if removed_backups > 0:
+        print(f"[build_strands_phased] Cleaned up {removed_backups} old semantic search backups")
+
     # Phase 1: Get seeds for all tweet_ids
     print("[Phase 1] Getting seeds...")
     def get_seeds_for_tid(tid: int) -> List[StrandSeed]:
@@ -238,7 +284,19 @@ def build_strands_phased(
         max_workers=seeds_workers, desc="Phase 1: Seeds"
     )
     print(f"[Phase 1] Got seeds for {len(seeds_by_tid)} strands, {len(seeds_failed)} failed")
-    
+
+    # Validate semantic search worked - fail fast if no semantic matches found
+    no_semantic_ids = [
+        tid for tid, seeds in seeds_by_tid.items()
+        if not _has_semantic_seeds(seeds)
+    ]
+    if no_semantic_ids:
+        # If ALL strands have no semantic matches, this is a system failure
+        if len(no_semantic_ids) == len(seeds_by_tid):
+            raise SemanticSearchFailedError(no_semantic_ids, len(tweet_ids))
+        # If only some failed, warn but continue (some tweets may legitimately have no matches)
+        print(f"[WARN] {len(no_semantic_ids)} strands have no semantic matches (may be expected for some)")
+
     # Phase 2: Filter trees for all
     print("[Phase 2] Filtering conversation trees...")
     def filter_trees_for_tid(tid: int) -> Dict[int, ConversationTree]:

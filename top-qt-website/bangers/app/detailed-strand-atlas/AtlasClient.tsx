@@ -863,12 +863,29 @@ export function AtlasClient() {
     setSelectedStrandId(null);
   }, []);
 
+  // Compute stats
+  const stats = useMemo(() => {
+    if (!data) return null;
+    const strandCounts = new Map<string, number>();
+    for (const t of data.tweets) {
+      strandCounts.set(t.sid, (strandCounts.get(t.sid) || 0) + 1);
+    }
+    const counts = [...strandCounts.values()].sort((a, b) => a - b);
+    const totalTweets = data.tweets.length;
+    const totalStrands = strandCounts.size;
+    const minTweets = counts[0] || 0;
+    const maxTweets = counts[counts.length - 1] || 0;
+    const avgTweets = totalStrands > 0 ? Math.round(totalTweets / totalStrands) : 0;
+    const essentialCount = data.tweets.filter(t => t.e).length;
+    return { totalTweets, totalStrands, minTweets, maxTweets, avgTweets, essentialCount };
+  }, [data]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading atlas data (~7MB)...</p>
+          <p className="text-gray-600">Loading atlas data (~12MB)...</p>
         </div>
       </div>
     );
@@ -891,6 +908,15 @@ export function AtlasClient() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <ControlPanel params={params} setParams={setParams} />
+      {stats && (
+        <div className="bg-gray-100 border-b border-gray-200 px-4 py-2 flex flex-wrap gap-4 text-xs text-gray-600">
+          <span><strong>{stats.totalTweets.toLocaleString()}</strong> tweets</span>
+          <span><strong>{stats.totalStrands}</strong> strands</span>
+          <span><strong>{stats.essentialCount.toLocaleString()}</strong> essential</span>
+          <span className="text-gray-400">|</span>
+          <span>per strand: <strong>{stats.minTweets}</strong>–<strong>{stats.maxTweets}</strong> (avg {stats.avgTweets})</span>
+        </div>
+      )}
       {selectedStrandInfo && (
         <div className="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-4 text-sm">
           <span className="font-medium text-gray-700">Selected:</span>
@@ -909,7 +935,7 @@ export function AtlasClient() {
           data={traces}
           layout={layout}
           config={config}
-          style={{ width: '100%', height: selectedStrandInfo ? 'calc(100vh - 160px)' : 'calc(100vh - 120px)' }}
+          style={{ width: '100%', height: selectedStrandInfo ? 'calc(100vh - 190px)' : 'calc(100vh - 150px)' }}
           useResizeHandler
           onClick={handlePlotClick}
           onInitialized={handlePlotInitialized}

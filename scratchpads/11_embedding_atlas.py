@@ -5,6 +5,7 @@ import re
 import requests
 from pathlib import Path
 from typing import Optional
+from tqdm import tqdm
 
 DATA_DIR = Path("data")
 RATED_DIR = DATA_DIR / "rated_strands"
@@ -209,7 +210,15 @@ Annotation:
 # Cell 1: Get all the text to embed for the atlas
 
 strand_files = sorted(RATED_DIR.glob("*.json"))
-print(f"Loading {len(strand_files)} strands...\n")
+print(f"Found {len(strand_files)} rated strands\n")
+
+# Filter to only strands that don't have embeddings yet
+existing_embeddings = set(p.stem for p in EMBEDDINGS_DIR.glob("*.json"))
+strand_files = [f for f in strand_files if f.stem not in existing_embeddings]
+print(f"Processing {len(strand_files)} strands without embeddings (skipping {len(existing_embeddings)} already done)\n")
+
+if not strand_files:
+    print("All strands already have embeddings! Skipping to UMAP step...")
 
 all_embedding_texts = {}  # {strand_id: [{tweet_id, text_to_embed, annotation, tweet_type}, ...]}
 
@@ -219,7 +228,7 @@ for filepath in tqdm(strand_files, desc="Loading strands"):
     thread_text = strand['thread_text']
     essential_tweets = strand['rating']['essential_tweets']
 
-    
+
     # Extract all tweet IDs from the thread
     all_tweet_ids = extract_all_tweet_ids_from_thread(thread_text)
     print(f"Total tweets in thread: {len(all_tweet_ids)}")
@@ -314,8 +323,16 @@ from tqdm import tqdm
 # Load environment variables
 load_dotenv(Path("..") / ".env")
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-EMBEDDING_MODEL = "text-embedding-3-large"  # or "text-embedding-3-large" for higher quality
+# Use OpenRouter API for embeddings
+api_key = os.getenv("OPENROUTER_API_KEY")
+if not api_key:
+    raise ValueError("OPENROUTER_API_KEY not found in .env file")
+
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=api_key
+)
+EMBEDDING_MODEL = "openai/text-embedding-3-large"  # OpenRouter prefix for OpenAI models
 
 def get_embeddings_batch(texts: list[str], batch_size: int = 500) -> list[list[float]]:
     """Get embeddings for multiple texts in batches."""

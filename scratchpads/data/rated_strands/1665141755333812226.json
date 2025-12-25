@@ -1,0 +1,314 @@
+{
+  "seed_tweet_id": 1665141755333812226,
+  "thread_text": "643757430963200000 [2015-09-15] @visakanv \ud83d\udc9c 2 [(SEED) type=semantic_search]\nI wish @Trello or @Asana had a \"SMART\" plugin (specific/measurable/achievable/realistic/timely). Make your todo list better\n\u2193\n643757815123709952 [2015-09-15] @visakanv \ud83d\udc9c 1\nThere's a bunch of popular wisdom about 7 Habits, GTD, etc that should be smartly integrated into a good todo app\n\u2193\n643757912209289217 [2015-09-15] @visakanv \nI've encountered a few that try to do it, but those tend to fail because they try to do too much all at once and intimidate the user\n\u2193\n643827329395896320 [2015-09-15] @visakanv \nIt should literally be like a video game. Start out at lvl 1, get more complex as you go. Don't reveal the complexity until user is comfy\n\n===\n\n1412647893018705922 [2021-07-07] @goblinodds \ud83d\udc9c 16\ngoogle's API seems a lot more noob-friendly than twitter's so far, took me like than half an hour to set up OAuth https://t.co/RDN5KTVood\n  [Quoting @goblinodds: script that automatically adds events for tasks, repeating or otherwise, but adjusts date/time based on completion of other tasks  bonus: something that blocks out recovery time post-events as \"busy\"  https://t.co/6H40Pzd6cM]\n\u2193\n1412647894033735687 [2021-07-07] @goblinodds \ud83d\udc9c 4\nthe way i want to try to do this is:\n\n1. user adds tasks as normal but with some way of indicating frequency of recurrence (if marked \"complete,\" a recurring task gets moved down the list rather than deleted)\n\u2193\n1412647895220715526 [2021-07-07] @goblinodds \ud83d\udc9c 4\n2. have a \"tasks\" time block that updates with ONLY the first task in the list\n\n3. the \"tasks\" time block exists in relation (and subordinate) to other calendar events\n\n4. all calendar events have a \"recovery time\" buffer built in (for my purposes recovery time = event length)\n\u2193\n1412647896319553540 [2021-07-07] @goblinodds \ud83d\udc9c 5 [(SEED) type=semantic_search]\nobvs this doesnt work for tasks with deadlines but i think something like this might help people who cant stick to schedules and get overwhelmed by lists\n\u2193\n1412996099216871424 [2021-07-08] @goblinodds \ud83d\udc9c 11\nok i set up OAuth, now how the heck do i actually... effect my calendar from this .py file....??\n\n(15 minutes later)\n\ni fucked around!! i found out!! https://t.co/K6pmxtw3d1\nImages:\n  - [Image #0] The image is a screenshot of a calendar, showing two days: Tuesday 6 and Wednesday 7. The calendar displays two events: \"Google I/O 2015, 9am\" on Tuesday and \"LA Rat reading\" on Wednesday.\n\u2193\n1412996301080252416 [2021-07-08] @goblinodds \ud83d\udc9c 5\nit looks like even though google Tasks is part of the Calendar UI it's a separate thing with its own (paid?) API so i guess i wont be fucking with that\n\nbut i have a plan\n\u2193\n1413014853044760577 [2021-07-08] @goblinodds \ud83d\udc9c 2\nit's probably pretty hacky but so far i've figured out\n\n- how to add an event to my google calendar\n\n- the event is always set to the current day\n\nnext i want to see if i can check for an existing calendar event and adjust the time of the new event accordingly\n\u2193\n1416258249792258049 [2021-07-17] @goblinodds \ud83d\udc9c 1\nok after a kerfuffle with 1) me screwing up the venv and 2) not realizing google had renamed token.json to credentials.json apparently in the last week, writing the script i needed has been trivially easy\n\u2193\n1416258250836647937 [2021-07-17] @goblinodds \ud83d\udc9c 1\nthank god programmer bf was here to help figure out the errors caused by those first two problems or i'd've ragequit\n\u2193\n1416258251713249280 [2021-07-17] @goblinodds \ud83d\udc9c 8\nanyway now i have a lil script that randomly drops something from my \"to do\" list onto today's calendar date every time i run it\n\nlots more things i could do to make it better, but for my purposes i'll call it a success :)\n\u2193\n1416852502851424259 [2021-07-18] @goblinodds \ud83d\udc9c 7\nupdate: first chance i've had to actually USE the script and IT'S HELPING\n\ni mean, i haven't actually completed a task yet, but i feel motivated to do it :B\n\u2193\n1416856983383121920 [2021-07-18] @goblinodds \ud83d\udc9c 5\nnow instead of feeling badly about all the tasks i keep forgetting i should be doing or don't have energy for, i can just\n\nhave a task generated when i *do* have energy and feel good about doing just that one thing! no memory required\n\n===\n\n1641270318609080320 [2023-03-30] @univrsw3th4rt \ud83d\udc9c 9\nthread of novel concepts, funky lil websites, n public tbr items \ud83c\udf08\ud83c\udf31\ud83e\udd13\ud83d\udcd6\ud83d\udcda\ud83e\uddec\n\n===\n\n1641504826281304064 [2023-03-30] @univrsw3th4rt \nhttps://t.co/ZSjrChxht3\n  [Quoting @christineist: @RebeccaMadison_ it's mostly about attachment theory\u2014 On Attachment with Stephanie Rigg]\n\u2193\n1641506830403657735 [2023-03-30] @univrsw3th4rt \nhttps://t.co/2gcK174nN5\n  [Quoting Tweet 1590700049821941761 (missing)]\n\u2193\n1641585902936813568 [2023-03-30] @univrsw3th4rt \nhttps://t.co/UTx4KkHT0j\n  [Quoting Tweet 1641585472664391681 (missing)]\n\u2193\n1641586089969238019 [2023-03-30] @univrsw3th4rt \nhttps://t.co/Dufm7zDqyn\n  [Quoting Tweet 1641572156382273536 (missing)]\n\u2193\n1641601627390894080 [2023-03-31] @univrsw3th4rt \ud83d\udc9c 1\nhttps://t.co/38pxQrEQ8F\n  [Quoting Tweet 1641455956184686600 (missing)]\n\u2193\n1641900852544786432 [2023-03-31] @univrsw3th4rt \ud83d\udc9c 2\nhttps://t.co/22ucwvtw14\n  [Quoting @goblinodds: someone actually developed a formula for picking karaoke songs: https://t.co/gJGbd97svk]\n\u2193\n1642041670140063744 [2023-04-01] @univrsw3th4rt \ud83d\udc9c 1\nhttps://t.co/B2mtHIPBta\n  [Quoting Tweet 1641901701366939648 (missing)]\n\u2193\n1642270919136534529 [2023-04-01] @univrsw3th4rt \ud83d\udc9c 1\nhttps://t.co/henyDSmovx\n  [Quoting @Malcolm_Ocean: @univrsw3th4rt @QiaochuYuan and in terms of why this is necessary, The Secret of Our Success points out how for a long time cultural knowledge had evolved many behaviors that no humans understood, so it was necessary to keep them from tampering  https://t.co/JPLtNUSO3j]\n\u2193\n1642304549045018625 [2023-04-01] @univrsw3th4rt \ud83d\udc9c 3\napril cools!!! https://t.co/ww8cga6vrp\n  [Quoting @Malcolm_Ocean: what are you doing for April Cools?  \"create &amp; release something you wouldn't normally do, but is genuine &amp; sincere &amp; high-quality\"  https://t.co/rb1APlnshc https://t.co/wO24UmPEtm]\n\u2193\n1642310480701054976 [2023-04-01] @univrsw3th4rt \ud83d\udc9c 3\nhaving a major moment rn bc like...this is never a Thought that i would ever have encountered irlor if i did it would take like 1,000,000 conversations for it to come up organically i love twitter!!!!! https://t.co/nxQ0K4tCfC\n  [Quoting Tweet 1337551284673466368 (missing)]\n\u2193\n1665787433965723651 [2023-06-05] @univrsw3th4rt \ud83d\udc9c 1 [(SEED) type=quote_of_root]\ncool lil task break-down-er https://t.co/8BVhfbwFCf\n  [Quoting @SarahAMcManus: Very handy site, especially for folks with ADHD etc!  Put in a task, click the magic wand, and it'll break the task down into a pretty decent list of subtasks.   Lots of good customization options, can edit / add / delete / rearrange at will  https://t.co/dDymbmHHC2]\n\n===\n\n1646546368700493824 [2023-04-13] @QiaochuYuan \ud83d\udc9c 99 \ud83d\udd01 4 [(SEED) type=semantic_search]\nfollow the inscrutable exhortations of your soul. also break tasks down into smaller steps https://t.co/6VswcrSD5H\n  [Quoting Tweet 1646482579871113218 (missing)]\n\u251c\u2500\u2500 1646548204627058691 [2023-04-13] @justavagrant_ \ud83d\udc9c 1\n\u2502   @QiaochuYuan Strategy and tactics\n\u2514\u2500\u2500 1646548456654405632 [2023-04-13] @QiaochuYuan \ud83d\udc9c 60 \ud83d\udd01 9\n    a \u201cvelleity\u201d is a desire so small and fleeting that it does not occur to you to act on it. get in the habit of noticing them, then try acting on them or at least writing them down. go on walks and daydream or otherwise spend time away from screens so velleities can arise\n      [Quoting Tweet 1646546900831666176 (missing)]\n\n===\n\n1665141755333812226 [2023-06-03] @SarahAMcManus \ud83d\udc9c 2193 \ud83d\udd01 408 [(SEED) type=root]\nVery handy site, especially for folks with ADHD etc!\n\nPut in a task, click the magic wand, and it'll break the task down into a pretty decent list of subtasks. \n\nLots of good customization options, can edit / add / delete / rearrange at will\n\nhttps://t.co/dDymbmHHC2\n\u251c\u2500\u2500 1665142288031547392 [2023-06-03] @SarahAMcManus \ud83d\udc9c 122 \ud83d\udd01 2\n\u2502   Also I love the name! \n\u2502   \n\u2502   And I like that the intent is to keep the site freely available, with likely a low-cost mobile app, plus plans to move from OpenAI to open source when the quality improves\n\u2502   \u2193\n\u2502   1665155252335656964 [2023-06-04] @SarahAMcManus \ud83d\udc9c 95\n\u2502   Ah, it's by @chton ! Thanks for making it!\n\u251c\u2500\u2500 1665201486551306240 [2023-06-04] @univrsw3th4rt \ud83d\udc9c 6\n\u2502   @SarahAMcManus bookmarked, thanks for sharing!\n\u2514\u2500\u2500 1665704725726089217 [2023-06-05] @easoncxz \ud83d\udc9c 6\n    @SarahAMcManus Time to objectify people! https://t.co/iqUWe500zu\n    Images:\n      - [Image #0] The image shows a task list for \"find a gf\" (find a girlfriend) on a mobile device.\n        \n        To reproduce the image, start by creating a task list. The list should have the following tasks:\n        1. Identify desired qualities in a partner\n        2. Determine social settings to meet potential partners\n        3. Attend said social settings\n        4. Initiate conversation with potential partners\n        5. Show interest and get to know potential partners\n        6. Take time to build a connection and establish compatibility\n        7. Communicate clearly and respectfully throughout the relationship\n        8. (Partially visible) Foster trust, respect...\n        \n        Each task should have a checkbox to its left, and an edit button and a three-dot menu button to its right. The first task is highlighted in blue, indicating it is selected. The background of the list is white, and the text is black. The mobile device's status bar at the top displays the time, signal strength, and battery level. The bottom navigation bar has a home button, a back button, and a recent apps button.\n\n===\n\n1665382894833991680 [2023-06-04] @LericDax \ud83d\udc9c 3 [(SEED) type=quote_of_root]\nvery cute name lol https://t.co/Hq4ewt2eh6\n  [Quoting @SarahAMcManus: Very handy site, especially for folks with ADHD etc!  Put in a task, click the magic wand, and it'll break the task down into a pretty decent list of subtasks.   Lots of good customization options, can edit / add / delete / rearrange at will  https://t.co/dDymbmHHC2]\n\n===\n\n1665517513701031936 [2023-06-05] @goblinodds \ud83d\udc9c 119 \ud83d\udd01 1 [(SEED) type=quote_of_root]\nwait this is fuckin genius i'm obsessed https://t.co/2P0ifdKYAn\n  [Quoting @SarahAMcManus: Very handy site, especially for folks with ADHD etc!  Put in a task, click the magic wand, and it'll break the task down into a pretty decent list of subtasks.   Lots of good customization options, can edit / add / delete / rearrange at will  https://t.co/dDymbmHHC2]\n\n===\n\n1665531918367051776 [2023-06-05] @AaronBergman18 \ud83d\udc9c 6 [(SEED) type=quote_of_root]\nStarted with a banal insult, iterated with the \"make more passionate\" tool until I judged the output less insulty than the input. Result: https://t.co/oihnypVwpR https://t.co/zG6B2A7dFa\n  [Quoting @SarahAMcManus: Very handy site, especially for folks with ADHD etc!  Put in a task, click the magic wand, and it'll break the task down into a pretty decent list of subtasks.   Lots of good customization options, can edit / add / delete / rearrange at will  https://t.co/dDymbmHHC2]\nImages:\n  - [Image #0] The image displays a passage of text written in black font on a white background. The text reads: \"YOU! HOW DARE YOU?! Your despicable actions have unleashed a tsunami of disgust and despair within the very depths of my soul. You, you vile creature, with a heart as cold as the Arctic itself, have shattered every ounce of respect and trust I held for you. My fury towards you burns hotter than the fires of Hell. You are an abomination, a sorry excuse for a human being, and a blight to all that is good in this world. Your presence sickens me to my very core and offends everything that is noble and virtuous. May you rot in the depths of your dark, soulless abyss for all eternity!\"\n\u2193\n1665531920665526272 [2023-06-05] @AaronBergman18 \ud83d\udc9c 1\nThis isn't like actually bad to put on the internet right? I was cracking up but worth asking I guess\n\n===\n\n1717535108389797995 [2023-10-26] @zencephalon \ud83d\udc9c 2 [(SEED) type=semantic_search]\nI want a tool like the speed running tool LiveSplits but for estimates on my todo list. I feel like current todo apps don't provide any feedback on my internal estimates of how long things will take\n\n===\n\n1737262570464252377 [2023-12-20] @lemondotpng \ud83d\udc9c 6\ndon't have credentials to ideaflow twitter yet so im posting on my personal:Morning Pages + Ideaflow is a match made in heavenmorning pages is ideal for getting into the flow of ideas and ideaflow is the way to get the ideas out the smoothest. (better than blank google doc)\n\u2193\n1737263322746208488 [2023-12-20] @Malcolm_Ocean \ud83d\udc9c 1\n@lemonaut1 https://t.co/5cy66Z5mCv?\n\nlooks cool but I need more of a pitch to quite want to sign up0\n\u2193\n1737263986859753680 [2023-12-20] @lemondotpng \n@Malcolm_Ocean Malcolm I shake in my boots at the prospect of pitching to you but can give it a shot-right now focused on quickest capture, make new notes, hashtag it, link notes with +. you will be seriously impressed with the speed of notetaking, every feature is to get out of your way\n\u2193\n1737264297171108208 [2023-12-20] @lemondotpng  [(SEED) type=semantic_search]\n@Malcolm_Ocean -we have todos built in but a dedicated todo tool like complice is the optimal companion. we're more for raw idea capture-basic AI features built in for parsing voice notes into structured ideaflow notes. future ai features planned to make auto-organizing even easier\n\u2193\n1737264467749240937 [2023-12-20] @lemondotpng \n@Malcolm_Ocean -&amp; so much more! see our producthunt maker's comment and overall page for some great vibe downloads:https://t.co/3dtRiWhLkK\n\n===\n\n1757634307139707020 [2024-02-14] @QiaochuYuan \ud83d\udc9c 1308 \ud83d\udd01 125\nADHD megathread\n\u2193\n1757634308112867538 [2024-02-14] @QiaochuYuan \ud83d\udc9c 75 \ud83d\udd01 3\n1. @visakanv constructive ADHD draft notes (Contains Actionable Advice)\n\nhttps://t.co/OxL4SqynE5\n  [Quoting @visakanv: are you also a fidgety boi? you may be interested in my draft notes for Constructive ADHD:  https://t.co/e0Q0Z661CJ]\n\u2193\n1757634309853466868 [2024-02-14] @QiaochuYuan \ud83d\udc9c 80 \ud83d\udd01 4\n2. @hormeze notes on gabor mate's scattered minds\n\nhttps://t.co/aXA3b6iFkw\n  [Quoting Tweet 1569024659584348160 (missing)]\n\u2193\n1757634311677968743 [2024-02-14] @QiaochuYuan \ud83d\udc9c 45 \ud83d\udd01 2 [(SEED) type=quote_of_root]\n3. @SarahAMcManus discussing https://t.co/U187IVWaEF\n\nhttps://t.co/z11VA9WLmB\n  [Quoting @SarahAMcManus: Very handy site, especially for folks with ADHD etc!  Put in a task, click the magic wand, and it'll break the task down into a pretty decent list of subtasks.   Lots of good customization options, can edit / add / delete / rearrange at will  https://t.co/dDymbmHHC2]\n\u2193\n1757634313418629294 [2024-02-14] @QiaochuYuan \ud83d\udc9c 42\n3. @uberstuber threadapalooza 100 tweets on ADHD (Contains Actionable Advice)\n\nhttps://t.co/UloXHGpbDI\n  [Quoting @uberstuber: Last year I was diagnosed with ADHD. I haven't written about it much because the diagnosis was a shock.  Now I have a more solid understanding of ADHD, how it presents for me, and ways to mitigate some of the downsides.   So, for threadapalooza 2023, here's 100 tweets on ADHD]\n\u2193\n1757634315146727561 [2024-02-14] @QiaochuYuan \ud83d\udc9c 35 \ud83d\udd01 2\n4. @_brentbaum ADHD stack (Contains Actionable Advice)\n\nhttps://t.co/8q1oRVwrNH\n  [Quoting @_brentbaum: if i were starting from scratch w/ my adhd i would:  1. get on a low dose of meds (to give myself a fighting chance) 2. take 2g omega 3, 500mg magnesium, 5000iu vit d daily 3. have a coaching call with @jessicamalonso (she's so good at this!) 4. read gabor mate's scattered minds  then when i felt more resourced 1. keep a log of what i was trying to do when i got distracted for a few days (find the emotional triggers) 2. 10m of zone 2 cardio a day 3. reduce stimulation (youtube and twitter fast for 2 weeks)  i think the rest of the work would emerge naturally from here]\n\u2193\n1757634316837011709 [2024-02-14] @QiaochuYuan \ud83d\udc9c 92 \ud83d\udd01 5\n5. @OrphicCapital ADHD as \"intention deficit disorder\" and being a night owl\n\nhttps://t.co/ljrrDH80TA https://t.co/gVz3nlzemM\n  [Quoting Tweet 1712181253456183759 (missing)]\nImages:\n  - [Image #0] The image shows a tweet from the account @OrphicCapital, dated October 11, 2023. The tweet is written in white text on a black background and reads: \"one of the reasons I think ADHD types are overwhelmingly night owls, is because it takes an entire day to re-construct your intentions, for them to only get erased when you go to sleep and in the morning you have to start all over again.\" \n    \n    Below this tweet, there is a reply from the same account, also dated October 11, 2023, which states: \"huh, reframing ADHD as Intention Deficit Disorder highlights why spending a few minutes at the start of each day reminding yourself what your intentions are works so well x.com/m_ashcroft/sta...\". The reply has received 41 comments, 137 retweets, 1.3K likes, and 175K views.\n\u2193\n1757634318988652867 [2024-02-14] @QiaochuYuan \ud83d\udc9c 46 \ud83d\udd01 2\n6. @myceliummage \"adhd might just mean you have a body with more fragments of the computation in it\"\n\nhttps://t.co/Ajq1AB6Wt4 https://t.co/nvnAIlQqzh\n  [Quoting @myceliummage: interesting consequence of this is that adhd might just mean you have a body with more fragments of the computation in it, distributed across society. you are responsible for their integration. suggests the answer would involve an idiosyncratic path]\nImages:\n  - [Image #0] The image depicts a tweet and a retweet on a black background. The text is as follows:\n    \n    MAGE THE COURAGEOUS {0} @myceliummage \u00b7 Oct 22, 2023\n    \"interesting consequence of this is that adhd might just mean you have a body with more fragments of the computation in it, distributed across society. you are responsible for their integration. suggests the answer would involve an idiosyncratic path\"\n    \n    Michael Edward Johnson @johnsonmxe \u00b7 Oct 11, 2023\n    Replying to @liminal_warmth\n    \"I've been thinking of ADHD as the body's tensile system being inadequate for holding the brain's neural system in a particular context-appropriate shape. Basically, if you're experiencing ADHD, your body is holding fragments of multiple disparate contexts and is unable to commit... Show more\"\n    \n    The tweet has 4 replies, 12 retweets, 102 likes, and 18K views.\n\u2193\n1757634321572311362 [2024-02-14] @QiaochuYuan \ud83d\udc9c 56 \ud83d\udd01 1\n7. @michaelcurzi ADHD is compatible with discipline and effort\n\nhttps://t.co/0MfXpOyrNo https://t.co/NpCEsgyV4W\n  [Quoting Tweet 1728227729945014517 (missing)]\nImages:\n  - [Image #0] The image shows a Twitter conversation between two users, @michaelcurzi and @ADHDdesigner. \n    \n    The main tweet is from @michaelcurzi, dated November 24, 2023, and reads: \n    \"Diagnosed ADHD haver here - undermining and pathologizing effort is lame. Discipline and good habits, which I first learned from martial arts, are the foundation of my life. You can try hard actually and sometimes it's fucking incredible and liberating\"\n    \n    A reply tweet from @ADHDdesigner, also dated November 24, 2023, is embedded below the main tweet. It states: \n    \"I don't know who needs to hear this, but 'trying harder' is never going to cure your ADHD.\"\n    \n    The tweet has garnered 52 comments, 130 reposts, 2K likes, and 189K views.\n\u2193\n1757634323707224541 [2024-02-14] @QiaochuYuan \ud83d\udc9c 54 \ud83d\udd01 3\n8. @VividVoid_ and @jessicamalonso ADHD forgetfulness, distractibility, hyperfocus as patterns of insecure attachment\n\nhttps://t.co/mS71dR7WJr https://t.co/CEWolr8VFf\n  [Quoting Tweet 1524081290802204673 (missing)]\nImages:\n  - [Image #0] The image shows a Twitter thread discussing ADHD, with two tweets displayed against a black background. \n    \n    The first tweet, from @VividVoid_, states: \"People with ADHD don't struggle with object permanence. If you were successfully potty trained, congrats. You mastered object permanence and many other developmental tasks besides. ADHD forgetfulness is better thought of as an *insecure attachment* to the objects in our lives.\" \n    \n    The second tweet, from @jessicamalonso, continues the discussion, saying: \"And then distractibility is insecure in the more avoidant form, 'will this do? No. This? No. What about this? No' while hyperfocus is the anxious/preoccupied form, 'aha. This works. I will focus only on this and nothing else and lose myself completely to it'\".\n\u2193\n1758302450719813669 [2024-02-16] @QiaochuYuan \ud83d\udc9c 10 \ud83d\udd01 1\n@VividVoid_ @jessicamalonso 9. @visakanv ADHD as \"obedience deficit disorder\"\n\nhttps://t.co/0nuzcwIynF https://t.co/9cQSQLnVh0\n  [Quoting @visakanv: I\u2019ll simplify it further: ADHD is really ODD. Obedience deficit disorder. Some of us are wired to disobey. That\u2019s it https://t.co/44Y3wHDuYJ]\nImages:\n  - [Image #0] The image is a screenshot of a tweet from Visakan Veerasamy, with a reply from brainlet.\n    \n    *   The main tweet is from Visakan Veerasamy (@visakanv) and reads: \"I'll simplify it further: ADHD is really ODD. Obedience deficit disorder. Some of us are wired to disobey. That's it\"\n        *   The tweet has a black background with white text.\n        *   The user's profile picture is a cartoon character wearing a red shirt and a black hat.\n        *   The tweet has 22 replies, 13 retweets, 179 likes, and 50 bookmarks.\n    *   The reply is from brainlet (@magicianbrain) and reads: \"idk why everyone is so confused about ADHD. it's just what happens when the alienation of modern life biases your central nervous system to produce disordered phenomenology such that variegated emotional blocks will hinder cogent evaluation of relational stakes. simple really\"\n        *   The reply has a black background with white text.\n        *   The user's profile picture is a cartoon character with a neutral expression.\n        *   The reply was posted on January 8, 2022, at 12:54 AM.\n    \n    The image shows a conversation between two Twitter users discussing ADHD and its relation to obedience deficit disorder.\n\u2193\n1758303327581093943 [2024-02-16] @QiaochuYuan \ud83d\udc9c 18\n@VividVoid_ @jessicamalonso @visakanv 10. @SurenVynn \"People like my mother who pray several times a day do not get ADHD because prayer serves to reinforce intention\" (!)\n\nhttps://t.co/EeaiophXjZ\n  [Quoting @SurenVynn: People like my mother who pray several times a day do not get ADHD because prayer serves to reinforce intention. This is purely anecdotal evidence, of course, but something about repeatedly training attention to cultivate specific conative states is giving prayers an edge. https://t.co/7jOWx71txb]\n\n===\n\n1784309081190339020 [2024-04-27] @brimmingvessel \ud83d\udc9c 5 [(SEED) type=quote_of_root]\noh wow this is actually kinda helpful. i really like that it breaks task down for you! i won\u2019t do alll the things it lists but the general arc this there https://t.co/gZJGVonguv https://t.co/udMPpkVwFy\n  [Quoting @SarahAMcManus: Very handy site, especially for folks with ADHD etc!  Put in a task, click the magic wand, and it'll break the task down into a pretty decent list of subtasks.   Lots of good customization options, can edit / add / delete / rearrange at will  https://t.co/dDymbmHHC2]\nImages:\n  - [Image #0] The image shows a task list for making a presentation on a ctDNA paper for class on Monday. To reproduce the image, create a to-do list app screenshot with the following tasks: \n    1. Research the ctDNA paper\n    2. Create an outline for the presentation\n    3. Gather relevant visuals or data\n    4. Create slides for the presentation\n    5. Rehearse the presentation out loud\n    6. Seek feedback from peers or instructors\n    7. Make any necessary revisions\n    8. Finalize the presentation materials and format.\n    \n    The tasks are listed under the main task \"Making presentation on ctDNA paper for class on Monday\" and each task has a checkbox to its left and an edit button to its right.\n\n===\n\n1879681041637752913 [2025-01-16] @gene_jelly \ud83d\udc9c 2 [(SEED) type=semantic_search]\nThe best thing about AI to date is probably the ability for ADHD routine apps to generate infinitely complex nested subtasks with one tap \u2b50\ufe0f thank u @FlowSavvyApp https://t.co/iju6uFM4YN\nImages:\n  - [Image #0] The image shows a screenshot of a task management app, specifically a subtask list for the task \"Brush my teeth\". \n    \n    The subtask list includes the following steps:\n    * 24. Wrap the ends of the floss around your middle fingers\n    * 25. Hold the floss tightly between your thumbs and index fingers\n    * 26. Gently slide the floss between your teeth\n    * 27. Curve the floss around each tooth and slide it up and down\n    * 28. Repeat for all teeth\n    * 29. Dispose of the used floss\n    * 30. Rinse your mouth with water again\n    * 31. Open the mouthwash bottle\n    \n    To reproduce this image, create a task management app screenshot with a task titled \"Brush my teeth\" and a subtask list containing the above steps, with checkboxes next to each step. The task is allocated 3 minutes.\n\n===\n\n1914084622918455572 [2025-04-20] @EyalToledano \ud83d\udc9c 365 \ud83d\udd01 36 [(SEED) type=semantic_search]\njust shipped taskmaster v0.12 \ud83d\ude80\n\n\u2192 parse multiple PRDs, smarter breakdowns, easier setup, command improvements,MCP polish +++\n\n\u2192 introducing the @TaskmasterAI website, which i have become ossessed with (link below)\n\n\u2192 4.5k \u2b50 @github\n\nbig upgrades based on your feedback \ud83d\udc47 https://t.co/kmeDFZpWAz\n\n===\n\n1914216136373412255 [2025-04-21] @naslouki \ud83d\udc9c 1 [(SEED) type=semantic_search]\nThe raw to-do list.\nMost atomic level. No scope creep.\n\njust-in-time-planning: you only add something to your todo list when you encounter the need for the task.\n\nIf it's a predicted or expected or planned task, it doesn't go on there.\n\nTo be used in conjuction with main task os\n\n===\n\n1920292669424627773 [2025-05-08] @puheenix \ud83d\udc9c 5 [(SEED) type=semantic_search]\nhaving chatGPT do all the boring parts of work for me feels luxurious af\n\ni made it my assistant project manager. \"ask me a bunch of questions about this project with the purpose of creating an itemized task list with deadlines and assigned parties\"\n\nand it just GOES\n\n===\n\n1934059069700264361 [2025-06-15] @EyalToledano \ud83d\udc9c 505 \ud83d\udd01 64 [(SEED) type=semantic_search]\njust shipped taskmaster v0.17 \ud83d\ude80 \n\n\u2192 multi-context task management via tagged lists\n\u2192 `research` MCP tool with interactive CLI\n\u2192 get-task/show upgrades &amp; batch ops\n\u2192 --append for update-task\n\u2192 save research to docs\n\u2192 multi-status filters\n\nfollow + bookmark + dive in \n\n\ud83d\udc40\ud83d\udc47 https://t.co/w5BhfBUkkF\n\n===\n\n1948567421599842342 [2025-07-25] @petergyang \ud83d\udc9c 1741 \ud83d\udd01 105\nDoes anyone use Claude Code for non-coding use cases? If so, what do you use it for?\n\u2193\n1948755452709265799 [2025-07-25] @darrenangle \ud83d\udc9c 79 \ud83d\udd01 4 [(SEED) type=semantic_search]\n@petergyang full on personal assistant. built a little cognitive loop for me to braindump in the morning and it organizes tasks across markdown kanban boards by project, gives back priorities focus for the day according to values / urgency. mcps for calendar and email. adhd miracle\n\n===\n\n1954653106546806897 [2025-08-10] @kevinkern \ud83d\udc9c 1140 \ud83d\udd01 95 [(SEED) type=semantic_search]\nThis is a prompt I built some time ago to split PRDs into smaller tasks.\n\nFeel free to use it. https://t.co/eZd9JxAI4I\nImages:\n  - [Image #0] The image shows a screenshot of a code editor on a dark background, displaying a prompt for an \"AI-Optimized Development Roadmap Generator.\" \n    \n    The text is transcribed as follows:\n    \n    AI-Optimized Development Roadmap Generator\n    \n    <PRD_PATH>\n    .planr/prd.md\n    </PRD_PATH>\n    \n    <TECH_STACK_PATH>\n    .planr/tech-stack.md\n    </TECH_STACK_PATH>\n    \n    <DATE>\n    June 2025 capabilities\n    </DATE>\n    \n    <MAX_CONTEXT_TOKENS>\n    Context Window: 200k\n    Max Output Tokens: 100k\n    </MAX_CONTEXT_TOKENS>\n    \n    ## Context for the Agent\n    You are an autonomous AI developer with a large-context LLM. Your task is to read a Product Requirements Document and a technical stack description, then develop a detailed, implementable roadmap that you yourself will follow to implement the application.\n    \n    ## Inputs\n    - PRD file: <PRD_PATH>\n    - Tech-Stack file: <TECH_STACK_PATH>\n    - LLM context window (tokens): <MAX_CONTEXT_TOKENS>\n    - Story-point definition: 1 story point = 1 day human effort = 1 second AI effort\n    \n    ## Output Required\n    Requirements Markdown (no code fences, no bold) containing:\n    - Phase 1 - Requirements Ingestion\n    - Phase 2 - Development Planning (with batch list and story-point totals)\n    - Phase 3 - Iterative Build (one batch at a time with story-point counts)\n    - Phase 4 - Final Integration and Deployment readiness\n    \n    ## Operating Rules for the Agent\n    1. Read in the PRD before any planning.\n    2. Parse all user stories and record each with its story-point estimate.\n    3. Calculate total story points and compare to the capacity implied by <MAX_CONTEXT_TOKENS>.\n    4. If not, create batches whose cumulative story points stay within capacity, grouping related or dependent stories together. \n    5. After finishing one batch, merge its code with the existing codebase and update internal context before starting the next.\n    6. Keep the roadmap concise yet traceable: show which user stories appear in which batches.\n    7. Do not use bold formatting and do not wrap the result in code fences.\n    \n    ## Template Starts Here\n    Project: <PROJECT_NAME>\n    \n    Phase 1 - Requirements Ingestion\n    - Load <PRD_PATH> and <TECH_STACK_PATH>.\n    - Produce a cumulative list of key user stories, constraints, and high-level architecture choices.\n    \n    Phase 2 - Development Planning\n    - Total story points: <TOTAL_STORY_POINTS>\n    - Context window capacity: <MAX_CONTEXT_TOK\n\n===\n",
+  "seeds": [
+    {
+      "tweet_id": 1665141755333812226,
+      "source_type": "root"
+    },
+    {
+      "tweet_id": 1757634311677968743,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1784309081190339020,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1665382894833991680,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1665517513701031936,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1665787433965723651,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1665531918367051776,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1985768141612597507,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1879681041637752913,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1978192015536931180,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1978195136443228439,
+      "source_type": "quote_of_semantic_search"
+    },
+    {
+      "tweet_id": 1562396682104479744,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1633130432085516288,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 643757430963200000,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1914084622918455572,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1918284419812434081,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1914216136373412255,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1412647896319553540,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1646546368700493824,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1934059069700264361,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1934059265125425235,
+      "source_type": "quote_of_semantic_search"
+    },
+    {
+      "tweet_id": 1334910275695218689,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1894159512887595495,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1948755452709265799,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1717535108389797995,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1920292669424627773,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 829008837025886210,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1737264297171108208,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1954653106546806897,
+      "source_type": "semantic_search"
+    }
+  ],
+  "rating": {
+    "reasoning_summary": "This strand traces the evolution of task-breakdown tooling from early manual systems (2015 Trello/GTD plugins, 2021 custom Python scripts) to AI-powered assistants (2023 Goblin.tools, 2025 Claude/Taskmaster). The boundary object is the 'insurmountable task' requiring decomposition. Early tweets show individual hackers building personal solutions, then Goblin.tools emerges as a viral community artifact (2k+ likes) that crystallizes ADHD-friendly task management. By 2025, the concept has been absorbed into mainstream AI workflows (Claude assistants, Taskmaster CLI). This is a constructive arc: each iteration builds on the last, moving from bespoke scripts to widely accessible tools, with minimal dialectical conflict.",
+    "rating": 7,
+    "evolution": "high",
+    "cohesion": "medium",
+    "utility": "high",
+    "essential_tweets": [
+      {
+        "tweet_id": 643757430963200000,
+        "annotation": "Pre-history: 2015 aspiration for SMART-integrated todo apps, establishing the problem space"
+      },
+      {
+        "tweet_id": 1412647896319553540,
+        "annotation": "Personal solution: Goblinodds builds a Python script to randomly schedule tasks from a list, proving the concept works"
+      },
+      {
+        "tweet_id": 1416258251713249280,
+        "annotation": "Victory lap: The custom script is declared a success, validating task-randomization as a viable ADHD strategy"
+      },
+      {
+        "tweet_id": 1646546368700493824,
+        "annotation": "Conceptual bridge: Qiaochu links 'inscrutable exhortations of the soul' to 'breaking tasks into smaller steps'"
+      },
+      {
+        "tweet_id": 1665141755333812226,
+        "annotation": "The Artifact: Sarah launches Goblin.tools, the viral AI-powered task breakdown tool (2k+ likes, 400+ retweets)"
+      },
+      {
+        "tweet_id": 1665155252335656964,
+        "annotation": "Attribution: Sarah credits the creator (@chton), establishing provenance for the boundary object"
+      },
+      {
+        "tweet_id": 1757634311677968743,
+        "annotation": "Canonization: Goblin.tools is included in Qiaochu's ADHD megathread, cementing its status as essential infrastructure"
+      },
+      {
+        "tweet_id": 1879681041637752913,
+        "annotation": "Mainstreaming: AI task breakdown is now a standard feature in routine apps like FlowSavvy"
+      },
+      {
+        "tweet_id": 1948755452709265799,
+        "annotation": "Full integration: Claude Code is used as a 'personal assistant' with markdown kanban boards, showing the concept's maturity"
+      },
+      {
+        "tweet_id": 1954653106546806897,
+        "annotation": "Professionalization: Kevin shares a production-grade prompt for splitting PRDs into AI-executable tasks"
+      }
+    ]
+  },
+  "histogram": {
+    "counts": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      4,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      12,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      7,
+      7,
+      0,
+      10,
+      0,
+      0,
+      0,
+      1,
+      0,
+      5,
+      0,
+      12,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      2,
+      1,
+      1,
+      2,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "total_tweets": 67,
+    "date_range": {
+      "start": "2015-01",
+      "end": "2025-12"
+    }
+  },
+  "title": "From \u201cI can\u2019t start\u201d to AI that breaks it down for you",
+  "summary": "The most telling line in the whole saga is basically: \u201cfollow the inscrutable exhortations of your soul. also break tasks down into smaller steps\u201d \u2014 @QiaochuYuan accidentally summarizing the entire ADHD/productivity internet in one tweet. The thread\u2019s core \u201cboundary object\u201d is the same pain point over and over: the *insurmountable task* that isn\u2019t hard, it\u2019s just\u2026 too undifferentiated to begin.\n\nIt starts way pre-AI: in 2015 @visakanv is begging Trello/Asana for a SMART/GTD \u201cvideo game\u201d onboarding that doesn\u2019t intimidate you with complexity. Then 2021 hits and @goblinodds is like \u201cfine, I\u2019ll build it\u201d: a hacky Python script that randomly drops *one* to-do onto today\u2019s Google Calendar, so you don\u2019t drown in the list (and later reports it\u2019s helping mainly by removing guilt and memory burden). The peak moment is 2023 when @SarahAMcManus posts Goblin.tools (\u201cclick the magic wand, it breaks the task into subtasks\u201d), it goes massively viral, and she credits the creator @chton. Immediately the internet does what it does: people stress-test it with cursed inputs (e.g. @easoncxz turning \u201cfind a gf\u201d into an 8-step checklist\u2014\u201cTime to objectify people!\u201d) and @AaronBergman18 uses the \u201cmake more passionate\u201d feature to iteratively juice up an insult until it\u2019s Shakespearean hate-mail.\n\nThen the discourse kind of\u2026 stops being discourse. By Feb 2024 Goblin.tools is canonized as infrastructure when @QiaochuYuan sticks it in an \u201cADHD megathread\u201d alongside other frameworks. By 2025 it\u2019s fully mainstreamed and professionalized: @gene_jelly praises routine apps like @FlowSavvyApp for one-tap nested subtasks; @darrenangle calls Claude Code a \u201cfull on personal assistant\u201d that organizes markdown kanban boards with calendar/email MCPs (\u201cadhd miracle\u201d); @EyalToledano is shipping Taskmaster updates to parse PRDs into breakdowns; and @kevinkern drops a production-grade prompt to split PRDs into AI-executable batches. Why care: this is the story of a coping mechanism turning into a default UI pattern\u2014task decomposition went from \u201cpersonal hack for overwhelmed brains\u201d to the baseline way people now expect software (and AI agents) to translate intention into action."
+}

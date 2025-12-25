@@ -1,0 +1,46 @@
+{
+  "tweet_id": 1310131153551196167,
+  "thread_text": "1314445766430261250 [2020-10-09] @blisstweeting \ud83d\udc9c 16 \ud83d\udd01 3 [(SEED) type=quote_of_root]\nPlato: human is a featherless biped\nSome couple thousand years later: https://t.co/8FulQhs91Q\n  [Quoting @nosilverv: @nickcammarata Ur basically a houseplant with emotions]\n\n===\n\n1486271074233110528 [2022-01-26] @visakanv \ud83d\udc9c 106 \ud83d\udd01 5\nthis is a mutuals-scenebuilding utterance-crafting workshop tweet: what's a short-ish phrase from someone around here that's been stuck in your mind? it could be an entire tweet, or part of a tweet\n\u2193\n1486272128706093056 [2022-01-26] @blisstweeting \ud83d\udc9c 18 [(SEED) type=quote_of_root]\n@visakanv we all know about \"focus your time and energy\" so I'll go with this one https://t.co/8FulQhs91Q\n  [Quoting @nosilverv: @nickcammarata Ur basically a houseplant with emotions]\n\u2193\n1486272910084161537 [2022-01-26] @visakanv \ud83d\udc9c 26\n@blisstweeting I think this is Rival's finest https://t.co/uZ3XQx9pZG\n  [Quoting @nosilverv: Psychological maturity is realizing your dad was just some guy lol]\n\u2193\n1486276300872601600 [2022-01-26] @blisstweeting \ud83d\udc9c 2\n@visakanv Oh I was looking for it to QT here but all my search queries were for naught https://t.co/ZzQrZRPjkB\n  [Quoting @blisstweeting: Not only your parents are just some guys. Any great leader, esteemed writer, or outstanding scientist, all of them are just some guys.]\n\n===\n\n1552854961662345217 [2022-07-29] @nosilverv \ud83d\udc9c 139 \ud83d\udd01 2\nIt\u2019s my birthday today! Going to bed now but if I\u2019ve touched you / improved your life in any way / you wanna wish me very specific wished - I\u2019d love to read them come to morning!\n\u2193\n1552936011340079104 [2022-07-29] @blisstweeting \ud83d\udc9c 1 [(SEED) type=quote_of_root]\n@nosilverv Happy birthday! This statement, among many other minor nudges, has certainly gotten to the core of me https://t.co/8FulQhs91Q\n  [Quoting @nosilverv: @nickcammarata Ur basically a houseplant with emotions]\n\u2193\n1554443790127071234 [2022-08-02] @nosilverv \ud83d\udc9c 1\n@blisstweeting thank you friend!\n\n===\n",
+  "seeds": [
+    {
+      "tweet_id": 1310131153551196167,
+      "source_type": "root"
+    },
+    {
+      "tweet_id": 1486272128706093056,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1332423925016502273,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1314445766430261250,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1371581492430835716,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1557100223146647552,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1392762764951789576,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1554033162359029760,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1552936011340079104,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1383651179721150467,
+      "source_type": "quote_of_root"
+    }
+  ]
+}
