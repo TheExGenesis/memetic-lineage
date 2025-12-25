@@ -41,6 +41,14 @@ export function StrandSemanticMap() {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const router = useRouter();
 
+  // Pan and zoom state
+  const [zoom, setZoom] = useState(1);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const lastMousePos = useRef({ x: 0, y: 0 });
+  const dragStartPos = useRef({ x: 0, y: 0 });
+  const hasDragged = useRef(false);
+
   // Load data
   useEffect(() => {
     fetch('/strand_semantic_map.json')
@@ -82,17 +90,24 @@ export function StrandSemanticMap() {
     };
   }, [data]);
 
-  // Convert data coords to canvas coords
+  // Convert data coords to canvas coords (with zoom and pan)
   const toCanvasCoords = useCallback((x: number, y: number) => {
     const scale = getScaleFactors();
     if (!scale) return { cx: 0, cy: 0 };
 
-    const cx = scale.padding + (x - scale.xMin) * scale.scaleX;
+    // Base coordinates
+    let cx = scale.padding + (x - scale.xMin) * scale.scaleX;
     // Flip y axis (canvas y increases downward)
-    const cy = scale.labelPadding + (scale.containerHeight - scale.padding - scale.labelPadding) - (y - scale.yMin) * scale.scaleY;
+    let cy = scale.labelPadding + (scale.containerHeight - scale.padding - scale.labelPadding) - (y - scale.yMin) * scale.scaleY;
+
+    // Apply zoom (around center) and pan
+    const centerX = scale.containerWidth / 2;
+    const centerY = scale.containerHeight / 2;
+    cx = centerX + (cx - centerX) * zoom + panOffset.x;
+    cy = centerY + (cy - centerY) * zoom + panOffset.y;
 
     return { cx, cy };
-  }, [getScaleFactors]);
+  }, [getScaleFactors, zoom, panOffset]);
 
   // Draw canvas
   useEffect(() => {
@@ -238,22 +253,94 @@ export function StrandSemanticMap() {
       ctx.fillText(box.text, box.x + box.width / 2, box.y + box.height - 4);
     }
 
-  }, [data, hoveredIndex, toCanvasCoords]);
+  }, [data, hoveredIndex, toCanvasCoords, zoom, panOffset]);
 
-  // Handle mouse move for hover
+  // Store zoom in ref for wheel handler (avoids stale closure)
+  const zoomRef = useRef(zoom);
+  useEffect(() => {
+    zoomRef.current = zoom;
+  }, [zoom]);
+
+  // Handle wheel for zoom - use native event listener with passive: false
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !data) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      // Zoom factor
+      const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+      const newZoom = Math.min(Math.max(zoomRef.current * zoomFactor, 0.5), 5);
+
+      // Adjust pan to zoom toward mouse position
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      const dx = mouseX - centerX;
+      const dy = mouseY - centerY;
+
+      setPanOffset(prev => ({
+        x: prev.x - dx * (zoomFactor - 1),
+        y: prev.y - dy * (zoomFactor - 1),
+      }));
+      setZoom(newZoom);
+    };
+
+    canvas.addEventListener('wheel', handleWheel, { passive: false });
+    return () => canvas.removeEventListener('wheel', handleWheel);
+  }, [data]);
+
+  // Handle mouse down for pan start
+  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (e.button === 0) { // Left mouse button
+      setIsPanning(true);
+      lastMousePos.current = { x: e.clientX, y: e.clientY };
+      dragStartPos.current = { x: e.clientX, y: e.clientY };
+      hasDragged.current = false;
+    }
+  }, []);
+
+  // Handle mouse up for pan end
+  const handleMouseUp = useCallback(() => {
+    setIsPanning(false);
+  }, []);
+
+  // Handle mouse move for hover and pan
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!data || !containerRef.current) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    // Handle panning
+    if (isPanning) {
+      const dx = e.clientX - lastMousePos.current.x;
+      const dy = e.clientY - lastMousePos.current.y;
+
+      // Check if dragged more than 5 pixels from start
+      const totalDx = e.clientX - dragStartPos.current.x;
+      const totalDy = e.clientY - dragStartPos.current.y;
+      if (Math.abs(totalDx) > 5 || Math.abs(totalDy) > 5) {
+        hasDragged.current = true;
+      }
+
+      setPanOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+      lastMousePos.current = { x: e.clientX, y: e.clientY };
+      return; // Don't update hover while panning
+    }
+
     const rect = canvas.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
 
-    // Find closest point within threshold
+    // Find closest point within threshold (scale threshold with zoom)
     let closestIdx: number | null = null;
-    let closestDist = 20; // Hover threshold in pixels
+    let closestDist = 20 * zoom; // Hover threshold scales with zoom
 
     data.points.forEach((point, i) => {
       const { cx, cy } = toCanvasCoords(point.x, point.y);
@@ -277,14 +364,17 @@ export function StrandSemanticMap() {
       setHoveredIndex(null);
       setTooltip({ visible: false, x: 0, y: 0, point: null });
     }
-  }, [data, toCanvasCoords]);
+  }, [data, toCanvasCoords, isPanning, zoom]);
 
   const handleMouseLeave = useCallback(() => {
     setHoveredIndex(null);
     setTooltip({ visible: false, x: 0, y: 0, point: null });
+    setIsPanning(false);
   }, []);
 
   const handleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    // Don't click if we were just dragging
+    if (hasDragged.current) return;
     if (!data || !containerRef.current) return;
 
     const canvas = canvasRef.current;
@@ -294,9 +384,9 @@ export function StrandSemanticMap() {
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
 
-    // Find clicked point
+    // Find clicked point (scale threshold with zoom)
     let clickedIdx: number | null = null;
-    let closestDist = 15;
+    let closestDist = 15 * zoom;
 
     data.points.forEach((point, i) => {
       const { cx, cy } = toCanvasCoords(point.x, point.y);
@@ -311,30 +401,48 @@ export function StrandSemanticMap() {
       const point = data.points[clickedIdx];
       router.push(`/best-strands/${point.seed_tweet_id}`);
     }
-  }, [data, toCanvasCoords, router]);
+  }, [data, toCanvasCoords, router, zoom]);
+
+  // Reset view handler
+  const handleResetView = useCallback(() => {
+    setZoom(1);
+    setPanOffset({ x: 0, y: 0 });
+  }, []);
 
   if (!data) {
     return (
-      <div className="w-full h-[350px] bg-gray-50 flex items-center justify-center text-gray-400 text-sm">
+      <div className="w-full h-[350px] lg:h-[520px] bg-gray-50 flex items-center justify-center text-gray-400 text-sm border-2 border-gray-200">
         Loading semantic map...
       </div>
     );
   }
 
   return (
-    <div className="relative w-full mb-6">
+    <div className="relative w-full">
       <div
         ref={containerRef}
-        className="w-full h-[350px] bg-[#fafafa] border-2 border-black shadow-[4px_4px_0_0_#000]"
+        className="w-full h-[350px] lg:h-[520px] bg-[#fafafa] border-2 border-black shadow-[4px_4px_0_0_#000] overflow-hidden"
       >
         <canvas
           ref={canvasRef}
-          className="w-full h-full cursor-pointer"
+          className={`w-full h-full ${isPanning ? 'cursor-grabbing' : 'cursor-grab'}`}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
+          onMouseDown={handleMouseDown}
+          onMouseUp={handleMouseUp}
           onClick={handleClick}
         />
       </div>
+      {/* Reset button - only show when zoomed/panned */}
+      {(zoom !== 1 || panOffset.x !== 0 || panOffset.y !== 0) && (
+        <button
+          onClick={handleResetView}
+          className="absolute top-2 right-2 px-2 py-1 text-xs bg-white/90 hover:bg-white border border-gray-300 rounded shadow-sm transition-colors"
+          title="Reset view"
+        >
+          Reset
+        </button>
+      )}
 
       {/* Tooltip */}
       {tooltip.visible && tooltip.point && (

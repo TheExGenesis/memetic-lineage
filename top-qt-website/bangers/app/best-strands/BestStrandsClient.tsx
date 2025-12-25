@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect, memo } from 'react';
+import { useState, useCallback, useRef, useEffect, memo, useMemo } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Markdown from 'react-markdown';
@@ -253,12 +253,22 @@ const StrandCard = memo(function StrandCard({ strand, histogramData, onSelect }:
 const INITIAL_STRANDS = 10;
 const LOAD_MORE_STRANDS = 10;
 
+type SortMode = 'topic' | 'rating' | 'date';
+
+interface SeriationOrder {
+  order: { id: string; distance: number }[];
+  start_id: string;
+  count: number;
+}
+
 export function BestStrandsClient({ strands }: BestStrandsClientProps) {
   const [selectedStrand, setSelectedStrand] = useState<StrandWithTweet | null>(null);
   const [selectedTweets, setSelectedTweets] = useState<Tweet[]>([]);
   const [noteDismissed, setNoteDismissed] = useState(true); // Start hidden to avoid flash
   const [histogramData, setHistogramData] = useState<HistogramData | null>(null);
   const [visibleStrandsCount, setVisibleStrandsCount] = useState(INITIAL_STRANDS);
+  const [sortMode, setSortMode] = useState<SortMode>('topic');
+  const [seriationOrder, setSeriationOrder] = useState<SeriationOrder | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const tweetCacheRef = useRef<Map<string, Tweet>>(new Map());
@@ -288,14 +298,57 @@ export function BestStrandsClient({ strands }: BestStrandsClientProps) {
     loadHistogramData();
   }, []);
 
+  // Fetch seriation order for topic sorting
+  useEffect(() => {
+    async function loadSeriationOrder() {
+      try {
+        const response = await fetch('/strand_seriation_order.json');
+        if (response.ok) {
+          const data: SeriationOrder = await response.json();
+          setSeriationOrder(data);
+        }
+      } catch (err) {
+        console.error('Failed to load seriation order:', err);
+      }
+    }
+    loadSeriationOrder();
+  }, []);
+
+  // Sort strands based on current mode
+  const sortedStrands = useMemo(() => {
+    if (sortMode === 'topic' && seriationOrder) {
+      // Create a map of id -> position for O(1) lookup
+      const positionMap = new Map<string, number>();
+      seriationOrder.order.forEach((item, index) => {
+        positionMap.set(item.id, index);
+      });
+
+      // Sort strands by their position in seriation order
+      return [...strands].sort((a, b) => {
+        const posA = positionMap.get(a.seed_tweet_id) ?? Infinity;
+        const posB = positionMap.get(b.seed_tweet_id) ?? Infinity;
+        return posA - posB;
+      });
+    } else if (sortMode === 'rating') {
+      return [...strands].sort((a, b) => b.rating.rating - a.rating.rating);
+    } else if (sortMode === 'date') {
+      return [...strands].sort((a, b) => {
+        const dateA = a.seedTweet?.created_at || '';
+        const dateB = b.seedTweet?.created_at || '';
+        return dateB.localeCompare(dateA); // Newest first
+      });
+    }
+    return strands;
+  }, [strands, sortMode, seriationOrder]);
+
   // Lazy load more strands on scroll
   useEffect(() => {
     if (!loadMoreRef.current) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && visibleStrandsCount < strands.length) {
-          setVisibleStrandsCount(prev => Math.min(prev + LOAD_MORE_STRANDS, strands.length));
+        if (entries[0].isIntersecting && visibleStrandsCount < sortedStrands.length) {
+          setVisibleStrandsCount(prev => Math.min(prev + LOAD_MORE_STRANDS, sortedStrands.length));
         }
       },
       { threshold: 0.1, rootMargin: '200px' }
@@ -303,7 +356,12 @@ export function BestStrandsClient({ strands }: BestStrandsClientProps) {
 
     observer.observe(loadMoreRef.current);
     return () => observer.disconnect();
-  }, [visibleStrandsCount, strands.length]);
+  }, [visibleStrandsCount, sortedStrands.length]);
+
+  // Reset visible count when sort mode changes
+  useEffect(() => {
+    setVisibleStrandsCount(INITIAL_STRANDS);
+  }, [sortMode]);
 
   // Calculate pane width based on selected tweets
   const collapsedWidth = selectedTweets.length > 0 ? selectedTweets.length * SPINE_WIDTH_PX : 0;
@@ -508,44 +566,34 @@ export function BestStrandsClient({ strands }: BestStrandsClientProps) {
   // Strand list view
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-[1600px] mx-auto px-4 lg:px-6 py-8">
         <header className="mb-8 border-b-4 border-black pb-4">
-          <div className="flex items-center justify-between gap-4 mb-2">
-            <div className="flex items-center gap-4">
-              <BackButton fallbackHref="/" />
-              <div>
-                <div className="flex items-center gap-4">
-                  <h1 className="text-3xl font-bold tracking-tight">Strands</h1>
-                  <a
-                    href="/detailed-strand-atlas"
-                    className="text-sm px-3 py-1 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded transition-colors"
-                  >
-                    View Atlas
-                  </a>
-                </div>
-                <div className="text-sm text-gray-600 max-w-4xl mt-2">
-                  <p className="leading-relaxed">
-                    <strong className="text-gray-900">Strands are units of narrative</strong>—stories worth telling that exist{' '}
-                    <em>one level above</em> individual tweets or threads, connecting multiple conversations into coherent narratives.
+          <div className="flex items-center gap-4 mb-2">
+            <BackButton fallbackHref="/" />
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Strands</h1>
+              <div className="text-sm text-gray-600 max-w-4xl mt-2">
+                <p className="leading-relaxed">
+                  <strong className="text-gray-900">Strands are units of narrative</strong>—stories worth telling that exist{' '}
+                  <em>one level above</em> individual tweets or threads, connecting multiple conversations into coherent narratives.
+                </p>
+                <div className="mt-3 space-y-1.5">
+                  <p className="flex gap-2">
+                    <span className="text-gray-400">1.</span>
+                    <span><strong className="text-gray-700">Start with bangers</strong> — high-impact tweets with many quote tweets</span>
                   </p>
-                  <div className="mt-3 space-y-1.5">
-                    <p className="flex gap-2">
-                      <span className="text-gray-400">1.</span>
-                      <span><strong className="text-gray-700">Start with bangers</strong> — high-impact tweets with many quote tweets</span>
-                    </p>
-                    <p className="flex gap-2">
-                      <span className="text-gray-400">2.</span>
-                      <span><strong className="text-gray-700">Find semantic neighbors</strong> — thematically related but structurally disconnected tweets</span>
-                    </p>
-                    <p className="flex gap-2">
-                      <span className="text-gray-400">3.</span>
-                      <span><strong className="text-gray-700">Gather connected content</strong> — quotes and replies that form the full conversation</span>
-                    </p>
-                    <p className="flex gap-2">
-                      <span className="text-gray-400">4.</span>
-                      <span><strong className="text-gray-700">Analyze with LLM</strong> — rated on <em>cohesion</em>, <em>evolution</em>, and <em>utility</em></span>
-                    </p>
-                  </div>
+                  <p className="flex gap-2">
+                    <span className="text-gray-400">2.</span>
+                    <span><strong className="text-gray-700">Find semantic neighbors</strong> — thematically related but structurally disconnected tweets</span>
+                  </p>
+                  <p className="flex gap-2">
+                    <span className="text-gray-400">3.</span>
+                    <span><strong className="text-gray-700">Gather connected content</strong> — quotes and replies that form the full conversation</span>
+                  </p>
+                  <p className="flex gap-2">
+                    <span className="text-gray-400">4.</span>
+                    <span><strong className="text-gray-700">Analyze with LLM</strong> — rated on <em>cohesion</em>, <em>evolution</em>, and <em>utility</em></span>
+                  </p>
                 </div>
               </div>
             </div>
@@ -574,27 +622,88 @@ export function BestStrandsClient({ strands }: BestStrandsClientProps) {
           </div>
         )}
 
-        {/* Semantic Map */}
-        <StrandSemanticMap />
-
-        <div className="flex flex-col gap-4">
-          {strands.slice(0, visibleStrandsCount).map((strand) => (
-            <StrandCard
-              key={strand.seed_tweet_id}
-              strand={strand}
-              histogramData={histogramData}
-              onSelect={() => selectStrand(strand)}
-            />
-          ))}
-          {visibleStrandsCount < strands.length && (
-            <div ref={loadMoreRef} className="py-8 text-center text-sm text-gray-400">
-              Loading more strands...
+        {/* Two-column layout on desktop, stacked on mobile */}
+        <div className="flex flex-col lg:flex-row lg:gap-6">
+          {/* Left column: Semantic Map (sticky on desktop) */}
+          <div className="lg:w-[42%] lg:flex-shrink-0 mb-6 lg:mb-0">
+            <div className="lg:sticky lg:top-8">
+              <StrandSemanticMap />
+              <div className="flex items-center justify-between mt-2">
+                <a
+                  href="/detailed-strand-atlas"
+                  className="text-sm px-3 py-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded transition-colors inline-flex items-center gap-1.5"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                    <path d="M2 12h20" />
+                  </svg>
+                  Explore Detailed Atlas
+                </a>
+                <span className="text-xs text-gray-400">Click point to explore single strand</span>
+              </div>
             </div>
-          )}
-        </div>
+          </div>
 
-        <div className="mt-8 text-center text-sm text-gray-500">
-          Showing {Math.min(visibleStrandsCount, strands.length)} of {strands.length} strands
+          {/* Right column: Strand cards */}
+          <div className="lg:w-[58%] flex-1 min-w-0">
+            {/* Sort selector */}
+            <div className="flex items-center gap-2 mb-4 text-sm">
+              <span className="text-gray-500">Sort by:</span>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setSortMode('topic')}
+                  className={`px-2.5 py-1 rounded transition-colors ${
+                    sortMode === 'topic'
+                      ? 'bg-black text-white'
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                  }`}
+                >
+                  Topic
+                </button>
+                <button
+                  onClick={() => setSortMode('rating')}
+                  className={`px-2.5 py-1 rounded transition-colors ${
+                    sortMode === 'rating'
+                      ? 'bg-black text-white'
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                  }`}
+                >
+                  Rating
+                </button>
+                <button
+                  onClick={() => setSortMode('date')}
+                  className={`px-2.5 py-1 rounded transition-colors ${
+                    sortMode === 'date'
+                      ? 'bg-black text-white'
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                  }`}
+                >
+                  Date
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              {sortedStrands.slice(0, visibleStrandsCount).map((strand) => (
+                <StrandCard
+                  key={strand.seed_tweet_id}
+                  strand={strand}
+                  histogramData={histogramData}
+                  onSelect={() => selectStrand(strand)}
+                />
+              ))}
+              {visibleStrandsCount < sortedStrands.length && (
+                <div ref={loadMoreRef} className="py-8 text-center text-sm text-gray-400">
+                  Loading more strands...
+                </div>
+              )}
+            </div>
+
+            <div className="mt-8 text-center text-sm text-gray-500">
+              Showing {Math.min(visibleStrandsCount, sortedStrands.length)} of {sortedStrands.length} strands
+            </div>
+          </div>
         </div>
       </div>
     </div>
