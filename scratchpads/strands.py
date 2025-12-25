@@ -613,7 +613,7 @@ def phase_export_atlas() -> bool:
         strands_meta[strand_id_str] = {
             'title': data.get('title', 'Untitled'),
             'summary': data.get('summary', ''),
-            'label': data.get('label', data.get('title', '')[:30] if data.get('title') else ''),
+            'label': data.get('label', data.get('title', '')),
             'username': root_username,
             'essential_tweets': essential_tweets,
             'rating': data.get('rating', {}).get('rating', 5) if isinstance(data.get('rating'), dict) else 5,
@@ -700,7 +700,7 @@ def phase_export_atlas() -> bool:
     for strand_id, meta in strands_meta.items():
         strands_output[strand_id] = {
             'title': meta['title'],
-            'label': meta['label'][:40],
+            'label': meta['title'],
             'summary': meta['summary'][:500],
             'username': meta['username'],
             'color': strand_colors.get(strand_id, '#888888'),
