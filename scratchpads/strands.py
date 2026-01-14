@@ -7,13 +7,19 @@ Combines all strand processing steps into a single script:
 2. Rate strands with LLM
 3. Generate summaries (title + summary)
 4. Generate histograms (tweet distribution over time)
-5. Export to frontend (histograms + semantic map)
+4.5. Generate tweet embeddings (per-tweet for atlas visualization)
+4.6. Generate atlas parquet (UMAP on tweet embeddings)
+5. Export to frontend (histograms + semantic map + atlas)
+6. Generate seriation order (topic sorting)
+7. Generate chronological summary text file
 
 Usage:
     python strands.py                    # Run full pipeline
     python strands.py --skip-build       # Skip building (use existing strands/)
     python strands.py --skip-rate        # Skip rating (use existing rated_strands/)
     python strands.py --skip-umap        # Skip UMAP (expensive, not always needed)
+    python strands.py --skip-tweet-embeddings  # Skip tweet embedding generation
+    python strands.py --skip-atlas-parquet     # Skip atlas parquet generation
     python strands.py --enrich-only      # Only add summaries/histograms to existing rated strands
     python strands.py --export-only      # Only export to frontend
 """
@@ -49,6 +55,7 @@ QUOTED_COUNTS_CACHE_PATH = DATA_DIR / "quoted_counts_cache.parquet"
 EMBEDDINGS_CACHE_PATH = DATA_DIR / "strand_summary_embeddings.json"
 LABEL_CONFIG_PATH = DATA_DIR / "strand_label_config.json"
 ATLAS_PARQUET_PATH = DATA_DIR / "tweet_embeddings_atlas.parquet"
+TWEET_EMBEDDINGS_DIR = DATA_DIR / "all_tweet_embeddings"
 
 # Frontend export paths
 FRONTEND_PUBLIC_DIR = Path(__file__).parent.parent / "top-qt-website" / "bangers" / "public"
@@ -56,6 +63,8 @@ ATLAS_EXPORT_PATH = FRONTEND_PUBLIC_DIR / "atlas_data.json"
 HISTOGRAM_EXPORT_PATH = FRONTEND_PUBLIC_DIR / "strand_histograms.json"
 SEMANTIC_MAP_EXPORT_PATH = FRONTEND_PUBLIC_DIR / "strand_semantic_map.json"
 SERIATION_ORDER_PATH = FRONTEND_PUBLIC_DIR / "strand_seriation_order.json"
+STRANDS_DATA_EXPORT_PATH = FRONTEND_PUBLIC_DIR / "strands_data.json"
+ALL_SUMMARIES_PATH = DATA_DIR / "all_summaries_chronological.txt"
 
 
 def get_built_strand_ids() -> Set[int]:
@@ -180,7 +189,7 @@ def phase_build_strands(
 
 def phase_rate_strands(
     model_name: str = "anthropic/claude-sonnet-4.5",
-    max_workers: int = 2
+    max_workers: int = 32
 ) -> int:
     """Rate strands using LLM. Returns count of newly rated strands."""
     print("\n" + "=" * 60)
@@ -291,7 +300,7 @@ Output JSON with fields: title, summary"""
 
 def phase_generate_summaries(
     model_name: str = "openai/gpt-4o-mini",
-    max_workers: int = 3,
+    max_workers: int = 32,
     force_regenerate: bool = False
 ) -> int:
     """Generate summaries for strands missing title/summary. Updates rated_strands in-place."""
@@ -375,8 +384,415 @@ def phase_generate_histograms(force_regenerate: bool = False) -> int:
 
 
 # =============================================================================
+# Phase 4.5: Generate Tweet Embeddings (per-tweet for atlas)
+# =============================================================================
+
+def _extract_tweet_ids_from_thread(thread_text: str) -> list[int]:
+    """Extract all tweet IDs from thread_text."""
+    import re
+    tweet_ids = []
+    pattern = re.compile(r'^[│├└─\s]*(\d{15,})\s+\[')
+    for line in thread_text.split('\n'):
+        match = pattern.match(line)
+        if match:
+            tweet_ids.append(int(match.group(1)))
+    return tweet_ids
+
+
+def _parse_tweet_from_thread(thread_text: str, tweet_id: int) -> dict | None:
+    """Extract tweet text, date, likes, retweets from thread_text by tweet_id."""
+    import re
+    tweet_id_str = str(tweet_id)
+    lines = thread_text.split('\n')
+
+    # Find header line
+    header_pattern = re.compile(rf'^[│├└─\s]*{tweet_id_str}\s+\[')
+    start_idx = None
+    for i, line in enumerate(lines):
+        if header_pattern.match(line):
+            start_idx = i
+            break
+
+    if start_idx is None:
+        return None
+
+    header_line = lines[start_idx]
+
+    # Extract date [YYYY-MM-DD]
+    date_match = re.search(rf'{tweet_id_str}\s+\[([0-9-]+)\]', header_line)
+    date = date_match.group(1) if date_match else None
+
+    # Extract likes/retweets: 💜 N 🔁 M
+    stats_match = re.search(r'💜\s+(\d+)\s+🔁\s+(\d+)', header_line)
+    likes = int(stats_match.group(1)) if stats_match else None
+    retweets = int(stats_match.group(2)) if stats_match else None
+
+    # Get tree prefix
+    prefix_match = re.match(rf'^([│├└─\s]*){tweet_id_str}', header_line)
+    tree_prefix = prefix_match.group(1) if prefix_match else ""
+
+    # Collect content lines
+    content_lines = []
+    next_tweet_pattern = re.compile(r'^[│├└─\s]*\d{15,}\s+\[')
+    separators = {'===', '↓'}
+
+    for i in range(start_idx + 1, len(lines)):
+        line = lines[i]
+        stripped_line = line[len(tree_prefix):] if tree_prefix and line.startswith(tree_prefix) else line
+        stripped = stripped_line.strip()
+
+        if stripped in separators:
+            break
+        if next_tweet_pattern.match(line):
+            break
+        if re.match(r'^[│\s]*[├└]──\s*\d{15,}\s+\[', line):
+            break
+
+        content_lines.append(stripped)
+
+    text = '\n'.join(content_lines).strip()
+    text = re.sub(r'\n{3,}', '\n\n', text)
+
+    return {
+        'text': text.strip(),
+        'date': date,
+        'likes': likes,
+        'retweets': retweets,
+    }
+
+
+def _clean_tweet_text(text: str) -> str:
+    """Clean tweet text for embedding."""
+    import re
+    # Remove tree connectors
+    text = re.sub(r'^[│├└─\s]+', '', text, flags=re.MULTILINE)
+    # Remove leading @mentions
+    text = re.sub(r'^(@\w+\s*)+', '', text.strip())
+    # Remove URLs
+    text = re.sub(r'https?://\S+', '', text)
+    # Remove arrows
+    text = re.sub(r'↓', '', text)
+    # Clean whitespace
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
+
+
+def _build_embedding_text(tweet_text: str, annotation: str = None) -> str | None:
+    """Combine tweet text and annotation for embedding."""
+    cleaned = _clean_tweet_text(tweet_text)
+    if len(cleaned) < 10:
+        return None
+
+    if annotation:
+        return f"Tweet:\n{cleaned}\n\nAnnotation:\n{annotation}"
+    return f"Tweet:\n{cleaned}"
+
+
+def phase_generate_tweet_embeddings(
+    max_workers: int = 32,
+    force_regenerate: bool = False
+) -> int:
+    """Generate per-tweet embeddings for atlas visualization using parallel processing."""
+    import os
+    from openai import OpenAI
+
+    print("\n" + "=" * 60)
+    print("PHASE 4.5: Generate Tweet Embeddings")
+    print("=" * 60)
+
+    TWEET_EMBEDDINGS_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Find strands needing embeddings
+    all_strands = load_all_rated_strands()
+    existing = {int(p.stem) for p in TWEET_EMBEDDINGS_DIR.glob("*.json") if p.stem.isdigit()}
+
+    if force_regenerate:
+        pending = list(all_strands.keys())
+    else:
+        pending = [sid for sid in all_strands.keys() if sid not in existing]
+
+    print(f"Found {len(all_strands)} rated strands, {len(existing)} already have tweet embeddings")
+    print(f"Processing {len(pending)} strands with {max_workers} parallel workers")
+
+    if not pending:
+        print("All strands already have tweet embeddings!")
+        return 0
+
+    # Setup API key
+    api_key = os.environ.get("OPENROUTER_API_KEY")
+    if not api_key:
+        print("[ERROR] OPENROUTER_API_KEY not found")
+        return 0
+
+    EMBEDDING_MODEL = "openai/text-embedding-3-large"
+
+    def process_single_strand(strand_id: int) -> bool:
+        """Process a single strand - returns True on success."""
+        # Create client per-thread for thread safety
+        client = OpenAI(
+            api_key=api_key,
+            base_url="https://openrouter.ai/api/v1"
+        )
+
+        def get_embeddings_batch(texts: list[str], batch_size: int = 100) -> list[list[float]]:
+            all_embeddings = []
+            for i in range(0, len(texts), batch_size):
+                batch = texts[i:i + batch_size]
+                response = client.embeddings.create(model=EMBEDDING_MODEL, input=batch)
+                all_embeddings.extend([d.embedding for d in response.data])
+            return all_embeddings
+
+        strand = all_strands[strand_id]
+        thread_text = strand.get("thread_text", "")
+        if not thread_text:
+            return False
+
+        # Get essential tweets lookup
+        essential_lookup = {}
+        if "rating" in strand and "essential_tweets" in strand["rating"]:
+            for et in strand["rating"]["essential_tweets"]:
+                tid = str(et.get("tweet_id", ""))
+                essential_lookup[tid] = et.get("annotation", "")
+
+        # Extract all tweets
+        tweet_ids = _extract_tweet_ids_from_thread(thread_text)
+        tweets_to_embed = []
+
+        for tid in tweet_ids:
+            parsed = _parse_tweet_from_thread(thread_text, tid)
+            if not parsed or not parsed["text"]:
+                continue
+
+            tid_str = str(tid)
+            is_essential = tid_str in essential_lookup
+            is_root = tid_str == str(strand_id)
+            annotation = essential_lookup.get(tid_str)
+
+            text_to_embed = _build_embedding_text(parsed["text"], annotation)
+            if text_to_embed is None:
+                continue
+
+            tweet_type = "regular"
+            if is_root and is_essential:
+                tweet_type = "root_essential"
+            elif is_root:
+                tweet_type = "root_regular"
+            elif is_essential:
+                tweet_type = "essential"
+
+            tweets_to_embed.append({
+                "tweet_id": tid_str,
+                "annotation": annotation,
+                "tweet_text": _clean_tweet_text(parsed["text"]),
+                "text_to_embed": text_to_embed,
+                "tweet_type": tweet_type,
+                "date": parsed["date"],
+                "likes": parsed["likes"],
+                "retweets": parsed["retweets"],
+            })
+
+        if not tweets_to_embed:
+            return False
+
+        # Generate embeddings
+        texts = [t["text_to_embed"] for t in tweets_to_embed]
+        embeddings = get_embeddings_batch(texts)
+
+        # Build result
+        results = []
+        for i, tweet in enumerate(tweets_to_embed):
+            results.append({
+                "tweet_id": tweet["tweet_id"],
+                "annotation": tweet["annotation"],
+                "tweet_text": tweet["tweet_text"],
+                "text_embedded": tweet["text_to_embed"],
+                "tweet_type": tweet["tweet_type"],
+                "date": tweet["date"],
+                "likes": tweet["likes"],
+                "retweets": tweet["retweets"],
+                "embedding": embeddings[i],
+            })
+
+        # Save
+        output = {
+            "seed_tweet_id": str(strand_id),
+            "model": EMBEDDING_MODEL,
+            "all_tweet_embeddings": results,
+        }
+        with open(TWEET_EMBEDDINGS_DIR / f"{strand_id}.json", "w") as f:
+            json.dump(output, f)
+
+        return True
+
+    # Process in parallel
+    results, failed = parallel_map_to_dict(
+        pending,
+        process_single_strand,
+        max_workers=max_workers,
+        desc="Generating tweet embeddings"
+    )
+
+    processed = sum(1 for v in results.values() if v)
+    if failed:
+        print(f"[WARN] {len(failed)} strands failed to process")
+    print(f"Generated tweet embeddings for {processed} strands")
+    return processed
+
+
+# =============================================================================
+# Phase 4.6: Generate Atlas Parquet (UMAP on tweet embeddings)
+# =============================================================================
+
+def phase_generate_atlas_parquet(force_regenerate: bool = False) -> bool:
+    """Run UMAP on tweet embeddings and save to parquet for atlas."""
+    import numpy as np
+    import pandas as pd
+    import umap
+
+    print("\n" + "=" * 60)
+    print("PHASE 4.6: Generate Atlas Parquet")
+    print("=" * 60)
+
+    # Check if we need to regenerate
+    if not force_regenerate and ATLAS_PARQUET_PATH.exists():
+        # Check if parquet is up to date with embeddings
+        embedding_files = list(TWEET_EMBEDDINGS_DIR.glob("*.json"))
+        if embedding_files:
+            newest_embedding = max(f.stat().st_mtime for f in embedding_files)
+            parquet_mtime = ATLAS_PARQUET_PATH.stat().st_mtime
+            if parquet_mtime > newest_embedding:
+                print("Atlas parquet is up to date, skipping")
+                return True
+
+    # Load all tweet embeddings
+    embedding_files = sorted(TWEET_EMBEDDINGS_DIR.glob("*.json"))
+    if not embedding_files:
+        print("[ERROR] No tweet embedding files found")
+        return False
+
+    print(f"Loading embeddings from {len(embedding_files)} files...")
+
+    all_embeddings = []
+    all_metadata = []
+
+    from tqdm import tqdm
+    for filepath in tqdm(embedding_files, desc="Loading embeddings"):
+        with open(filepath) as f:
+            data = json.load(f)
+
+        strand_id = data["seed_tweet_id"]
+        embeddings_data = data.get("all_tweet_embeddings", [])
+
+        for item in embeddings_data:
+            all_embeddings.append(item["embedding"])
+            all_metadata.append({
+                "tweet_id": item["tweet_id"],
+                "strand_id": strand_id,
+                "annotation": item.get("annotation", "") or "",
+                "tweet_type": item.get("tweet_type", "unknown"),
+                "text": item.get("text_embedded", item.get("tweet_text", "")),
+                "date": item.get("date"),
+                "likes": item.get("likes"),
+                "retweets": item.get("retweets"),
+            })
+
+    print(f"Loaded {len(all_embeddings)} tweet embeddings from {len(embedding_files)} strands")
+
+    if len(all_embeddings) < 2:
+        print("[ERROR] Need at least 2 embeddings for UMAP")
+        return False
+
+    # Run UMAP
+    print("Running UMAP projection...")
+    X = np.array(all_embeddings)
+    reducer = umap.UMAP(
+        n_components=2,
+        n_neighbors=10,
+        min_dist=0.1,
+        random_state=42,
+        verbose=True,
+    )
+    embedding_2d = reducer.fit_transform(X)
+
+    # Create DataFrame
+    df = pd.DataFrame(all_metadata)
+    df["projection_x"] = embedding_2d[:, 0]
+    df["projection_y"] = embedding_2d[:, 1]
+    df["is_essential"] = df["tweet_type"].isin(["essential", "root_essential"])
+    df["is_root"] = df["tweet_type"].isin(["root_essential", "root_regular"])
+
+    # Save parquet
+    df.to_parquet(ATLAS_PARQUET_PATH, index=False)
+    print(f"Saved atlas parquet: {ATLAS_PARQUET_PATH}")
+    print(f"  {len(df)} tweets from {df['strand_id'].nunique()} strands")
+
+    return True
+
+
+# =============================================================================
 # Phase 5: Export to Frontend
 # =============================================================================
+
+def phase_export_strands_data() -> bool:
+    """Export all strands with seed tweets to a single static JSON.
+
+    This eliminates 252 file reads + Supabase call on each page load.
+    """
+    print("\n" + "=" * 60)
+    print("PHASE 5: Export Strands Data")
+    print("=" * 60)
+
+    all_strands = load_all_rated_strands()
+    tweet_dict, _ = load_caches()
+
+    print(f"Loaded {len(all_strands)} rated strands")
+
+    strands_with_tweets = []
+    for strand_id, data in all_strands.items():
+        # Get seed tweet from tweet_dict
+        seed_tweet = tweet_dict.get(strand_id)
+        seed_tweet_data = None
+        if seed_tweet:
+            seed_tweet_data = {
+                'tweet_id': str(strand_id),
+                'full_text': seed_tweet.get('full_text', ''),
+                'created_at': seed_tweet.get('created_at', ''),
+                'username': seed_tweet.get('username', 'unknown'),
+                'avatar_media_url': seed_tweet.get('profile_image_url', seed_tweet.get('avatar_media_url')),
+                'media_urls': seed_tweet.get('media_urls', []),
+                'like_count': seed_tweet.get('favorite_count', seed_tweet.get('like_count', 0)) or 0,
+                'retweet_count': seed_tweet.get('retweet_count', 0) or 0,
+            }
+
+        strands_with_tweets.append({
+            'seed_tweet_id': str(strand_id),
+            'title': data.get('title'),
+            'summary': data.get('summary'),
+            'seeds': data.get('seeds', []),
+            'rating': data.get('rating', {}),
+            'seedTweet': seed_tweet_data,
+        })
+
+    # Sort by rating descending
+    strands_with_tweets.sort(
+        key=lambda s: s['rating'].get('rating', 0) if isinstance(s['rating'], dict) else 0,
+        reverse=True
+    )
+
+    output = {
+        'generatedAt': datetime.now().isoformat(),
+        'count': len(strands_with_tweets),
+        'strands': strands_with_tweets,
+    }
+
+    FRONTEND_PUBLIC_DIR.mkdir(parents=True, exist_ok=True)
+    with open(STRANDS_DATA_EXPORT_PATH, 'w') as f:
+        json.dump(output, f)
+
+    file_size = STRANDS_DATA_EXPORT_PATH.stat().st_size / 1024
+    print(f"Exported {len(strands_with_tweets)} strands to {STRANDS_DATA_EXPORT_PATH} ({file_size:.1f} KB)")
+    return True
+
 
 def phase_export_histograms() -> bool:
     """Export histogram data to frontend."""
@@ -578,7 +994,7 @@ def phase_export_atlas() -> bool:
     # Check if parquet exists
     if not ATLAS_PARQUET_PATH.exists():
         print(f"[WARN] Atlas parquet not found at {ATLAS_PARQUET_PATH}")
-        print("  Run 11_embedding_atlas.py to generate tweet-level embeddings first.")
+        print("  Run pipeline without --skip-tweet-embeddings and --skip-atlas-parquet to generate it.")
         return False
 
     # Load parquet
@@ -647,6 +1063,9 @@ def phase_export_atlas() -> bool:
         text = str(row.get('text', ''))
         if text.startswith('Tweet:\n'):
             text = text[7:]
+        # Strip out "Annotation:" section if present (it's stored separately)
+        if '\n\nAnnotation:\n' in text:
+            text = text.split('\n\nAnnotation:\n')[0]
 
         tweets_data.append({
             'id': tweet_id,
@@ -834,6 +1253,87 @@ def phase_generate_seriation() -> bool:
 
 
 # =============================================================================
+# Phase 7: Generate Chronological Summary Text File
+# =============================================================================
+
+def phase_generate_chronological_summary() -> bool:
+    """Generate a single text file with all strand summaries in chronological order."""
+    print("\n" + "=" * 60)
+    print("PHASE 7: Generate Chronological Summary")
+    print("=" * 60)
+
+    all_strands = load_all_rated_strands()
+    print(f"Loaded {len(all_strands)} rated strands")
+
+    if not all_strands:
+        print("[ERROR] No rated strands found")
+        return False
+
+    # Sort by tweet ID numerically (tweet IDs are chronologically ordered)
+    sorted_ids = sorted(all_strands.keys(), key=lambda x: int(x))
+
+    lines = []
+    total = len(sorted_ids)
+
+    for idx, strand_id in enumerate(sorted_ids, 1):
+        data = all_strands[strand_id]
+
+        # Extract fields
+        title = data.get("title", "Untitled")
+        summary = data.get("summary", "")
+        rating_obj = data.get("rating", {})
+        histogram = data.get("histogram", {})
+
+        # Rating components
+        if isinstance(rating_obj, dict):
+            rating_num = rating_obj.get("rating", "?")
+            evolution = rating_obj.get("evolution", "?")
+            cohesion = rating_obj.get("cohesion", "?")
+            utility = rating_obj.get("utility", "?")
+            reasoning = rating_obj.get("reasoning_summary", "")
+            essential_tweets = rating_obj.get("essential_tweets", [])
+        else:
+            rating_num = "?"
+            evolution = cohesion = utility = "?"
+            reasoning = ""
+            essential_tweets = []
+
+        # Total tweets from histogram
+        total_tweets = histogram.get("total_tweets", 0)
+
+        # Format the entry
+        lines.append(f"═══ [{idx}/{total}] ═══")
+        lines.append(f"ID: {strand_id}")
+        lines.append(f"TITLE: {title}")
+        lines.append(f"RATING: {rating_num}/10 | Evolution: {evolution} | Cohesion: {cohesion} | Utility: {utility} | TWEETS: {total_tweets}")
+        lines.append("")
+        lines.append(f"SUMMARY: {summary}")
+        lines.append("")
+
+        if reasoning:
+            lines.append(f"REASONING: {reasoning}")
+            lines.append("")
+
+        if essential_tweets:
+            lines.append(f"ESSENTIAL TWEETS ({len(essential_tweets)}):")
+            for et in essential_tweets:
+                tweet_id = et.get("tweet_id", "?")
+                annotation = et.get("annotation", "")
+                lines.append(f"  • {tweet_id}: {annotation}")
+            lines.append("")
+
+        lines.append("─" * 80)
+        lines.append("")
+
+    # Write to file
+    with open(ALL_SUMMARIES_PATH, "w") as f:
+        f.write("\n".join(lines))
+
+    print(f"Exported {total} strand summaries to {ALL_SUMMARIES_PATH}")
+    return True
+
+
+# =============================================================================
 # Main
 # =============================================================================
 
@@ -845,11 +1345,13 @@ def main():
     parser.add_argument("--skip-histogram", action="store_true", help="Skip generating histograms")
     parser.add_argument("--skip-umap", action="store_true", help="Skip UMAP export")
     parser.add_argument("--skip-atlas", action="store_true", help="Skip atlas export")
+    parser.add_argument("--skip-tweet-embeddings", action="store_true", help="Skip tweet embeddings generation")
+    parser.add_argument("--skip-atlas-parquet", action="store_true", help="Skip atlas parquet (UMAP on tweets)")
     parser.add_argument("--enrich-only", action="store_true", help="Only add summaries/histograms")
     parser.add_argument("--export-only", action="store_true", help="Only export to frontend")
     parser.add_argument("--force", action="store_true", help="Force regenerate all")
     parser.add_argument("--rating-model", default="anthropic/claude-sonnet-4.5", help="Model for rating")
-    parser.add_argument("--summary-model", default="openai/gpt-4o-mini", help="Model for summaries")
+    parser.add_argument("--summary-model", default="openai/gpt-5.2", help="Model for summaries")
     args = parser.parse_args()
 
     print("=" * 60)
@@ -862,6 +1364,7 @@ def main():
     # Shortcut modes
     if args.export_only:
         args.skip_build = args.skip_rate = args.skip_summary = args.skip_histogram = True
+        args.skip_tweet_embeddings = args.skip_atlas_parquet = True
     if args.enrich_only:
         args.skip_build = args.skip_rate = True
 
@@ -899,6 +1402,30 @@ def main():
             errors.append(f"Phase 4 (Histogram): {e}")
             print(f"[ERROR] Phase 4 failed: {e}")
 
+    # Phase 4.5: Tweet Embeddings (per-tweet for atlas)
+    if not args.skip_tweet_embeddings:
+        try:
+            phase_generate_tweet_embeddings(force_regenerate=args.force)
+        except Exception as e:
+            errors.append(f"Phase 4.5 (Tweet Embeddings): {e}")
+            print(f"[ERROR] Phase 4.5 failed: {e}")
+
+    # Phase 4.6: Atlas Parquet (UMAP on tweet embeddings)
+    if not args.skip_atlas_parquet:
+        try:
+            phase_generate_atlas_parquet(force_regenerate=args.force)
+        except Exception as e:
+            errors.append(f"Phase 4.6 (Atlas Parquet): {e}")
+            print(f"[ERROR] Phase 4.6 failed: {e}")
+
+    # Phase 5: Export strands data (combined JSON with seed tweets)
+    try:
+        if not phase_export_strands_data():
+            errors.append("Phase 5 (Export Strands Data): Failed")
+    except Exception as e:
+        errors.append(f"Phase 5 (Export Strands Data): {e}")
+        print(f"[ERROR] Phase 5 failed: {e}")
+
     # Phase 5a: Export histograms
     try:
         if not phase_export_histograms():
@@ -932,6 +1459,14 @@ def main():
     except Exception as e:
         errors.append(f"Phase 6 (Seriation): {e}")
         print(f"[ERROR] Phase 6 failed: {e}")
+
+    # Phase 7: Generate Chronological Summary
+    try:
+        if not phase_generate_chronological_summary():
+            print("[WARN] Phase 7: Could not generate chronological summary")
+    except Exception as e:
+        errors.append(f"Phase 7 (Chronological Summary): {e}")
+        print(f"[ERROR] Phase 7 failed: {e}")
 
     # Summary
     print("\n" + "=" * 60)
