@@ -142,11 +142,22 @@ function adjustSaturationByAge(
   return `rgb(${Math.round(r * 255)},${Math.round(g * 255)},${Math.round(b * 255)})`;
 }
 
-// Compute alpha shape (concave hull) using Delaunay triangulation
-function computeAlphaShape(points: [number, number][], alpha: number): [number, number][] | null {
-  if (points.length < 3) return null;
+// Compute envelope using maximum edge distance constraint
+// Unlike alpha shapes (which use circumradius), this directly filters by edge length
+// maxEdgeDist: maximum allowed distance between connected points
+// Returns multiple polygons for disconnected clusters
+function computeEnvelope(points: [number, number][], maxEdgeDist: number): [number, number][][] {
+  if (points.length < 3) return [];
+
+  // For exactly 3 points, check if all edges are within threshold
   if (points.length === 3) {
-    return [...points, points[0]];
+    const d01 = Math.hypot(points[1][0] - points[0][0], points[1][1] - points[0][1]);
+    const d12 = Math.hypot(points[2][0] - points[1][0], points[2][1] - points[1][1]);
+    const d20 = Math.hypot(points[0][0] - points[2][0], points[0][1] - points[2][1]);
+    if (d01 <= maxEdgeDist && d12 <= maxEdgeDist && d20 <= maxEdgeDist) {
+      return [[...points, points[0]]];
+    }
+    return [];
   }
 
   try {
@@ -154,6 +165,7 @@ function computeAlphaShape(points: [number, number][], alpha: number): [number, 
     const triangles = delaunay.triangles;
     const edges = new Map<string, { count: number; p1: [number, number]; p2: [number, number] }>();
 
+    // Filter triangles: only keep if ALL edges are within maxEdgeDist
     for (let i = 0; i < triangles.length; i += 3) {
       const i0 = triangles[i];
       const i1 = triangles[i + 1];
@@ -163,18 +175,15 @@ function computeAlphaShape(points: [number, number][], alpha: number): [number, 
       const p1 = points[i1];
       const p2 = points[i2];
 
-      const ax = p1[0] - p0[0], ay = p1[1] - p0[1];
-      const bx = p2[0] - p0[0], by = p2[1] - p0[1];
-      const d = 2 * (ax * by - ay * bx);
+      // Compute all three edge lengths
+      const d01 = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]);
+      const d12 = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
+      const d20 = Math.hypot(p0[0] - p2[0], p0[1] - p2[1]);
 
-      if (Math.abs(d) < 1e-10) continue;
+      // Skip triangle if ANY edge exceeds maxEdgeDist
+      if (d01 > maxEdgeDist || d12 > maxEdgeDist || d20 > maxEdgeDist) continue;
 
-      const ux = (by * (ax * ax + ay * ay) - ay * (bx * bx + by * by)) / d;
-      const uy = (ax * (bx * bx + by * by) - bx * (ax * ax + ay * ay)) / d;
-      const circumradius = Math.sqrt(ux * ux + uy * uy);
-
-      if (circumradius > 1 / alpha) continue;
-
+      // Track edges for boundary detection
       const triEdges: [number, number][] = [[i0, i1], [i1, i2], [i2, i0]];
       for (const [a, b] of triEdges) {
         const key = a < b ? `${a}-${b}` : `${b}-${a}`;
@@ -187,6 +196,7 @@ function computeAlphaShape(points: [number, number][], alpha: number): [number, 
       }
     }
 
+    // Extract boundary edges (edges that appear only once)
     const boundaryEdges: Array<{ p1: [number, number]; p2: [number, number] }> = [];
     for (const edge of edges.values()) {
       if (edge.count === 1) {
@@ -194,41 +204,61 @@ function computeAlphaShape(points: [number, number][], alpha: number): [number, 
       }
     }
 
-    if (boundaryEdges.length === 0) return null;
+    if (boundaryEdges.length === 0) return [];
 
-    const polygon: [number, number][] = [boundaryEdges[0].p1, boundaryEdges[0].p2];
-    const usedEdges = new Set([0]);
+    // Chain boundary edges into polygons (may have multiple disconnected components)
+    const polygons: [number, number][][] = [];
+    const usedEdges = new Set<number>();
 
     while (usedEdges.size < boundaryEdges.length) {
-      const lastPoint = polygon[polygon.length - 1];
-      let found = false;
-
+      // Find an unused edge to start a new polygon
+      let startIdx = -1;
       for (let i = 0; i < boundaryEdges.length; i++) {
-        if (usedEdges.has(i)) continue;
-        const edge = boundaryEdges[i];
-
-        const dist1 = Math.hypot(edge.p1[0] - lastPoint[0], edge.p1[1] - lastPoint[1]);
-        const dist2 = Math.hypot(edge.p2[0] - lastPoint[0], edge.p2[1] - lastPoint[1]);
-
-        if (dist1 < 0.0001) {
-          polygon.push(edge.p2);
-          usedEdges.add(i);
-          found = true;
-          break;
-        } else if (dist2 < 0.0001) {
-          polygon.push(edge.p1);
-          usedEdges.add(i);
-          found = true;
+        if (!usedEdges.has(i)) {
+          startIdx = i;
           break;
         }
       }
+      if (startIdx === -1) break;
 
-      if (!found) break;
+      const polygon: [number, number][] = [boundaryEdges[startIdx].p1, boundaryEdges[startIdx].p2];
+      usedEdges.add(startIdx);
+
+      // Try to extend the polygon
+      let extended = true;
+      while (extended) {
+        extended = false;
+        const lastPoint = polygon[polygon.length - 1];
+
+        for (let i = 0; i < boundaryEdges.length; i++) {
+          if (usedEdges.has(i)) continue;
+          const edge = boundaryEdges[i];
+
+          const dist1 = Math.hypot(edge.p1[0] - lastPoint[0], edge.p1[1] - lastPoint[1]);
+          const dist2 = Math.hypot(edge.p2[0] - lastPoint[0], edge.p2[1] - lastPoint[1]);
+
+          if (dist1 < 0.0001) {
+            polygon.push(edge.p2);
+            usedEdges.add(i);
+            extended = true;
+            break;
+          } else if (dist2 < 0.0001) {
+            polygon.push(edge.p1);
+            usedEdges.add(i);
+            extended = true;
+            break;
+          }
+        }
+      }
+
+      if (polygon.length >= 3) {
+        polygons.push(polygon);
+      }
     }
 
-    return polygon.length >= 3 ? polygon : null;
+    return polygons;
   } catch {
-    return null;
+    return [];
   }
 }
 
@@ -346,14 +376,14 @@ function ControlPanel({
             <span className="text-xs text-gray-500">tightness:</span>
             <input
               type="range"
-              min="0.5"
-              max="3"
-              step="0.1"
-              value={params.alphaValue}
-              onChange={(e) => setParams({ ...params, alphaValue: parseFloat(e.target.value) })}
+              min="10"
+              max="95"
+              step="5"
+              value={params.envelopeTightness}
+              onChange={(e) => setParams({ ...params, envelopeTightness: parseFloat(e.target.value) })}
               className="w-20"
             />
-            <span className="text-xs text-gray-500 w-6">{params.alphaValue}</span>
+            <span className="text-xs text-gray-500 w-6">{params.envelopeTightness}</span>
           </>
         )}
       </div>
@@ -423,7 +453,7 @@ interface Parameters {
   showEdges: boolean;
   edgeThreshold: number;
   showEnvelopes: boolean;
-  alphaValue: number;
+  envelopeTightness: number;  // 1-100, maps to maxEdgeDist (higher = tighter/smaller envelopes)
   showRootLabels: boolean;
   edgeOpacity: number;
   envelopeFillOpacity: number;
@@ -439,7 +469,7 @@ export function AtlasClient() {
     showEdges: true,
     edgeThreshold: 1.5,
     showEnvelopes: true,
-    alphaValue: 1.5,
+    envelopeTightness: 70,  // Higher = tighter. 70 → ~3% of global span → maxEdgeDist ~0.8
     showRootLabels: true,
     edgeOpacity: 0.25,
     envelopeFillOpacity: 0.15,
@@ -497,11 +527,24 @@ export function AtlasClient() {
     return (strandId: string) => strandColors.get(strandId) || 'rgb(128,128,128)';
   }, [strandColors]);
 
-  // Compute alpha shape envelopes
-  const strandEnvelopes = useMemo(() => {
-    if (!data || !params.showEnvelopes) return new Map<string, [number, number][]>();
+  // Compute global extent for envelope calculations
+  const globalSpan = useMemo(() => {
+    if (!data) return 27; // fallback
+    const xs = data.tweets.map(t => t.x);
+    const ys = data.tweets.map(t => t.y);
+    return Math.max(
+      Math.max(...xs) - Math.min(...xs),
+      Math.max(...ys) - Math.min(...ys)
+    );
+  }, [data]);
 
-    const envelopes = new Map<string, [number, number][]>();
+  // Compute envelopes using max edge distance constraint
+  // Returns multiple polygons per strand (for disconnected clusters)
+  // Uses GLOBAL span so envelope behavior is consistent across strands
+  const strandEnvelopes = useMemo(() => {
+    if (!data || !params.showEnvelopes) return new Map<string, [number, number][][]>();
+
+    const envelopes = new Map<string, [number, number][][]>();
     const strandTweets = new Map<string, Tweet[]>();
 
     for (const t of data.tweets) {
@@ -510,22 +553,41 @@ export function AtlasClient() {
       strandTweets.set(t.sid, list);
     }
 
+    // Convert tightness (10-95, higher=tighter) to maxEdgeDist
+    // tightness=95 → ~1.5% of global span (very tight, ~0.4 units)
+    // tightness=70 → ~4% of global span (moderate, ~1.1 units)
+    // tightness=10 → ~10% of global span (loose, ~2.7 units)
+    const maxEdgeDist = globalSpan * (0.10 - 0.085 * params.envelopeTightness / 100);
+
+    let envelopeCount = 0;
+    let skippedCount = 0;
+
     for (const [strandId, tweets] of strandTweets) {
       const important = tweets.filter(t => t.e || t.r);
       if (important.length < 3) continue;
 
       const points: [number, number][] = important.map(t => [t.x, t.y]);
-      let envelope = computeAlphaShape(points, params.alphaValue);
-      if (!envelope) {
-        envelope = computeConvexHull(points);
-      }
-      if (envelope) {
-        envelopes.set(strandId, envelope);
+      const polygons = computeEnvelope(points, maxEdgeDist);
+
+      // No fallback to convex hull - if envelope can't be computed at this
+      // threshold, the points are too spread out and shouldn't have an envelope
+      if (polygons.length === 0) {
+        skippedCount++;
+      } else {
+        envelopeCount++;
+        envelopes.set(strandId, polygons);
       }
     }
 
+    console.log('Envelope results:', {
+      envelopeCount,
+      skippedCount,
+      tightness: params.envelopeTightness,
+      maxEdgeDist: maxEdgeDist.toFixed(3)
+    });
+
     return envelopes;
-  }, [data, params.showEnvelopes, params.alphaValue]);
+  }, [data, params.showEnvelopes, params.envelopeTightness, globalSpan]);
 
   // Track if a point was clicked (to distinguish from background clicks)
   const pointClickedRef = useRef(false);
@@ -587,51 +649,56 @@ export function AtlasClient() {
     const sel = selectedStrandId;
 
     // 1. Envelopes - split into selected and non-selected for efficiency
+    // Each strand can have multiple polygons (for disconnected clusters)
     if (params.showEnvelopes && params.envelopeFillOpacity > 0) {
       // If selection active, render selected envelope separately for highlighting
       if (sel && strandEnvelopes.has(sel)) {
-        const envelope = strandEnvelopes.get(sel)!;
+        const polygons = strandEnvelopes.get(sel)!;
         const color = getStrandColor(sel);
         const rgbMatch = color.match(/rgb\((\d+),(\d+),(\d+)\)/);
         if (rgbMatch) {
           const [, r, g, b] = rgbMatch;
-          traces.push({
-            type: 'scatter',
-            x: envelope.map((c) => c[0]),
-            y: envelope.map((c) => c[1]),
-            mode: 'lines',
-            fill: 'toself',
-            fillcolor: `rgba(${r},${g},${b},${params.envelopeFillOpacity * 2})`,
-            line: { color: `rgba(${r},${g},${b},0.8)`, width: 2 },
-            showlegend: false,
-            hoverinfo: 'skip',
-            customdata: envelope.map(() => sel),
-          } as PlotlyTrace);
+          for (const polygon of polygons) {
+            traces.push({
+              type: 'scatter',
+              x: polygon.map((c) => c[0]),
+              y: polygon.map((c) => c[1]),
+              mode: 'lines',
+              fill: 'toself',
+              fillcolor: `rgba(${r},${g},${b},${params.envelopeFillOpacity * 2})`,
+              line: { color: `rgba(${r},${g},${b},0.8)`, width: 2 },
+              showlegend: false,
+              hoverinfo: 'skip',
+              customdata: polygon.map(() => sel),
+            } as PlotlyTrace);
+          }
         }
       }
 
-      // All other envelopes in a single batch (dimmed if selection active)
+      // All other envelopes (dimmed if selection active)
       const dimmedOpacity = sel ? params.envelopeFillOpacity * 0.2 : params.envelopeFillOpacity;
       const borderOpacity = sel ? 0.15 : 0.5;
-      for (const [strandId, envelope] of strandEnvelopes) {
+      for (const [strandId, polygons] of strandEnvelopes) {
         if (sel === strandId) continue; // Already rendered above
         const color = getStrandColor(strandId);
         const rgbMatch = color.match(/rgb\((\d+),(\d+),(\d+)\)/);
         if (!rgbMatch) continue;
         const [, r, g, b] = rgbMatch;
 
-        traces.push({
-          type: 'scatter',
-          x: envelope.map((c) => c[0]),
-          y: envelope.map((c) => c[1]),
-          mode: 'lines',
-          fill: 'toself',
-          fillcolor: `rgba(${r},${g},${b},${dimmedOpacity})`,
-          line: { color: `rgba(${r},${g},${b},${borderOpacity})`, width: 1 },
-          showlegend: false,
-          hoverinfo: 'skip',
-          customdata: envelope.map(() => strandId),
-        } as PlotlyTrace);
+        for (const polygon of polygons) {
+          traces.push({
+            type: 'scatter',
+            x: polygon.map((c) => c[0]),
+            y: polygon.map((c) => c[1]),
+            mode: 'lines',
+            fill: 'toself',
+            fillcolor: `rgba(${r},${g},${b},${dimmedOpacity})`,
+            line: { color: `rgba(${r},${g},${b},${borderOpacity})`, width: 1 },
+            showlegend: false,
+            hoverinfo: 'skip',
+            customdata: polygon.map(() => strandId),
+          } as PlotlyTrace);
+        }
       }
     }
 
