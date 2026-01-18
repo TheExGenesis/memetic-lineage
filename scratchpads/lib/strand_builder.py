@@ -1,4 +1,5 @@
 # %%
+import re
 import time
 from dataclasses import dataclass
 from typing import Dict, List, Literal, Optional, Set, Tuple
@@ -11,6 +12,21 @@ from .conversation_explorer import (
 from diskcache import Cache
 
 from .semantic_search import search_embeddings
+
+
+def _clean_search_query(text: str) -> str:
+    """Remove t.co, twitter.com, and x.com URLs from text for cleaner semantic search.
+
+    These shortened/social URLs don't carry semantic meaning and can pollute search results.
+    """
+    # Pattern matches URLs starting with http(s):// followed by t.co, twitter.com, or x.com
+    url_pattern = r'https?://(?:t\.co|twitter\.com|x\.com)[^\s]*'
+    cleaned = re.sub(url_pattern, '', text)
+    # Clean up extra whitespace that may result from URL removal
+    cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+    return cleaned
+
+
 from .image_describer import get_image_cache, get_image_descriptions_batch
 from .parallel import parallel_map_to_dict
 
@@ -45,16 +61,21 @@ def _semantic_search_for_strands(
     exclude_keywords: List[str] = [],
     limit: int = 20,
     k: int = 100,
+    max_k: int = 400,
     threshold: float = 0.5,
     debug: bool = False
 ) -> List[EnrichedTweet]:
-    """Search for semantically similar tweets, filter direct quotes and retweets, sort by quoted_count."""
+    """Search for semantically similar tweets, filter direct quotes and retweets, sort by quoted_count.
+
+    If filtered results are below limit, retries with doubled k (up to max_k).
+    """
     tweet = tweet_dict.get(tweet_id)
     if not tweet:
         return []
 
     search_params = {
         'k': k,
+        'max_k': max_k,
         'threshold': threshold,
         'exclude_keywords': exclude_keywords
     }
@@ -67,28 +88,50 @@ def _semantic_search_for_strands(
         # Reconstruct EnrichedTweet objects from IDs
         backup_tweets = [tweet_dict.get(tid) for tid in backup_tweet_ids if tweet_dict.get(tid)]
         backup_tweets = [t for t in backup_tweets if t is not None]
-        return sorted(backup_tweets, key=lambda x: x.get('quoted_count', 0) or 0, reverse=True)[:limit]
+        if len(backup_tweets) > 0:
+            print(f"[DEBUG] Returning {len(backup_tweets)} results from backup for tweet {tweet_id}")
+            return sorted(backup_tweets, key=lambda x: x.get('quoted_count', 0) or 0, reverse=True)[:limit]
 
     # No valid backup - perform search
     filter_obj = {"must_not": [{"key": "text", "match": {"text": kw}} for kw in exclude_keywords]} if exclude_keywords else None
 
-    start_time = time.time()
-    results = search_embeddings(tweet['full_text'], k=k, threshold=threshold, exclude_tweet_id=str(tweet_id), filter=filter_obj)
+    # Clean search query by removing t.co/twitter.com/x.com URLs
+    search_query = _clean_search_query(tweet['full_text'])
     if debug:
-        print(f"[DEBUG] Semantic search completed in {time.time() - start_time:.3f}s, found {len(results)} results")
-    start_time = time.time()
-    result_ids = [int(r['key']) for r in results]
-    result_dicts = [tweet_dict.get(rid,None) for rid in result_ids]
-    result_dicts = [t for t in result_dicts if t is not None]
+        print(f"[DEBUG] Cleaned search query: '{search_query[:100]}...' (original had {len(tweet['full_text'])} chars)")
 
-    # Filter out direct quotes of the seed tweet and retweets
-    filtered = [
-        t for t in result_dicts
-        if (t.get('quoted_tweet_id') is None or int(t['quoted_tweet_id']) != tweet_id)
-        and not t.get('full_text', '').startswith('RT @')
-    ]
-    if debug:
-        print(f"[DEBUG] Filtering completed in {time.time() - start_time:.3f}s, found {len(filtered)} results")
+    current_k = k
+    filtered = []
+
+    while current_k <= max_k:
+        start_time = time.time()
+        results = search_embeddings(search_query, k=current_k, threshold=threshold, exclude_tweet_id=str(tweet_id), filter=filter_obj)
+        if debug:
+            print(f"[DEBUG] Semantic search (k={current_k}) completed in {time.time() - start_time:.3f}s, found {len(results)} results")
+
+        start_time = time.time()
+        result_ids = [int(r['key']) for r in results]
+        result_dicts = [tweet_dict.get(rid, None) for rid in result_ids]
+        result_dicts = [t for t in result_dicts if t is not None]
+
+        # Filter out direct quotes of the seed tweet and retweets
+        filtered = [
+            t for t in result_dicts
+            if (t.get('quoted_tweet_id') is None or int(t['quoted_tweet_id']) != tweet_id)
+            and not t.get('full_text', '').startswith('RT @')
+        ]
+        if debug:
+            print(f"[DEBUG] Filtering completed in {time.time() - start_time:.3f}s, found {len(filtered)} results")
+
+        # If we have enough results or we've hit max_k, stop retrying
+        if len(filtered) >= limit or current_k >= max_k:
+            break
+
+        # Retry with doubled k
+        old_k = current_k
+        current_k = min(current_k * 2, max_k)
+        if debug:
+            print(f"[DEBUG] Only {len(filtered)} results after filtering (need {limit}), retrying with k={current_k} (was {old_k})")
 
     # Save backup of filtered tweet IDs
     filtered_tweet_ids = [t['tweet_id'] for t in filtered]
@@ -118,7 +161,7 @@ def get_strand_seeds(
     # Phase 1: Semantic search
     if debug:
         phase_start = time.time()
-    semantic_results = _semantic_search_for_strands(tweet_id=tweet_id, tweet_dict=tweet_dict, exclude_keywords=exclude_keywords, debug=debug)
+    semantic_results = _semantic_search_for_strands(tweet_id=tweet_id, tweet_dict=tweet_dict, exclude_keywords=exclude_keywords, limit=semantic_limit, debug=debug)
     if debug:
         print(f"[DEBUG] Semantic search completed in {time.time() - phase_start:.3f}s, found {len(semantic_results)} results")
     

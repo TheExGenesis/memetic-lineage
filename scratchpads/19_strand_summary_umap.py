@@ -20,9 +20,6 @@ PALETTE = 'nausicaa'  # Toxic Forest color scheme
 BANNER_WIDTH = 1200
 BANNER_HEIGHT = 400  # 1:3 aspect ratio
 
-# Number of labels to show (spatially distributed)
-TOP_N_LABELS = 12
-
 # UMAP parameters
 UMAP_N_NEIGHBORS = 10
 UMAP_MIN_DIST = 0.1
@@ -31,6 +28,10 @@ UMAP_MIN_DIST = 0.1
 FONT_FAMILY = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
 TITLE_COLOR = '#1a1a1a'
 LABEL_COLOR = '#333333'
+
+# Manual label config - edit data/strand_label_config.json to control which labels are shown
+# Set "displayed": true to show a label, "custom_label": "text" to override the title
+LABEL_CONFIG_PATH = Path(__file__).parent / "data/strand_label_config.json"
 
 # ===== END PARAMETERS =====
 
@@ -296,16 +297,35 @@ def select_spatially_distributed_labels(df, n_labels, grid_cols=5):
     return selected_indices
 
 # %%
-# Generate colors and select labels
+# Generate colors
 print(f"Generating colors with '{PALETTE}' palette...")
 colors = get_position_colors(x, y, palette=PALETTE)
 df['color'] = colors
 
-selected_indices = select_spatially_distributed_labels(df, TOP_N_LABELS, grid_cols=5)
-print(f"Selected {len(selected_indices)} labels:")
+# Load label config from JSON
+print(f"Loading label config from {LABEL_CONFIG_PATH}")
+with open(LABEL_CONFIG_PATH) as f:
+    label_config = json.load(f)
+
+# Build lookup from config
+label_config_lookup = {c['seed_tweet_id']: c for c in label_config}
+
+# Get indices of displayed labels and their display text
+selected_indices = []
+label_texts = {}  # seed_tweet_id -> display text
+
+for i, row in df.iterrows():
+    config = label_config_lookup.get(row['seed_tweet_id'])
+    if config and config.get('displayed'):
+        selected_indices.append(i)
+        # Use custom_label if set, otherwise use title
+        label_texts[row['seed_tweet_id']] = config.get('custom_label') or config['title']
+
+print(f"Selected {len(selected_indices)} labels from config:")
 for idx in selected_indices:
     row = df.iloc[idx]
-    print(f"  - @{row['username']}: {row['title'][:40]}...")
+    label = label_texts[row['seed_tweet_id']]
+    print(f"  - @{row['username']}: {label[:50]}...")
 
 # %%
 # Helper: wrap text for hover
@@ -398,15 +418,85 @@ traces.append(go.Scattergl(
 
 fig = go.Figure(data=traces)
 
-# Add labels as annotations (pixel offset stays constant on zoom)
+# Add labels as annotations with collision detection
+# Estimate label dimensions in data coordinates
+x_range = x.max() - x.min()
+y_range = y.max() - y.min()
+char_width = x_range / 120  # Approximate width per character in data units
+label_height = y_range / 15  # Approximate label height in data units
+
+# Build label info with bounding boxes
+label_info = []
 for idx in selected_indices:
     row = df.iloc[idx]
+    display_label = label_texts.get(row['seed_tweet_id'], row['title'])
+    label_width = len(display_label) * char_width
+    label_info.append({
+        'idx': idx,
+        'x': row['x'],
+        'y': row['y'],
+        'text': display_label,
+        'width': label_width,
+        'height': label_height,
+        'likes': row['likes'],
+    })
+
+# Sort by likes (highest first for priority)
+label_info.sort(key=lambda l: l['likes'], reverse=True)
+
+def boxes_overlap(a, b, padding=0.02):
+    """Check if two label boxes overlap"""
+    return not (a['bx'] + a['width'] + padding < b['bx'] or
+                b['bx'] + b['width'] + padding < a['bx'] or
+                a['by'] + a['height'] + padding < b['by'] or
+                b['by'] + b['height'] + padding < a['by'])
+
+def try_positions(label, placed):
+    """Try different positions for a label, return first non-overlapping"""
+    offsets = [
+        (0, label_height * 0.8, 18, 'middle center'),   # above
+        (0, -label_height * 1.5, -18, 'middle center'), # below
+        (-label['width'] * 0.6, 0, 0, 'middle right'),  # left
+        (label['width'] * 0.6, 0, 0, 'middle left'),    # right
+    ]
+
+    for dx, dy, yshift, anchor in offsets:
+        test_box = {
+            'bx': label['x'] + dx - label['width'] / 2,
+            'by': label['y'] + dy,
+            'width': label['width'],
+            'height': label['height'],
+        }
+
+        if not any(boxes_overlap(test_box, p) for p in placed):
+            return {
+                **test_box,
+                'x': label['x'] + dx,
+                'y': label['y'] + dy,
+                'yshift': yshift,
+                'anchor': anchor,
+                'text': label['text'],
+            }
+
+    return None  # No valid position
+
+# Place labels with collision detection
+placed_labels = []
+for label in label_info:
+    positioned = try_positions(label, placed_labels)
+    if positioned:
+        placed_labels.append(positioned)
+
+print(f"Placed {len(placed_labels)}/{len(label_info)} labels (skipped {len(label_info) - len(placed_labels)} due to overlap)")
+
+# Add the placed annotations
+for lbl in placed_labels:
     fig.add_annotation(
-        x=row['x'],
-        y=row['y'],
-        text=row['title'],
+        x=lbl['x'],
+        y=lbl['y'],
+        text=lbl['text'],
         showarrow=False,
-        yshift=18,  # Fixed pixel offset above point
+        yshift=lbl['yshift'],
         font=dict(
             size=10,
             color=LABEL_COLOR,
@@ -478,9 +568,12 @@ def export_for_frontend():
     }
 
     for i, row in df.iterrows():
+        # Get custom label if configured for this strand (for chart labels)
+        display_label = label_texts.get(row['seed_tweet_id'])
         export_data['points'].append({
             'seed_tweet_id': row['seed_tweet_id'],
-            'title': row['title'],
+            'title': row['title'],  # Original title for tooltips
+            'label': display_label,  # Custom label for chart (None if not labeled)
             'x': float(row['x']),
             'y': float(row['y']),
             'color': row['color'],

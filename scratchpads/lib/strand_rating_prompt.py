@@ -26,7 +26,7 @@ You are looking for **Stories Worth Telling**. A high-value strand is not just a
 *   **Knowledge Production:** Is the community building a shared map, a new vocabulary, or a social technology?
 *   **Conflict as Catalyst:** Dialectical conflict is good *if* it leads to refinement. A back-and-forth that creates new distinctions is valuable. A circular argument is not.
 *   **Temporal Depth:** Long-running arcs (years) are preferred over short bursts (48h). Pre-history (context before the main viral moment) is highly valuable.
-*   **Boundary Objects:** There should be a clear "center" or "boundary" to the discussion—a specific question, a diagram, a meme, or a controversial statement—even if there isn't one single viral tweet anchoring it.
+*   **Boundary Objects:** There should be a clear "center" or "boundary" to the discussion—a specific question, a diagram, a meme, or a controversial statement—even if there isn't one single viral tweet anchoring it. And note that not all tweets need to be relevant, there may be noise that should be ignored.
 
 ### 2. Analysis Process
 When reviewing the input, perform the following mental steps:

@@ -49,7 +49,7 @@ tweet_dict, conversation_trees = load_caches()
 
 print("Loading top quoted tweet IDs...")
 quoted_count_tweets = read_parquet(QUOTED_COUNTS_CACHE_PATH).sort_values('quoted_count', ascending=False)
-high_half_life_qt_tweet_ids = quoted_count_tweets['quoted_tweet_id'].astype(int).tolist()[:100]
+high_half_life_qt_tweet_ids = quoted_count_tweets[quoted_count_tweets.quoted_count>5]['quoted_tweet_id'].astype(int).tolist()
 print(f"Found {len(high_half_life_qt_tweet_ids)} tweet IDs")
 
 # %%
@@ -104,7 +104,7 @@ else:
     # Phase 1-4: Build strands using phased pipeline
     print("Building strands with phase-level parallelism...")
     strand_results = build_strands_phased(
-        strand_target_tweet_ids,
+        strand_target_tweet_ids[:2],
         tweet_dict,
         quote_dict,
         conversation_trees,
