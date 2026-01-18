@@ -12,12 +12,8 @@ export function BackButton({ fallbackHref = '/', label, className = '' }: BackBu
   const router = useRouter();
 
   const handleClick = () => {
-    // Check if we have history to go back to
-    if (window.history.length > 1) {
-      router.back();
-    } else {
-      router.push(fallbackHref);
-    }
+    // Always navigate to the explicit hierarchy parent, not browser back
+    router.push(fallbackHref);
   };
 
   return (

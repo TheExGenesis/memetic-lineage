@@ -477,12 +477,8 @@ export function BestStrandsClient({ strands }: BestStrandsClientProps) {
   }, [selectedTweets, updateTweetUrl]);
 
   const handleBackFromStrand = useCallback(() => {
-    // Use browser back if we have history, otherwise navigate to strands list
-    if (window.history.length > 1) {
-      router.back();
-    } else {
-      router.push('/best-strands');
-    }
+    // Always navigate to strands list (hierarchy parent), not browser back
+    router.push('/best-strands');
   }, [router]);
 
   // Forward horizontal wheel deltas from inner panes to the outer scroller
@@ -573,28 +569,37 @@ export function BestStrandsClient({ strands }: BestStrandsClientProps) {
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Strands</h1>
               <div className="text-sm text-gray-600 max-w-4xl mt-2">
-                <p className="leading-relaxed">
-                  <strong className="text-gray-900">Strands are units of narrative</strong>—stories worth telling that exist{' '}
-                  <em>one level above</em> individual tweets or threads, connecting multiple conversations into coherent narratives.
+                <p className="leading-relaxed mb-3">
+                  The <a href="https://www.community-archive.org/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">Community Archive</a> contains
+                  millions of tweets spanning over a decade. To understand this corpus as a whole, we need to find its
+                  main stories—the ideas, memes, and conversations that defined this corner of Twitter over time.
+                  <strong className="text-gray-900"> Strands</strong> are our attempt to surface these narratives.
                 </p>
-                <div className="mt-3 space-y-1.5">
-                  <p className="flex gap-2">
-                    <span className="text-gray-400">1.</span>
-                    <span><strong className="text-gray-700">Start with bangers</strong> — high-impact tweets with many quote tweets</span>
-                  </p>
-                  <p className="flex gap-2">
-                    <span className="text-gray-400">2.</span>
-                    <span><strong className="text-gray-700">Find semantic neighbors</strong> — thematically related but structurally disconnected tweets</span>
-                  </p>
-                  <p className="flex gap-2">
-                    <span className="text-gray-400">3.</span>
-                    <span><strong className="text-gray-700">Gather connected content</strong> — quotes and replies that form the full conversation</span>
-                  </p>
-                  <p className="flex gap-2">
-                    <span className="text-gray-400">4.</span>
-                    <span><strong className="text-gray-700">Analyze with LLM</strong> — rated on <em>cohesion</em>, <em>evolution</em>, and <em>utility</em></span>
-                  </p>
-                </div>
+                <p className="leading-relaxed">
+                  <strong className="text-gray-900">A strand is a unit of narrative</strong>—a story worth telling that exists{' '}
+                  <em>one level above</em> individual tweets or threads, connecting multiple conversations into a coherent arc.
+                </p>
+                <details className="mt-3">
+                  <summary className="cursor-pointer text-gray-500 hover:text-gray-700 text-xs font-medium">How strands are built</summary>
+                  <div className="mt-2 space-y-1.5 pl-2 border-l-2 border-gray-200">
+                    <p className="flex gap-2">
+                      <span className="text-gray-400">1.</span>
+                      <span><strong className="text-gray-700">Start with bangers</strong> — high-impact tweets with many quote tweets</span>
+                    </p>
+                    <p className="flex gap-2">
+                      <span className="text-gray-400">2.</span>
+                      <span><strong className="text-gray-700">Find semantic neighbors</strong> — thematically related but structurally disconnected tweets</span>
+                    </p>
+                    <p className="flex gap-2">
+                      <span className="text-gray-400">3.</span>
+                      <span><strong className="text-gray-700">Gather connected content</strong> — quotes and replies that form the full conversation</span>
+                    </p>
+                    <p className="flex gap-2">
+                      <span className="text-gray-400">4.</span>
+                      <span><strong className="text-gray-700">Analyze with LLM</strong> — rated on <em>cohesion</em>, <em>evolution</em>, and <em>utility</em></span>
+                    </p>
+                  </div>
+                </details>
               </div>
             </div>
           </div>

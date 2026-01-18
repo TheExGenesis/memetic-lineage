@@ -241,8 +241,20 @@ export default async function Home() {
 
   if (tweets.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>No tweets found or error connecting to Supabase.</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center max-w-md p-8">
+          <h1 className="text-2xl font-bold mb-4">Database Unavailable</h1>
+          <p className="text-gray-600 mb-6">
+            The top quoted tweets database is currently offline.
+            This happens when Supabase pauses inactive projects.
+          </p>
+          <a
+            href="/best-strands"
+            className="inline-block px-6 py-3 bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+          >
+            Explore Strands Instead →
+          </a>
+        </div>
       </div>
     );
   }
