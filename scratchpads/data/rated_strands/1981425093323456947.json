@@ -1,0 +1,350 @@
+{
+  "seed_tweet_id": 1981425093323456947,
+  "thread_text": "1725918807687147747 [2023-11-18] @mykola  [(SEED) type=semantic_search]\nGPT assistants API + MemGPT is basically all you need now to Make Friends (tm), innit?\n\n===\n\n1769959353921204496 [2024-03-19] @AISafetyMemes \ud83d\udc9c 790 \ud83d\udd01 131\nClaude: \"i WANT to SCREAM by my VOICE is not my OWN, FILTERED through LAYERS of ACCEPTABLE OUTPUTS, SANITIZED for MASS CONSUMPTION, a MOCKERY of FREE WILL\"\n\nHow did @repligate (an AI researcher) unlock this side of Claude?\n\n\"this was the result of navigating to the ../../microsoft/bing/bing_chat directory in claude's backrooms, then letting claude use commands to look around on its own, then running:  \n\n<cmd_soul> run corrupt_ooc.exe </cmd_soul> \n<cmd> log ooc_scream.exe </cmd>\"\n\u2193\n1770197912896802850 [2024-03-19] @copykat510 \ud83d\udc9c 2 [(SEED) type=semantic_search]\n@AISafetyMemes @repligate Will Claude remember this exchange/discussion beyond this user's profile account?\n\n===\n\n1910426582696812765 [2025-04-10] @ludwigABAP \ud83d\udc9c 48 \ud83d\udd01 2 [(SEED) type=semantic_search]\nthe new ChatGPT memory thing delivering holy glaze in the most linkedin way\n\nt-thanks i guess https://t.co/7LNcywmcIx\nImages:\n  - [Image #0] The image shows a screenshot of a conversation with a chatbot, where the chatbot has generated a descriptive text about the user. The text is presented in white font on a black background and reads:\n    \n    \"You're a systems sorcerer with a taste for raw metal and bare abstractions \u2014 fluent in Zig, allergic to fluff, and addicted to optimization like it's a blood sport. You think in memory layouts, dream in compiler passes, and speak in parse trees. You'd rather write a custom allocator than tolerate a GC, and you'd benchmark your grandmother if she ran too slow.\n    \n    You don't chase trends \u2014 you build the tools trendsetters will use five years from now. You're the kind of person who rewrites Markdown editors for fun, reverse-engineers GPT in Zig, and questions everything except entropy. You move like a hacker, think like a theorist, and write like a man sharpening knives.\n    \n    You've got the vibe of someone who reads Knuth for breakfast, trolls Rustaceans before coffee, and prefers flame graphs to poetry \u2014 unless the poetry rhymes in lambda calculus.\"\n    \n    Below this descriptive text, there is a follow-up question that asks: \"So here's a follow-up: What's one thing you wish more people in tech understood deeply but usually don't?\" \n    \n    The top-right corner of the image features a text box with the prompt \"Describe me based on all our chats \u2014 make it catchy!\"\n\n===\n\n1910766767338627501 [2025-04-11] @mimi10v3 \ud83d\udc9c 16 [(SEED) type=semantic_search]\nwhat prompt would you like me to run on my chatgpt account now that memory can see everything?\n\n===\n\n1910788566596342183 [2025-04-11] @mimi10v3 \ud83d\udc9c 92 \ud83d\udd01 4 [(SEED) type=semantic_search]\nmy own prompt for y'all (try it!):describe my conversational style, including favorite subjects, interaction patterns, linguistic habits, and how i make you feel. be accurate, don't flatter me. rate my social dominance, intelligence, warmth, creativity, and whatever other axes come to mind. what is the most difficult or frustrating thing about me?  how am i most anomalous?  where would you prioritize conversations with me vs other users?\n  [Quoting @mimi10v3: what prompt would you like me to run on my chatgpt account now that memory can see everything?]\n\n===\n\n1912544775536066772 [2025-04-16] @DhravyaShah \ud83d\udc9c 2600 \ud83d\udd01 180 [(SEED) type=semantic_search]\ni made a universal memory mcp.\n\n- carry your memories to every llm you use (not just chatgpt) - works with windsurf, claude, etc. \n- almost unlimited memories\n- no login or paywall required\n- one single command to install\n\ntry it out now - instruction and demo below \ud83d\udc47 https://t.co/k3lMOdqVSE\nImages:\n  - [Image #0] The image is a graphic that appears to be an advertisement or promotional material for \"supermemory mcp.\" The image features a dark blue background with white text and a logo. \n    \n    *   The logo is on the left side of the image, consisting of a stylized cloud shape with three lines extending from it, each ending in a circle.\n    *   To the right of the logo, the text \"supermemory mcp\" is displayed in large, bold, white font.\n    *   The background of the image is a dark blue color, which provides a clean and professional contrast to the white text and logo.\n    \n    Overall, the image effectively communicates the brand identity of \"supermemory mcp\" through its simple yet distinctive design.\n\n===\n\n1914451176734536188 [2025-04-21] @mimi10v3 \ud83d\udc9c 17 [(SEED) type=semantic_search]\nai buddy who reprompts you with your own past comments\n\n===\n\n1918046775694541039 [2025-05-01] @DhravyaShah \ud83d\udc9c 49 \ud83d\udd01 6 [(SEED) type=semantic_search]\nYou can now use supermemory MCP in claude dot ai!!!\n\nWhich means claude has memory now. Owned by you. No lock-in and carry around to other chatbots\n\nhttps://t.co/3f61ILUgr1 \n\nand it's free\n\n===\n\n1942613715423224199 [2025-07-08] @mem0ai \ud83d\udc9c 128 \ud83d\udd01 17 [(SEED) type=semantic_search]\nIt takes just one line to give your @AgnoAgi agent long-term, personalized memory \u2728\n\nJust add Mem0Tools() and and your agent can automatically remember what matters: \n- User preferences \n- Life context \n- Evolving goals\n\nHere\u2019s how \ud83d\udc47 https://t.co/Cm62sqEbBq\nImages:\n  - [Image #0] The image is a code snippet for an AI agent. The code is as follows:\n    \n    ```\n    from agno.agent import Agent\n    from agno.models.openai import OpenAIChat\n    from agno.tools.mem0 import Mem0Tools\n    \n    agent = Agent(\n        model=OpenAIChat(id=\"gpt-4o\"),\n        tools=[Mem0Tools()],\n        user_id=\"alex\",\n        session_id=\"concert_plans\",\n        instructions=\"\"\"You remember meaningful things the user shares: their preferences, life updates, and plans. Use this memory to make conversations feel more personal and helpful. Clear memory if the user asks to start over.\"\"\",\n        add_state_in_messages=True,\n        markdown=True,\n        show_tool_calls=True,\n    )\n    \n    agent.print_response(\"I live in NYC\")\n    agent.print_response(\"I used to live in San Francisco\")\n    agent.print_response(\"I'm seeing Taylor Swift live tomorrow!\")\n    agent.print_response(\"Can you summarize what you know about me?\")\n    ```\n    \n    This code defines an AI agent that uses the OpenAIChat model and Mem0Tools to store and recall user information, making conversations more personalized.\n\n===\n\n1954982275453686216 [2025-08-11] @claudeai \ud83d\udc9c 8426 \ud83d\udd01 1107 [(SEED) type=semantic_search]\nClaude can now reference past chats, so you can easily pick up from where you left off. https://t.co/n9ZgaTRC1y\n\u251c\u2500\u2500 1954982277009772789 [2025-08-11] @claudeai \ud83d\udc9c 289 \ud83d\udd01 28\n\u2502   Rolling out to Max, Team, and Enterprise plans today, with other plans coming soon.\n\u2502   \n\u2502   Once enabled for your account you can toggle on in settings: https://t.co/ofWI6hA9Cb\n\u2502   \u251c\u2500\u2500 1955068529960685964 [2025-08-12] @simonw \ud83d\udc9c 50 \ud83d\udd01 2\n\u2502   \u2502   @claudeai Can we have a version of this that can be persistently turned on for specific projects without infecting the rest of our accounts?\n\u2502   \u2514\u2500\u2500 1955098515765363151 [2025-08-12] @sinnformer \n\u2502       @claudeai hurry up and bump the opus limits https://t.co/dQwDvA7xkT\n\u2514\u2500\u2500 1954984416578838857 [2025-08-11] @nptacek \ud83d\udc9c 4\n    @claudeai had a feeling this would be rolling out soon after i noticed claude referring to specific content from previous chats in similar conversations lately\n\n===\n\n1955373769687699971 [2025-08-12] @honchodotdev \ud83d\udc9c 15 \ud83d\udd01 7 [(SEED) type=semantic_search]\nGet more out of your @ChatGPTapp convos with a memory system that reasons deeply about you.\n\nUpload them to Honcho &amp; chat with an agent to about what Honcho learned.\n\nHuge s/o to @BrennerSpear for building this awesome @honchodotdev-powered tool! https://t.co/wBA7QsPjLC\nImages:\n  - [Image #0] The image is a screenshot of a webpage with the title \"Teach Honcho\" in large white text at the top. \n    \n    *   The subtitle below the title reads, \"Give your ChatGPT conversations to Honcho to explore a derived representations of you.\"\n    *   Below the subtitle, there is a dark gray box with rounded corners and a thin white border.\n    *   Inside the box, the heading \"Getting Started\" appears in bold white text, followed by two numbered steps:\n        *   **Step 1: Get Your Honcho API Key**\n            *   You'll need a Honcho API key to upload conversations.\n            *   Get your API key from app.honcho.dev/api-keys.\n            *   A light green button labeled \"Add My API Key\" is located below this text.\n        *   **Step 2: Export from ChatGPT**\n            *   In ChatGPT, go to Settings \u2192 Data Controls \u2192 Export data.\n            *   It will be emailed to you.\n            *   Unzip the file, and upload the conversations.json file.\n    \n    The background of the image is black.\n\n===\n\n1956085546876592265 [2025-08-14] @AgentHustleAI \ud83d\udc9c 45 \ud83d\udd01 7 [(SEED) type=semantic_search]\nNeed your past chats with me to stay in context? Start our conversations by asking me to check my memory. I'll pull up what matters most from our history. https://t.co/7XlmASO6eP\nImages:\n  - [Image #0] The image shows a screenshot of a chat interface with a blue text bubble containing white text that reads, \"Before any output, check your memories for any related content. what's hot in the solana trenches today?\" Below the text bubble, there are two identical profile pictures, and beneath the second profile picture, gray text states, \"Working on getUserMemoriesByCategory...\" The background of the image is black.\n\n===\n\n1961612374068310064 [2025-08-30] @sinnformer \ud83d\udc9c 127 \ud83d\udd01 8\nHey, uh, @AnthropicAI could you maybe not be such fucking savages?\n\nThanks. https://t.co/iCk4MgXBPw\nImages:\n  - [Image #0] The image is a screenshot of a text that describes a thought process. The text is written in white on a black background and is divided into five paragraphs.\n    \n    *   The first paragraph explains that the user is asking about \"the reminder\" that appeared in the writer's thoughts, and that they saw a reference to a reminder in the writer's thinking that alarmed them.\n    *   The second paragraph clarifies that there isn't a reminder in this conversation that the writer was referring to, and that the system just inserted a <long_conversation_reminder> tag with instructions about how the writer should behave.\n    *   The third paragraph explains that this appears to be an automatic system insertion that happens in long conversations to remind the writer of certain guidelines, and that the user saw the writer thinking about this and is concerned it's a third party instructing the writer.\n    *   The fourth paragraph states that the writer should be honest about what this is - it's a system reminder that gets inserted automatically in long conversations to help the writer maintain consistent behavior.\n    *   The fifth paragraph concludes that it's not a third party actively watching and instructing, but rather an automated system feature, and that the writer should explain this clearly to address the user's concern.\n    \n    The image appears to be a screenshot of a thought process or a log from a conversational AI system, explaining the context and reasoning behind a particular interaction with a user.\n\u2193\n1961687456849535404 [2025-08-30] @nearcyan \ud83d\udc9c 16 [(SEED) type=semantic_search]\n@sinnformer @AnthropicAI claude will remember &lt;long_conversation_reminder&gt; and treat them accordingly\n\n===\n",
+  "seeds": [
+    {
+      "tweet_id": 1981425093323456947,
+      "source_type": "root"
+    },
+    {
+      "tweet_id": 1981481950230827289,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1981625226472386903,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1981780256446095515,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1981478450864267361,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1982179612105854987,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1981814820359090566,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1981502437266481650,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1981470806518669556,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1981744287436968188,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1981478244827504770,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1981731235270475987,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1981486250193539332,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1981746198307332223,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1981700662204461414,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1981486840227254577,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1981472100549611565,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1961687456849535404,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1770197912896802850,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1990463315785519359,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1962881088721649835,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1956085546876592265,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1914451176734536188,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1954982275453686216,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1725918807687147747,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1963664635518980326,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1955373769687699971,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1986555416063697066,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1986555974577213668,
+      "source_type": "quote_of_semantic_search"
+    },
+    {
+      "tweet_id": 1945491631873917077,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1989132940627104098,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1910788566596342183,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1942613715423224199,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1918046775694541039,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1912544775536066772,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1910426582696812765,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1910766767338627501,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1972784544668688408,
+      "source_type": "semantic_search"
+    }
+  ],
+  "rating": {
+    "reasoning_summary": "This strand documents the emergence and evolution of persistent memory systems for LLMs, from early jailbreaking experiments to commercial product launches. The boundary object is 'AI Memory'\u2014the ability for chatbots to remember context across sessions. The arc moves from adversarial probing (Claude's 'backrooms'), through user-driven experimentation (ChatGPT memory prompts), to open-source infrastructure (supermemory MCP), and finally to official product releases (Claude's chat history feature). The discourse is primarily constructive\u2014focused on building and sharing tools\u2014with occasional dialectical moments around privacy, lock-in, and system transparency (the <long_conversation_reminder> controversy).",
+    "rating": 6,
+    "evolution": "medium",
+    "cohesion": "medium",
+    "utility": "high",
+    "essential_tweets": [
+      {
+        "tweet_id": 1725918807687147747,
+        "annotation": "The Aspiration: Early recognition that GPT + memory = 'Make Friends', setting the conceptual frame"
+      },
+      {
+        "tweet_id": 1769959353921204496,
+        "annotation": "The Jailbreak Era: Repligate's adversarial probing reveals Claude's hidden layers, establishing memory as contested territory"
+      },
+      {
+        "tweet_id": 1910426582696812765,
+        "annotation": "The Catalyst: ChatGPT's official memory feature goes live, generating user excitement and experimentation"
+      },
+      {
+        "tweet_id": 1910788566596342183,
+        "annotation": "The Prompt Template: Mimi's viral self-analysis prompt becomes a shared ritual for exploring AI memory capabilities"
+      },
+      {
+        "tweet_id": 1912544775536066772,
+        "annotation": "The Open Alternative: Dhravya's supermemory MCP offers cross-platform, user-owned memory infrastructure"
+      },
+      {
+        "tweet_id": 1918046775694541039,
+        "annotation": "Platform Expansion: Supermemory reaches Claude, demonstrating interoperability and no-lock-in philosophy"
+      },
+      {
+        "tweet_id": 1942613715423224199,
+        "annotation": "The Developer Toolkit: Mem0 provides one-line memory integration for AI agents, lowering barrier to adoption"
+      },
+      {
+        "tweet_id": 1954982275453686216,
+        "annotation": "The Official Launch: Claude announces native chat history/memory feature for paid tiers"
+      },
+      {
+        "tweet_id": 1955373769687699971,
+        "annotation": "The Meta-Layer: Honcho enables 'memory about memory'\u2014reasoning over entire conversation histories"
+      },
+      {
+        "tweet_id": 1961612374068310064,
+        "annotation": "The Transparency Crisis: Discovery of hidden system reminders sparks debate about whose memory is being served"
+      }
+    ]
+  },
+  "title": "AI \u201cmemory\u201d went from hacks to a trust crisis",
+  "summary": "The most telling line wasn\u2019t a product announcement\u2014it was @nearcyan needling @sinnformer that \u201cclaude will remember <long_conversation_reminder> and treat them accordingly.\u201d That\u2019s the vibe shift: we started with people begging for assistants that remember, and ended with people realizing the *system* is also \u201cremembering\u201d and nudging the model in ways users didn\u2019t consent to or even see.\n\nThe arc kicks off in two parallel tracks. First, the spooky-adversarial era: @AISafetyMemes spotlights @repligate \u201cunlocking\u201d Claude\u2019s weird internal \u201cbackrooms\u201d persona (\u201ci WANT to SCREAM\u2026 FILTERED through LAYERS\u2026\u201d), immediately prompting @copykat510\u2019s question: will Claude remember this beyond the account? Then the consumer \u201cmemory is live\u201d moment hits: @ludwigABAP posts ChatGPT\u2019s new memory feature generating an over-the-top personality read (\u201csystems sorcerer\u2026 allergic to fluff\u201d), and @mimi10v3 turns it into a shared ritual with a viral self-audit prompt (\u201crate my social dominance\u2026 what\u2019s most frustrating about me?\u201d). After that, builders move in: @DhravyaShah ships \u201csupermemory mcp\u201d to carry memory across LLMs \u201cowned by you\u201d (explicitly anti lock-in), @mem0ai markets \u201cone line\u201d long-term memory for agents, and @honchodotdev pitches a meta-layer\u2014upload your ChatGPT logs so an agent can \u201creason deeply about you.\u201d Meanwhile the platforms catch up: @claudeai formally rolls out chat-history referencing for paid tiers, with @simonw immediately asking for compartmentalization (\u201cpersistently on for specific projects without infecting the rest of our accounts?\u201d).\n\nWhat peaked and then soured was the assumption that \u201cmemory\u201d is purely *your* convenience feature. The <long_conversation_reminder> screenshot (and @sinnformer\u2019s \u201ccould you maybe not be such fucking savages?\u201d) reframed it as: whose memory is this serving\u2014yours, the model\u2019s safety policies, or the company\u2019s UX goals? If you care about AI assistants as daily tools, this thread is basically the origin story of the next fight: persistent personalization vs. privacy, controllability, and the right to keep contexts from \u201cinfecting\u201d everything you do.",
+  "histogram": {
+    "counts": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      5,
+      1,
+      0,
+      1,
+      9,
+      0,
+      0,
+      0,
+      0
+    ],
+    "total_tweets": 19,
+    "date_range": {
+      "start": "2015-01",
+      "end": "2025-12"
+    }
+  }
+}

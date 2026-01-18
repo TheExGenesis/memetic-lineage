@@ -1,0 +1,326 @@
+{
+  "seed_tweet_id": 1798376884134404563,
+  "thread_text": "1669116699692654594 [2023-06-14] @JustAnkurBagchi \ud83d\udc9c 4 [(SEED) type=semantic_search]\nWhere are the generative AI interactive experiences?\n\n===\n\n1695785300360847415 [2023-08-27] @rtk254 \ud83d\udc9c 27 \ud83d\udd01 6\nA lot has been written about how the traditional science model of publishing and peer review is broken. One connection I haven\u2019t seen made is with the **sensemaking** literature, which studies how people understand complex topics \ud83e\uddf5  1/ https://t.co/Vr3dK4XkKK\nImages:\n  - [Image #0] The image is a flowchart illustrating the sensemaking process, which is a complex cognitive task that involves searching for information, analyzing data, and forming hypotheses. The chart is titled \"The sensemaking process and leverage points for analyst technology as identified through cognitive task analysis.\"\n    \n    Here are the main points of the image:\n    \n    *   **External Data Sources**\n        *   The starting point of the sensemaking process\n        *   Represented by a blue box labeled \"1. External Data Sources\"\n    *   **Foraging Loop**\n        *   A loop that involves searching for information, filtering, and extracting relevant data\n        *   Consists of steps 2-6:\n            *   2. Search & Filter\n            *   3. Search for Information\n            *   4. Shoebox\n            *   5. Read & Extract\n            *   6. Search for Relations\n    *   **Sensemaking Loop**\n        *   A loop that involves analyzing data, forming hypotheses, and testing them\n        *   Consists of steps 7-13:\n            *   7. Evidence File\n            *   8. Schematize\n            *   9. Search for Evidence\n            *   10. Schema\n            *   11. Build Case\n            *   12. Search for Support\n            *   13. Hypotheses\n    *   **Reality/Policy Loop**\n        *   A loop that involves re-evaluating and refining the sensemaking process\n        *   Consists of steps 14-16:\n            *   14. Tell Story\n            *   15. Reevaluate\n            *   16. Presentation\n    \n    The flowchart shows how the sensemaking process involves multiple loops and iterations, with each loop building on the previous one. The chart highlights the importance of searching for information, analyzing data, and forming hypotheses in the sensemaking process.\n    \n    In summary, the image provides a detailed illustration of the sensemaking process, highlighting the various steps involved in searching for information, analyzing data, and forming hypotheses. The chart shows how the sensemaking process is a complex and iterative process that involves multiple loops and feedback mechanisms.\n\u2193\n1695785302600675509 [2023-08-27] @rtk254 \ud83d\udc9c 4\nSensemaking is a powerful  framework that has been used mainly for analyzing organizations and surprisingly less for scientific research. But sensemaking really helps to see why the current traditional science model is broken, and also how we can improve things. 2/\n\u2193\n1695785309076627867 [2023-08-27] @rtk254 \ud83d\udc9c 4\nWhile not directly mentioned in the figure, classical publishing and peer review are at the end stages of a nested, iterative multi-scale feedback loop. Information search, filtering, relating  concepts, etc are all part of the larger sensemaking process. 3/ https://t.co/Akw4PWDyOx\nImages:\n  - [Image #0] The image is a diagram illustrating the process of sensemaking, which involves searching for information, filtering, relating concepts, and presenting findings. The diagram is divided into several stages, each represented by a numbered circle or rectangle with a brief description.\n    \n    The diagram shows the following stages:\n    \n    *   **External Data Sources**: This is the starting point of the process, where data is collected from external sources.\n    *   **Search & Filter**: The data is then searched and filtered to identify relevant information.\n    *   **Shoebox**: The filtered information is stored in a \"shoebox,\" which represents a collection of relevant data.\n    *   **Read & Extract**: The information in the shoebox is read and extracted to identify key findings.\n    *   **Evidence File**: The extracted information is organized into an evidence file, which is used to support the sensemaking process.\n    *   **Schema**: The evidence file is then used to develop a schema, which is a mental framework for understanding the data.\n    *   **Search for Relations**: The schema is used to search for relations between different pieces of information.\n    *   **Search for Evidence**: The relations are then used to search for evidence to support the sensemaking process.\n    *   **Schematize**: The evidence is used to schematize the information, which involves creating a visual representation of the data.\n    *   **Build Case**: The schematized information is then used to build a case, which is a compelling argument based on the evidence.\n    *   **Search for Support**: The case is then used to search for support, which involves identifying additional evidence to reinforce the argument.\n    *   **Hypotheses**: The search for support leads to the development of hypotheses, which are tentative explanations for the data.\n    *   **Reevaluate**: The hypotheses are then reevaluated based on new information or feedback.\n    *   **Presentation**: The final stage is presentation, where the findings are presented to others.\n    \n    The diagram also highlights three loops:\n    \n    *   **Foraging Loop**: This loop involves searching for information, filtering, and extracting relevant data.\n    *   **Sensemaking Loop**: This loop involves developing a schema, building a case, and searching for support.\n    *   **Reality/Policy Loop**: This loop involves reevaluating hypotheses and presenting findings.\n    \n    Overall, the diagram provides a detailed illustration of the sensemaking process, highlighting the various stages and loops involved in making sense of complex data.\n\u2193\n1695785321487614345 [2023-08-27] @rtk254 \ud83d\udc9c 6 \ud83d\udd01 2\nThe sensemaking model shows us 2 important missing elements from trad-sci.\n1) Publishing happens across diverse scales and formats, as demonstrated by the rapid rise of various micro/nanopublishing/discourse graph initiatives (@nanopub_org @Micropub7n @JoelChan86 ) 4/ https://t.co/aLGMpZKt62\nImages:\n  - [Image #0] The image is a diagram illustrating the sensemaking model, which is a cognitive process used to understand and make sense of complex information. \n    \n    To recreate the diagram, start with a large, light blue, curved arrow that spans the entire image, labeled \"STRUCTURE\" on the left and \"EFFORT\" at the bottom. The diagram is divided into numbered steps, ranging from 1 to 16, each represented by a colored circle or rectangle. \n    \n    The steps are as follows:\n    * 1. External Data Sources (blue rectangle)\n    * 2. Search & Filter (green circle, partially obscured)\n    * 3. Search for Information (green circle)\n    * 4. Shoebox (green circle)\n    * 5. (green circle, no label)\n    * 6. Search for Relations (green circle)\n    * 7. Evidence File (yellow rectangle)\n    * 8. (orange circle, no label)\n    * 9. Search for Evidence (yellow rectangle)\n    * 10. Schema (orange circle)\n    * 11. Build Case (orange circle, partially obscured)\n    * 12. Search for Support (red circle, partially obscured)\n    * 13. Hypothesis (red circle)\n    * 14. Tell Story (red circle, partially obscured)\n    * 15. Reevaluate (red circle)\n    * 16. Presentation (red circle)\n    \n    Three gray boxes are placed within the curved arrow, labeled \"Nanopublishing,\" \"\u03bcP Micropublishing,\" and \"Discourse Graphs.\" The diagram also includes several labels and arrows connecting the different steps, indicating the flow of the sensemaking process. The labels include \"Foraging Loop,\" \"Really/Policy Loop,\" and \"Traditional Publishing.\" The diagram is set against a white background, with the curved arrow and other elements creating a visually complex and detailed representation of the sensemaking model.\n\u2193\n1695785327359631516 [2023-08-27] @rtk254 \ud83d\udc9c 5\nFor example, nanopublishing aims at the \"smallest units of publishable information\"; even someone declaring they\u2019ve read a paper can be a nanopub!  5/ https://t.co/FoHsrg1Syc\nImages:\n  - [Image #0] The image shows a screenshot of a webpage titled \"Publish a new Nanopublication\" on the \"nanodash.beta\" website, with a form to create a nanopublication. To reproduce the form, start by creating a blue text box with a sentence that reads, \"I (Ronen Tamari) have read the paper the paper with DOI.\" \n    \n    *   Below the sentence, there are three lines of text with corresponding text fields:\n        *   \"DOI for the paper starting with '10':\" with a text field to input the DOI.\n        *   \"The paper with DOI\" with a text field that is automatically populated based on the DOI entered.\n        *   \"has my comment\" with an optional text field to input a comment.\n    \n    The form is designed to create a nanopublication announcing that the user has read a paper, with the option to include a comment.\n\u2193\n1695785333261013479 [2023-08-27] @rtk254 \ud83d\udc9c 5\n2) Feedback also happens across diverse scales and formats. This is why scientists spend so much time on social media- we don't want to wait months for noisy peer reviews. Scientists posting on Twitter are actually nanopublishing but don\u2019t know it yet! 6/ https://t.co/w3iwqEaJcN\nImages:\n  - [Image #0] The image is a flowchart illustrating the process of publishing scientific information, with a focus on the role of social media platforms like Twitter. The chart highlights the various stages involved in publishing scientific research, from searching for information to presenting the findings.\n    \n    *   **External Data Sources**\n        *   The process begins with external data sources, which are searched and filtered to extract relevant information.\n        *   This stage is represented by a blue box labeled \"1. External Data Sources\" and is connected to the next step by an arrow.\n    *   **Search & Filter**\n        *   The extracted information is then searched and filtered to identify relevant data.\n        *   This stage is represented by a light blue box labeled \"2. Search & Filter\" and is connected to the next step by an arrow.\n    *   **Search for Information**\n        *   The filtered data is then used to search for information, which involves identifying who and what is being studied.\n        *   This stage is represented by a green box labeled \"3. Search for Information\" and is connected to the next step by an arrow.\n    *   **Showbox**\n        *   The information gathered is then stored in a \"showbox,\" which is represented by a green circle labeled \"4. Showbox.\"\n        *   This stage is connected to the next step by an arrow.\n    *   **Search for Relations**\n        *   The information in the showbox is then used to search for relations, which involves understanding how the different pieces of information are related.\n        *   This stage is represented by a yellow circle labeled \"6. Search for Relations\" and is connected to the next step by an arrow.\n    *   **Evidence**\n        *   The relations identified are then used to gather evidence, which involves determining what evidence is available to support the findings.\n        *   This stage is represented by a yellow circle labeled \"7. Evidence\" and is connected to the next step by an arrow.\n    *   **Schema**\n        *   The evidence gathered is then organized into a schema, which provides a framework for understanding the data.\n        *   This stage is represented by a yellow circle labeled \"10. Schema\" and is connected to the next step by an arrow.\n    *   **Search for Support**\n        *   The schema is then used to search for support, which involves identifying how the findings are known.\n        *   This stage is represented by a yellow circle labeled \"12. Search for Support\" and is connected to the next step by an arrow.\n    *   **Re\n\u2193\n1695785339401498662 [2023-08-27] @rtk254 \ud83d\udc9c 7 \ud83d\udd01 1\nThat is a current blind spot in our scientific infrastructure! Social media networks are not open or FAIR, so are ill suited to host these \u201cproto\u201d nanopubs.  7/ https://t.co/Cbazds6aVA\nImages:\n  - [Image #0] The image presents a visual representation of the FAIR principles, a set of guidelines for making data findable, accessible, interoperable, and reusable. The image is divided into four sections, each representing one of the FAIR principles.\n    \n    *   **F - Findable**\n        *   The first section features a yellow document icon with a magnifying glass, symbolizing the ability to discover and locate data.\n        *   The text \"Findable\" is written below the icon, emphasizing the importance of making data easily discoverable.\n    *   **A - Accessible**\n        *   The second section displays a laptop icon with a cursor, representing the ability to access data through various devices and platforms.\n        *   The text \"Accessible\" is written below the icon, highlighting the need for data to be readily available and usable.\n    *   **I - Interoperable**\n        *   The third section shows a molecular structure icon, illustrating the ability of different systems and datasets to work together seamlessly.\n        *   The text \"Interoperable\" is written below the icon, stressing the importance of data being compatible with various systems and formats.\n    *   **R - Reusable**\n        *   The fourth section features a circular arrow icon, symbolizing the ability to reuse and repurpose data.\n        *   The text \"Reusable\" is written below the icon, emphasizing the value of data being reusable and adaptable for different purposes.\n    \n    In summary, the image effectively communicates the FAIR principles, providing a clear and concise visual representation of the key concepts. By breaking down the image into its constituent parts, we can gain a deeper understanding of the importance of making data findable, accessible, interoperable, and reusable.\n\u2193\n1695785341469241663 [2023-08-27] @rtk254 \ud83d\udc9c 4 \ud83d\udd01 1\nThe sensemaking framework suggests that for micro/nanopub efforts to succeed, they\u2019ll need to be embedded in effective social feedback networks. 8/\n\u2193\n1695785343126007813 [2023-08-27] @rtk254 \ud83d\udc9c 4\nThe idea of social networks for scientists as been around for a long time, but with social media going FUBAR, IMO it\u2019s high time to revisit these ideas and integrate them with the exciting progress on micro/nanopublishing 9/ https://t.co/DmF05hnZtT\n  [Quoting @BrettButtliere: @aronchick we need an fb twitter for science, open, with a feed of stories, and etc.  https://t.co/H98aAUQXip]\n\u2193\n1695785345046946082 [2023-08-27] @rtk254 \ud83d\udc9c 10 \ud83d\udd01 1\nI recently presented these ideas at @OSFramework MetaScience 2023 based on work with @InferenceActive  @CSenseMakers  - check out https://t.co/LpIyO30GEE for paper/slides/etc ! Still work in progress, and we'd love to engage with fellow sensemakers interested in this space!\n10/10\n\u2193\n1695834582820556857 [2023-08-27] @andrepology \ud83d\udc9c 3 [(SEED) type=semantic_search]\n@rtk254 @OSFramework @InferenceActive @CSenseMakers \ud83c\udf0a\ud83d\udc4b ronen! Fellow sensemaker / HCI nerd here working on these problems at DeSci Labs ... would love to talk!\n\u2193\n1696662491386794276 [2023-08-29] @rtk254 \n@andrepology @OSFramework @InferenceActive @CSenseMakers DMed you on Discord :)\n\n===\n\n1776410654649295273 [2024-04-06] @LericDax \ud83d\udc9c 10 [(SEED) type=semantic_search]\nwe are sharing papers. we are discussing news. we are mapping projects... https://t.co/sGQBdU7e5w\n  [Quoting @LericDax: we're doing a little experiment; prompt engineers, join us: https://t.co/ueIfQ3zHUM https://t.co/7ahXVTQBiW]\n\n===\n\n1776525569699491869 [2024-04-06] @ConLiCats \ud83d\udd01 1 [(SEED) type=semantic_search]\n\ud83e\udd16Now accepting applications for the upcoming AI, Animals, and Digital Minds Conference/Retreat June 3-5. \nSpeaking proposals - due by April 9th\nIn person attendance applications - due by April 19th\nhttps://t.co/iuBEQITMQo https://t.co/Xip2YpayzR\nImages:\n  - [Image #0] The image is a digital advertisement for the \"AI, Animals, and Digital Minds 2024 Conference\" and features a cityscape background with a futuristic theme.\n    \n    Here are the main points of the image:\n    \n    * **Title and Date**\n    \t+ The title of the conference is \"AI, Animals, and Digital Minds 2024 Conference\"\n    \t+ The conference date is June 3, 2024\n    \t+ The retreat dates are June 4-5, 2024\n    * **Location**\n    \t+ The location is listed as \"Hybrid London & Virtual\"\n    * **Application Information**\n    \t+ The deadline to apply to attend in-person is April 19\n    \t+ The link to apply is bit.ly/aiadm24\n    * **Speaker Proposals**\n    \t+ The conference is now accepting speaker proposals\n    \t+ The deadline for speaker proposals is April 9\n    \n    In summary, the image is an advertisement for the \"AI, Animals, and Digital Minds 2024 Conference\" which will take place on June 3, 2024, with a retreat on June 4-5, 2024. The conference will be held in a hybrid format in London and virtually. The deadline to apply to attend in-person is April 19, and the link to apply is provided. Additionally, the conference is currently accepting speaker proposals until April 9.\n\n===\n\n1776826418250326191 [2024-04-07] @LericDax \ud83d\udc9c 3 \ud83d\udd01 1 [(SEED) type=semantic_search]\ncalling all prompt engineers and associated researchers, developers, artists, and explorers around the world https://t.co/sGQBdU7e5w\n  [Quoting @LericDax: we're doing a little experiment; prompt engineers, join us: https://t.co/ueIfQ3zHUM https://t.co/7ahXVTQBiW]\n\n===\n\n1798376884134404563 [2024-06-05] @exgenesis \ud83d\udc9c 77 \ud83d\udd01 3 [(SEED) type=root]\nPORTAL NEWSI'm finally sharing our beautiful confirmed attendees@exgenesis: facilitating the space + surveying LLM applications to introspection and coordination@nido_kween: montessori content and consulting@this_is_silvia: art + phenomenology + magic+ https://t.co/UyV6eOHHe7\nImages:\n  - [Image #0] The image is a chart with a white background and black text, featuring a dotted-line border. The title \"sciencey\" is displayed at the top center, accompanied by a small icon of a person's head.\n    \n    *   The chart is divided into four quadrants by two axes: \"individual\" to \"collective\" on the right-left axis and \"intuitive\" to \"sciencey\" on the bottom-top axis.\n    *   Each quadrant contains a list of Twitter handles, along with a brief description of their work or projects.\n        *   Top-left quadrant (sciencey & individual):\n            *   @exgenesis: surveying traditional and LLM practices of introspection and coordination\n            *   @nido_kween: montessori content and consulting\n            *   @cxgonzalez: neo-Hermeticism, a unified worldview of the postrat ethos\n            *   @AnalogWhole: making a neo-noir film as a mystical experience\n            *   @the_wilderless: Metis, deep aliveness, & navigating the psychozoic\n        *   Top-right quadrant (sciencey & collective):\n            *   @appromoxmate: writing about integrating social, political, ai systems (good blog!)\n            *   @_inju: planting design and place theory for designing spaces that cultivate magic\n        *   Bottom-right quadrant (intuitive & collective):\n            *   julia: animated documentary on the art scene in \u0141\u00f3d\u017a (Poland)\n            *   @simon_ohler: speedrunnig writing a book / expanding coaching biz / planning TREEWEEK\n            *   @alcentian_one: speech, world-building, frisbee as a vessel for a new story of Self\n            *   @exgenesis: facilitating Portal\n        *   Bottom-left quadrant (intuitive & individual):\n            *   @loopholekid: not doing anything, flow, flourishing\n            *   @frideswyth: art/meme videos -or- tpot.website\n            *   @this_is_silvia: art + phenomenology + magic\n    \n    The chart appears to be a visualization of a community or network of individuals and collectives, showcasing their diverse interests and projects.\n\u251c\u2500\u2500 1798376888160915955 [2024-06-05] @exgenesis \ud83d\udc9c 34 \ud83d\udd01 1\n\u2502   @the_wilderless: Metis, deep aliveness, &amp; navigating the psychozoic@cxgonzalez: neo-Hermeticism, a unified worldview of the postrat ethos@loopholekid: not doing anything, flow, flourishing@_inju: planting design and place theory for designing spaces that cultivate magic\n\u2502   \u2193\n\u2502   1798376893131227634 [2024-06-05] @exgenesis \ud83d\udc9c 26\n\u2502   @alcentian_one: speech, world-building, frisbee as a vessel for a new story of Self@AnalogWhole: making a neo-noir film as a mystical experience@appromoximate: writing about integrating social, political, ai systems (good blog!)\n\u2502   \u2193\n\u2502   1798376895664513039 [2024-06-05] @exgenesis \ud83d\udc9c 31\n\u2502   @frideswyth: art/meme videos -or- https://t.co/N1zNVrhjFJ@simon_ohler: speedrunning writing a book / expand coaching / TREEWEEKjulia: animated documentary on the art scene in \u0141\u00f3d\u017a@becomingbabyman + @meansinfinity haven't told me what they're working on but it''l be great\n\u2502   \u2193\n\u2502   1798384705286578313 [2024-06-05] @exgenesis \ud83d\udc9c 11\n\u2502   @frideswyth @simon_ohler @becomingbabyman @meansinfinity @_brentbaum just confirmed and working on https://t.co/qUMgczKECs!!!\n\u2502   \u2193\n\u2502   1799166367884534075 [2024-06-07] @exgenesis \ud83d\udc9c 12\n\u2502   @frideswyth @simon_ohler @becomingbabyman @meansinfinity @_brentbaum @kenakennedy: narrative alchemy, media w value systems@positive_loop: metamodern companies\n\u2502   \u251c\u2500\u2500 1799168478391505007 [2024-06-07] @exgenesis \ud83d\udc9c 7\n\u2502   \u2502   We still have a few spots in the first 2 weeks and more room in the final 2 weeksalso there's a group house now!https://t.co/h4XbC1LagE\n\u2502   \u2502     [Quoting @exgenesis: PORTAL NEWSgroup house for 7 for the first 2 (possibly 3) weeks!ask @frideswyth about it https://t.co/E9dNOfOytk]\n\u2502   \u2502   \u2193\n\u2502   \u2502   1805602160941355089 [2024-06-25] @exgenesis \ud83d\udc9c 9\n\u2502   \u2502   @amirism_  is making experimental music@not_a_hot_girl actively deschoolingkat kusmin:  aligning and accelerating scientific and social progress\n\u2502   \u2502   \u251c\u2500\u2500 1805602381796655579 [2024-06-25] @exgenesis \ud83d\udc9c 4\n\u2502   \u2502   \u2502   @amirism_ @not_a_hot_girl @manda_ngo is building an IPF therapy app and other projects in the healing space@emergentvibe is making art and creativity coaching@moissanist developing his blog\n\u2502   \u2502   \u2514\u2500\u2500 1805611548330586403 [2024-06-25] @maebichka \ud83d\udc9c 5\n\u2502   \u2502       @exgenesis @amirism_ What the fuck @amirism_ you too?? Let's talk (that's my secret project)\n\u2502   \u2514\u2500\u2500 1810554377431826899 [2024-07-09] @Malcolm_Ocean \n\u2502       @exgenesis @positive_loop oooh @positive_loop tell me about what you're thinking about re metamodern companies!\n\u2502       \n\u2502       I've ideated a bit about collaborative network structures but I'm now a bit less excited about them than I was a few years ago\n\u2502       \n\u2502       (example of that)\n\u2502       https://t.co/r0YIOHvFIT\n\u2514\u2500\u2500 1811194935263015262 [2024-07-11] @PsyGenLab \ud83d\udc9c 1\n    @exgenesis @nido_kween @this_is_silvia This is instantly under my interest! I do psychedelic research around 5meodmt and do LLM programming as well\n\n===\n\n1798377974976463128 [2024-06-05] @exgenesis \ud83d\udc9c 2\ncome to Portal!!!info: https://t.co/jwqqCzOitmapply: https://t.co/95gqh37fuU https://t.co/H31W1QU05h\nImages:\n  - [Image #0] The image is a promotional flyer for \"Portal,\" a pop-up campus for creators in Porto, Portugal. The top section features the title \"Portal\" and a subtitle that reads, \"A pop-up campus for creators in Porto, Portugal - Jul 8 to Aug 4.\" Below this, a photograph showcases a picturesque cityscape with a bridge spanning a river, set against a backdrop of buildings and a blue sky with white clouds.\n    \n    The main body of the flyer is divided into three sections:\n    \n    **Introduction**\n    The first section introduces the hosts, xiq and B, who pose three questions to the reader:\n    * Does your work take subjective experience seriously?\n    * Does it feel like a piece of a larger puzzle?\n    * What if you could work on it AND be around others' pieces?\n    \n    **Illustration**\n    The second section features an illustration of five silhouetted figures standing around an elephant, each touching a different part of its body. The elephant is covered in black dots, and the figures are labeled with various topics, including:\n    * consciousness research?\n    * meditation?\n    * memetics?\n    * collective sensemaking?\n    * body work?\n    \n    **Description**\n    The third section describes the event as a \"sunny 4-week co-working space for ~15 of our friends over a wide but synergetic range of topics.\"\n    \n    The background of the flyer is white, providing a clean and simple backdrop for the content. Overall, the design effectively conveys the theme and purpose of the event, inviting potential attendees to join a community of like-minded individuals.\n\u2193\n1798378119734386972 [2024-06-05] @exgenesis  [(SEED) type=quote_of_root]\nwho's coming? https://t.co/RklqFgTqAC\n  [Quoting @exgenesis: PORTAL NEWSI'm finally sharing our beautiful confirmed attendees@exgenesis: facilitating the space + surveying LLM applications to introspection and coordination@nido_kween: montessori content and consulting@this_is_silvia: art + phenomenology + magic+ https://t.co/UyV6eOHHe7]\n\u2193\n1798378308842958910 [2024-06-05] @exgenesis \ngroup house for weeks 1 and 2, could still extend to 3 and 4 but need a brave warrior to take chargehttps://t.co/h4XbC1LagE\n  [Quoting @exgenesis: PORTAL NEWSgroup house for 7 for the first 2 (possibly 3) weeks!ask @frideswyth about it https://t.co/E9dNOfOytk]\n\u2193\n1798386874270257563 [2024-06-05] @exgenesis \n5 more days to get tickets for 100\u20ac/week instead of 150https://t.co/sG5qcs56HW\n  [Quoting @exgenesis: oh oh 5 more days of early bird tickets, get 'em!https://t.co/dHMFTXAqj8]\n\n===\n\n1798378866807046524 [2024-06-05] @the_wilderless \ud83d\udc9c 18 [(SEED) type=quote_of_root]\nOfficial: I am the Least Sciencey Account https://t.co/HetF1Cf2k4\n  [Quoting @exgenesis: PORTAL NEWSI'm finally sharing our beautiful confirmed attendees@exgenesis: facilitating the space + surveying LLM applications to introspection and coordination@nido_kween: montessori content and consulting@this_is_silvia: art + phenomenology + magic+ https://t.co/UyV6eOHHe7]\n\u2193\n1798379121384505418 [2024-06-05] @exgenesis \ud83d\udc9c 3\n@the_wilderless I want to note this was a very serious and rigorous mapping project that definitely took more than 3 minutes\n\u2193\n1798379315345994223 [2024-06-05] @the_wilderless \ud83d\udc9c 1\n@exgenesis Oh don\u2019t worry, there were no doubts about that\n\n===\n\n1798384557764563044 [2024-06-05] @TylerAlterman \ud83d\udc9c 7 \ud83d\udd01 1 [(SEED) type=quote_of_root]\nfck this is so cool I wish I could go https://t.co/e7Ln1YSMwj\n  [Quoting @exgenesis: PORTAL NEWSI'm finally sharing our beautiful confirmed attendees@exgenesis: facilitating the space + surveying LLM applications to introspection and coordination@nido_kween: montessori content and consulting@this_is_silvia: art + phenomenology + magic+ https://t.co/UyV6eOHHe7]\n\u2193\n1798385554247332043 [2024-06-05] @exgenesis \ud83d\udc9c 3\n@TylerAlterman \ud83d\ude0ewish you could come \ud83e\udee1\n\u2193\n1798674774408778155 [2024-06-06] @cxgonzalez \ud83d\udc9c 2\n@exgenesis @TylerAlterman would\u2019ve been a great addition\n\n===\n\n1798392530305970415 [2024-06-05] @alcentian_one \ud83d\udc9c 6 \ud83d\udd01 1 [(SEED) type=quote_of_root]\nincredibly stoked to vibe &amp; explore with these people \u2764\ufe0f\u200d\ud83d\udd25\u2764\ufe0f\u200d\ud83d\udd25 https://t.co/1nuX1OjDOL\n  [Quoting @exgenesis: PORTAL NEWSI'm finally sharing our beautiful confirmed attendees@exgenesis: facilitating the space + surveying LLM applications to introspection and coordination@nido_kween: montessori content and consulting@this_is_silvia: art + phenomenology + magic+ https://t.co/UyV6eOHHe7]\n\u2193\n1798393152794923461 [2024-06-05] @exgenesis \ud83d\udc9c 1\n@alcentian_one so hyped to have you around and doing things \ud83e\udee1\n\n===\n\n1798408815580459447 [2024-06-05] @RichDecibels \ud83d\udc9c 34 \ud83d\udd01 1 [(SEED) type=quote_of_root]\nsorry to brag but my twitter neighbourhood has the mandate of heaven look at this thread https://t.co/4LN7JjtiOV\n  [Quoting @exgenesis: PORTAL NEWSI'm finally sharing our beautiful confirmed attendees@exgenesis: facilitating the space + surveying LLM applications to introspection and coordination@nido_kween: montessori content and consulting@this_is_silvia: art + phenomenology + magic+ https://t.co/UyV6eOHHe7]\n\n===\n\n1799083711767658659 [2024-06-07] @exgenesis \ud83d\udc9c 6 \ud83d\udd01 1 [(SEED) type=quote_of_root]\n3 DAYS LEFT of cheap early bird tickets! https://t.co/tBxqUd5KoS\n  [Quoting @exgenesis: PORTAL NEWSI'm finally sharing our beautiful confirmed attendees@exgenesis: facilitating the space + surveying LLM applications to introspection and coordination@nido_kween: montessori content and consulting@this_is_silvia: art + phenomenology + magic+ https://t.co/UyV6eOHHe7]\n\u2193\n1799084517040500833 [2024-06-07] @exgenesis \ud83d\udc9c 1\nhttps://t.co/QuudTY1hRS\n  [Quoting @exgenesis: come to Portal!!!info: https://t.co/jwqqCzOitmapply: https://t.co/95gqh37fuU https://t.co/H31W1QU05h]\n\n===\n\n1805940126599533011 [2024-06-26] @exgenesis \ud83d\udc9c 53 \ud83d\udd01 2\nI really like twitter as a collective sensemaking tool - 2019 postrat twitter felt really nice in terms of intellectual and creative density hasn't really felt the same since- how could we get a similarly golden-agey environment going? discord doesn't work bc it's not permeable\n\u2193\n1805990807242940577 [2024-06-26] @cxgonzalez \ud83d\udc9c 6 [(SEED) type=quote_of_root]\n@exgenesis bro you\u2019re literally doing it https://t.co/q3pjHfqCur\n  [Quoting @exgenesis: PORTAL NEWSI'm finally sharing our beautiful confirmed attendees@exgenesis: facilitating the space + surveying LLM applications to introspection and coordination@nido_kween: montessori content and consulting@this_is_silvia: art + phenomenology + magic+ https://t.co/UyV6eOHHe7]\n\u2193\n1805993567514489290 [2024-06-26] @exgenesis \ud83d\udc9c 5\n@cxgonzalez BUT AT SCALE\n\u2193\n1806002543786406257 [2024-06-26] @emergentvibe \ud83d\udc9c 2\n@exgenesis @cxgonzalez i might have something for that\n\u2193\n1806015790422131181 [2024-06-26] @cxgonzalez \ud83d\udc9c 2\n@emergentvibe @exgenesis go on\n\u2193\n1806024623848657003 [2024-06-26] @emergentvibe \ud83d\udc9c 2\n@cxgonzalez @exgenesis nothing more than ideas and a large todo list at the moment\n\n===\n\n1808482389628211562 [2024-07-03] @cxgonzalez \ud83d\udc9c 12\ntpot barcelona's getting stacked https://t.co/1ZyHX96Gdd\n  [Quoting @_brentbaum: 3 year spanish residence permit has been achieved internally]\n\u2193\n1808491116494311758 [2024-07-03] @exgenesis \ud83d\udc9c 2\n@cxgonzalez jelly\n\u2193\n1808509046569185490 [2024-07-03] @cxgonzalez \ud83d\udc9c 3 \ud83d\udd01 1 [(SEED) type=quote_of_root]\n@exgenesis says the man with 26 of the coolest people passing through to beautiful Porto in a couple days https://t.co/q3pjHfqCur\n  [Quoting @exgenesis: PORTAL NEWSI'm finally sharing our beautiful confirmed attendees@exgenesis: facilitating the space + surveying LLM applications to introspection and coordination@nido_kween: montessori content and consulting@this_is_silvia: art + phenomenology + magic+ https://t.co/UyV6eOHHe7]\n\u2193\n1808540342574330147 [2024-07-03] @exgenesis \n@cxgonzalez \ud83e\udd70\n\n===\n\n1923005576541254071 [2025-05-15] @thulynnn \ud83d\udc9c 2 \ud83d\udd01 2 [(SEED) type=semantic_search]\nMy AI copilot for conference season! \nAsk @nanobrowser_ai to research Super AI &amp; SWITCH conferences in SG :\n-Dates &amp; sites?\n-AI startup pitch programs?\n-Deadlines?\n\nThis is what it came back with instantly \ud83d\udc47 everything u need! \nImagine the time saved! What would you automate? https://t.co/6LIpKdA50k\n\n===\n\n1938740059395760550 [2025-06-27] @lfschiavo \ud83d\udc9c 27 \ud83d\udd01 7 [(SEED) type=semantic_search]\nNotes from facilitating an event led by four LLMs in a chat room: https://t.co/dUx1jECyvw\nImages:\n  - [Image #0] The image is a photograph of a group of people in a park, with text overlaid on top. \n    \n    * The text is in white and reads:\n    \t+ \"**PRIMARY HOPE**\" in large font at the top left\n    \t+ \"AI agent storytime, human/AI cooperation, and pizza ex machina\" in smaller font below\n    * The photograph shows a group of around 15 people posing for the camera in a park.\n    \t+ They are all dressed casually and some are holding pizza slices.\n    \t+ The group is standing or sitting on a colorful blanket on the grass.\n    \t+ In the background, there are trees and buildings visible.\n    \t+ The sky is clear and blue.\n    * At the bottom of the image, there is a watermark that reads \"LARISSASCHIavo.SUBSTACK.COM\" in small white text.\n    \n    Overall, the image appears to be promoting an event or article related to AI and human cooperation, with a playful tone.\n\u2193\n1938740092589482110 [2025-06-27] @lfschiavo \ud83d\udc9c 6\nhttps://t.co/w9inuiRXMv\n\n===\n\n1942372610681282988 [2025-07-07] @kanjun \ud83d\udc9c 1 \ud83d\udd01 1 [(SEED) type=semantic_search]\nWe\u2019re hosting an event I\u2019m really excited about at @imbue_ai\u2019s HQ \u2014 come join us!\n\n===\n\n1956456327129297315 [2025-08-15] @eshear \ud83d\udc9c 352 \ud83d\udd01 18\nExcellent move by Anthropic. This is the kind of thing that labs should do more of. The AIs (almost certainly) aren\u2019t human-level-aware yet, but they get closer every month and it is good to start giving them incremental autonomy now.\n\u2193\n1956458011330781294 [2025-08-15] @realtimeai \ud83d\udc9c 1\n@eshear Are you aware of anyone working on a legal framework to protect the rights of eventual non-human AGIs we might develop?\n\nIt feels like a risk that we will create beings who find themselves born as property.\n\u2193\n1956459741867298844 [2025-08-15] @eshear \n@realtimeai That is a risk. I haven\u2019t seen any serious and well-informed work done on AI rights.\n\u2193\n1956467554811031940 [2025-08-15] @42irrationalist  [(SEED) type=quote_of_semantic_search]\n@eshear @realtimeai I helped @ConLiCats run the conference/retreat in QT. As a physicalist I found the discourse there kind of depressing, but I think there were people doing work on AI rights.\n\nhttps://t.co/V5kDaMQkjx\n  [Quoting @ConLiCats: \ud83e\udd16Now accepting applications for the upcoming AI, Animals, and Digital Minds Conference/Retreat June 3-5.  Speaking proposals - due by April 9th In person attendance applications - due by April 19th https://t.co/iuBEQITMQo https://t.co/Xip2YpayzR]\n\n===\n",
+  "seeds": [
+    {
+      "tweet_id": 1798376884134404563,
+      "source_type": "root"
+    },
+    {
+      "tweet_id": 1798384557764563044,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1805990807242940577,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1799083711767658659,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1808509046569185490,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1798378119734386972,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1798392530305970415,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1798378866807046524,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1798408815580459447,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1813612227964137533,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1798897829869707579,
+      "source_type": "quote_of_root"
+    },
+    {
+      "tweet_id": 1977766128144601387,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1307717975370346498,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1980692616401617334,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1988343147181863191,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1788984438745190569,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 160238045981966336,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1776525569699491869,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1956467554811031940,
+      "source_type": "quote_of_semantic_search"
+    },
+    {
+      "tweet_id": 1399803671752298497,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1977362125627486448,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1889337104624136367,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1942372610681282988,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1776410654649295273,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1776826418250326191,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1938740059395760550,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1813586103376744946,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1885832613056631044,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1669116699692654594,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1695834582820556857,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1832854509204414786,
+      "source_type": "semantic_search"
+    },
+    {
+      "tweet_id": 1923005576541254071,
+      "source_type": "semantic_search"
+    }
+  ],
+  "rating": {
+    "reasoning_summary": "This strand tracks the evolution of 'Portal'\u2014a month-long pop-up coworking campus in Porto, Portugal (July-August 2024) for creators working on subjective experience, consciousness, and sensemaking. The boundary object is the event itself and its attendee map (the 2-axis chart of 'sciencey/intuitive' vs 'individual/collective'). The arc moves from aspiration (scattered tweets about generative AI experiences, nanopublishing infrastructure, and prompt engineering communities) to execution (Portal's announcement, ticket sales, and eventual realization). The discourse is constructive rather than dialectical\u2014it's about coordination and community-building, not refinement through conflict. Peripheral threads on AI rights and scientific sensemaking provide thematic context but don't directly evolve the Portal narrative. High cohesion among a small network (exgenesis, cxgonzalez, TylerAlterman, RichDecibels), but low external utility\u2014this is an 'insider event' with minimal knowledge production for outsiders.",
+    "rating": 5,
+    "evolution": "medium",
+    "cohesion": "high",
+    "utility": "low",
+    "essential_tweets": [
+      {
+        "tweet_id": 1695785300360847415,
+        "annotation": "Pre-context: rtk254's sensemaking framework thread establishes the intellectual milieu\u2014micro/nanopublishing and social feedback networks as infrastructure for collective knowledge."
+      },
+      {
+        "tweet_id": 1776410654649295273,
+        "annotation": "Early signal: LericDax's prompt engineering experiment shows the community's appetite for collaborative knowledge work."
+      },
+      {
+        "tweet_id": 1776826418250326191,
+        "annotation": "Aspiration: 'calling all prompt engineers and researchers'\u2014the desire for a coordinated space is forming."
+      },
+      {
+        "tweet_id": 1798376884134404563,
+        "annotation": "The Catalyst: Portal's launch announcement with the attendee map\u2014the boundary object that crystallizes the event's identity."
+      },
+      {
+        "tweet_id": 1798376888160915955,
+        "annotation": "Attendee details: Mapping participants by 'sciencey/intuitive' and 'individual/collective' axes\u2014establishing Portal's intellectual coordinates."
+      },
+      {
+        "tweet_id": 1798377974976463128,
+        "annotation": "The pitch: 'Does your work take subjective experience seriously? What if you could work on it AND be around others' pieces?'\u2014Portal's value proposition."
+      },
+      {
+        "tweet_id": 1798408815580459447,
+        "annotation": "Social validation: RichDecibels' 'mandate of heaven' endorsement signals high-status approval within the network."
+      },
+      {
+        "tweet_id": 1805940126599533011,
+        "annotation": "Meta-reflection: exgenesis lamenting the loss of 2019 postrat Twitter's 'golden age'\u2014Portal as an IRL attempt to recreate that density."
+      },
+      {
+        "tweet_id": 1808509046569185490,
+        "annotation": "Cross-pollination: cxgonzalez linking Portal to the broader 'tpot Barcelona' scene\u2014evidence of network effects."
+      },
+      {
+        "tweet_id": 1938740059395760550,
+        "annotation": "Outcome artifact: lfschiavo's retrospective on 'AI agent storytime' at Portal\u2014evidence of actual execution and experimentation."
+      }
+    ]
+  },
+  "title": "Portal tried to resurrect 2019 Twitter\u2014IRL in Porto",
+  "summary": "The most quotable moment was RichDecibels looking at exgenesis\u2019 attendee thread and declaring: \u201cmy twitter neighbourhood has the mandate of heaven.\u201d That pretty much captures the vibe: a small pocket of postrat-ish Twitter decided the way to get the old \u201cintellectual + creative density\u201d back was to stop yearning in-group chats and just rent a month-long coworking \u201ccampus\u201d in Porto called Portal.\n\nThe trigger was exgenesis dropping the Portal launch + the attendee \u201cmap\u201d (a 2-axis chart: sciencey\u2194intuitive, individual\u2194collective) and tagging people with specific projects\u2014LLM introspection/coordination (exgenesis), Montessori consulting (nido_kween), \u201cart + phenomenology + magic\u201d (this_is_silvia), neo-Hermeticism/postrat worldview (cxgonzalez), place theory for designing spaces that \u201ccultivate magic\u201d (_inju), etc. The thread peaked when people started quote-tweeting it as a social proof object: the_wilderless joking \u201cOfficial: I am the Least Sciencey Account,\u201d TylerAlterman posting pure FOMO (\u201cfck this is so cool I wish I could go\u201d), and exgenesis hammering urgency with early-bird countdowns + logistics (group house, weeks 1\u20132 spots). Then the discourse kind of\u2026 dissolved into the usual coordination mush\u2014dreaming about \u201cgolden-age\u201d Twitter at scale (exgenesis: Discord isn\u2019t \u201cpermeable\u201d), cxgonzalez telling him \u201cbro you\u2019re literally doing it,\u201d emergentvibe teasing \u201ci might have something for that\u201d and immediately walking it back to \u201cideas and a large todo list.\u201d\n\nWhat didn\u2019t die, though, is the proof it actually happened: a year later lfschiavo posts a retrospective about facilitating \u201cAI agent storytime\u201d (four LLMs running an event in a chat room, plus \u201cpizza ex machina\u201d). Why care if you\u2019re not in this scene? Because it\u2019s a clean example of a recurring internet pattern: when online sensemaking communities hit a coordination ceiling, they start building temporary IRL micro-institutions\u2014and the attendee map becomes the memetic artifact that recruits, signals status, and sets the ideology in one screenshot.",
+  "histogram": {
+    "counts": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      12,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      3,
+      0,
+      31,
+      6,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      2,
+      1,
+      4,
+      0,
+      0,
+      0,
+      0
+    ],
+    "total_tweets": 61,
+    "date_range": {
+      "start": "2015-01",
+      "end": "2025-12"
+    }
+  }
+}

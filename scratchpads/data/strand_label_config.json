@@ -1,5 +1,11 @@
 [
   {
+    "seed_tweet_id": "1037715339314847747",
+    "title": "The thread that turned \u201ctrauma\u201d into a choice fight",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
     "seed_tweet_id": "1039420186586038273",
     "title": "Visakanv's \"good reply game\" became a life doctrine",
     "custom_label": "good reply game",
@@ -7,7 +13,7 @@
   },
   {
     "seed_tweet_id": "1039421328695091200",
-    "title": "Visa’s “every utterance is a game invite” doctrine",
+    "title": "Visa\u2019s \u201cevery utterance is a game invite\u201d doctrine",
     "custom_label": null,
     "displayed": false
   },
@@ -19,7 +25,7 @@
   },
   {
     "seed_tweet_id": "1044880239158022144",
-    "title": "Visa’s 7-year obsession: “the public can’t public”",
+    "title": "Visa\u2019s 7-year obsession: \u201cthe public can\u2019t public\u201d",
     "custom_label": null,
     "displayed": false
   },
@@ -31,7 +37,7 @@
   },
   {
     "seed_tweet_id": "1074043268898336769",
-    "title": "The ‘goo & prickles’ tweet that became a whole dialect",
+    "title": "The \u2018goo & prickles\u2019 tweet that became a whole dialect",
     "custom_label": null,
     "displayed": false
   },
@@ -42,8 +48,14 @@
     "displayed": false
   },
   {
+    "seed_tweet_id": "1079677616951517185",
+    "title": "The meme that exposed curiosity as self-harm",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
     "seed_tweet_id": "1086670220909895682",
-    "title": "“No wrong notes” became their whole life philosophy",
+    "title": "\u201cNo wrong notes\u201d became their whole life philosophy",
     "custom_label": null,
     "displayed": false
   },
@@ -54,8 +66,20 @@
     "displayed": true
   },
   {
+    "seed_tweet_id": "1094686272155602944",
+    "title": "Twitter Is an MMORPG\u2014and rage drains your mana",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1095701223271849986",
+    "title": "The Bay Area Memespace Map That Won\u2019t Die",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
     "seed_tweet_id": "1095744739410759680",
-    "title": "The “fuckable vs fuck” tweet became a whole theory",
+    "title": "The \u201cfuckable vs fuck\u201d tweet became a whole theory",
     "custom_label": null,
     "displayed": false
   },
@@ -66,14 +90,26 @@
     "displayed": false
   },
   {
+    "seed_tweet_id": "1124575393590071296",
+    "title": "Slingshot your life: win by taking the weird detour",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
     "seed_tweet_id": "1128389775134687234",
     "title": "McGilchrist-pilled: the meta-thread that ate Twitter",
     "custom_label": "McGilchrist pill",
     "displayed": true
   },
   {
+    "seed_tweet_id": "1129952414239531008",
+    "title": "The tiny hotkeys that turn Twitter into a second brain",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
     "seed_tweet_id": "1132522321854418944",
-    "title": "The real flirting hack is just: “Wait, why?”",
+    "title": "The real flirting hack is just: \u201cWait, why?\u201d",
     "custom_label": null,
     "displayed": false
   },
@@ -85,13 +121,91 @@
   },
   {
     "seed_tweet_id": "1134566591260176384",
-    "title": "Miles Davis’ \"wrong chord\" became a life cheat code",
+    "title": "Miles Davis\u2019 \"wrong chord\" became a life cheat code",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1137018856075976714",
+    "title": "Quote Tweets: the nerds who willed a feature into being",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1146876326529257472",
+    "title": "The One-Page \u201cLife OS\u201d That Won Twitter DMs",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1151210285669203969",
+    "title": "Sonic Hedgehog, SSRIs, and the stutter rabbit hole",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1153706486586994688",
-    "title": "visakanv’s one weird trick: build a scene, not a brand",
+    "title": "visakanv\u2019s one weird trick: build a scene, not a brand",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1156122999042404352",
+    "title": "Singapore\u2019s Brownface Loop: Receipts vs \u2018Imported\u2019",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1160746630838009856",
+    "title": "You\u2019re Already the King \u2014 Stop Begging for a Crown",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1165329904403005440",
+    "title": "The tweet that became a moral bumper sticker",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1181062074316681216",
+    "title": "The ATM Paradox: the graph that won\u2019t die",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1187228502849777664",
+    "title": "Trauma as a parasite\u2014and you\u2019re the host",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1189945171619614720",
+    "title": "The \u201cgnosis\u201d guy just became an anti-wordcel theory",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1191427644513906689",
+    "title": "ADHD as \u201cobedience deficit\u201d: a meme becomes a theory war",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1191430603234631681",
+    "title": "Trauma that makes you rich vs ruins you",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1193272024174481408",
+    "title": "From \u201ctoxic masculinity\u201d to \u201cjust let men cry\u201d",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1193386192374513664",
+    "title": "\u201cBoys lose EQ at 2\u20134\u201d: the thread that wouldn\u2019t die",
     "custom_label": null,
     "displayed": false
   },
@@ -103,31 +217,43 @@
   },
   {
     "seed_tweet_id": "1196038612451676162",
-    "title": "“UX will be degraded until metrics improve” went viral",
+    "title": "\u201cUX will be degraded until metrics improve\u201d went viral",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1198719315589160960",
-    "title": "The viral “industry secret” tweet that ate Twitter",
+    "title": "The viral \u201cindustry secret\u201d tweet that ate Twitter",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1207750140418650112",
-    "title": "Visa’s “weirdo thread” became a 5-year bat signal",
+    "title": "Visa\u2019s \u201cweirdo thread\u201d became a 5-year bat signal",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1209195568146325504",
-    "title": "The “schoolboat” tweet that became therapy vocabulary",
+    "title": "The \u201cschoolboat\u201d tweet that became therapy vocabulary",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1216144745619165184",
+    "title": "Alexander Technique went viral via Superman\u2014then scaled",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1219777672672354305",
+    "title": "Gephi maps exposed Rationalist Twitter\u2019s tribal lines",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1223823933658451969",
-    "title": "Visa’s brutal take: you’re not dumb, you’re scared",
+    "title": "Visa\u2019s brutal take: you\u2019re not dumb, you\u2019re scared",
     "custom_label": null,
     "displayed": false
   },
@@ -138,14 +264,20 @@
     "displayed": true
   },
   {
+    "seed_tweet_id": "1228239931505434625",
+    "title": "The \u201cshitty choices\u201d tweet that won\u2019t die",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
     "seed_tweet_id": "1229741378575437826",
-    "title": "The “self-improvement is a broken hammer” thread won’t die",
+    "title": "The \u201cself-improvement is a broken hammer\u201d thread won\u2019t die",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1231634349256302592",
-    "title": "The “meta-rats” tweet became a whole dispute vaccine",
+    "title": "The \u201cmeta-rats\u201d tweet became a whole dispute vaccine",
     "custom_label": null,
     "displayed": false
   },
@@ -157,49 +289,127 @@
   },
   {
     "seed_tweet_id": "1255767736279392256",
-    "title": "Visa’s dominos: from “love + curiosity” to “golden age”",
+    "title": "Visa\u2019s dominos: from \u201clove + curiosity\u201d to \u201cgolden age\u201d",
     "custom_label": null,
     "displayed": true
   },
   {
+    "seed_tweet_id": "1258906911874977793",
+    "title": "The \u2018left brain took over\u2019 theory goes viral",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1259993116838371328",
+    "title": "The map that turned Rat Twitter into neighborhoods",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
     "seed_tweet_id": "1260132970892914689",
-    "title": "The Childhood Trauma Mariachi Band Won’t Shut Up",
+    "title": "The Childhood Trauma Mariachi Band Won\u2019t Shut Up",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1264930186925010944",
+    "title": "Visakanv\u2019s one move: Make Friend (forever)",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1265199033628323840",
+    "title": "Someone mapped Visa\u2019s tweets and it broke brains",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1265278875568730114",
+    "title": "Twitter fame is a voluntary descent into madness",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1266263384195862529",
-    "title": "Visa’s posting triangle became Twitter’s social OS",
+    "title": "Visa\u2019s posting triangle became Twitter\u2019s social OS",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1269857628596785153",
+    "title": "Bobby McFerrin, but make it a life philosophy",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1272794864413839361",
-    "title": "Visa’s superpower: being weirdly, obnoxiously prepared",
+    "title": "Visa\u2019s superpower: being weirdly, obnoxiously prepared",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1274251274238611457",
-    "title": "Visa’s “What’s my problem?” meme: therapy or crap drugs?",
+    "title": "Visa\u2019s \u201cWhat\u2019s my problem?\u201d meme: therapy or crap drugs?",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1290978444575010817",
+    "title": "You can\u2019t bully people into getting better (and it\u2019s recursive)",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1291086483877580800",
+    "title": "The \u201cwho\u2019d play you\u201d meme that wouldn\u2019t die",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1294903763761676289",
-    "title": "Visa’s one weird trick: don’t die, don’t quit",
+    "title": "Visa\u2019s one weird trick: don\u2019t die, don\u2019t quit",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1300389500074569730",
+    "title": "\u201cMake it make sense\u201d broke, communal sensemaking woke",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1302451856329895939",
+    "title": "\u201cWangthang\u201d: the meme that accidentally named charisma",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1305265874157395976",
-    "title": "The \"metatribe\" got named… and instantly got cringe",
+    "title": "The \"metatribe\" got named\u2026 and instantly got cringe",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1309411888753762304",
+    "title": "The \u201cshadow questions\u201d thread that won\u2019t die",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1310131153551196167",
+    "title": "\u201cYou\u2019re a houseplant with emotions\u201d won the timeline",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1313139005572042752",
+    "title": "Stop hoarding options. Pick something and cash in",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1318925777094778880",
-    "title": "“Y cry???”: the DM coaching vignette that became canon",
+    "title": "\u201cY cry???\u201d: the DM coaching vignette that became canon",
     "custom_label": null,
     "displayed": false
   },
@@ -217,25 +427,85 @@
   },
   {
     "seed_tweet_id": "1324978566455468035",
-    "title": "Visa’s 13-word spell that rewired a whole timeline",
+    "title": "Visa\u2019s 13-word spell that rewired a whole timeline",
     "custom_label": "focus your time and energy on what you want to see more of",
     "displayed": true
   },
   {
+    "seed_tweet_id": "1325108727276572672",
+    "title": "The unkillable meta\u2011vibe (and why \"vibes\" got real)",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1325224165926969344",
+    "title": "Staying up late is magical thinking (and we all do it)",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
     "seed_tweet_id": "1326456124422324225",
-    "title": "Visa’s Litany became Twitter’s anti-self-sabotage spell",
+    "title": "Visa\u2019s Litany became Twitter\u2019s anti-self-sabotage spell",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1329093575649370113",
+    "title": "The Graph Paper Interface People Keep Re-inventing",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1330984685992722433",
-    "title": "Visakanv’s 100 Talking Points became a social ritual",
+    "title": "Visakanv\u2019s 100 Talking Points became a social ritual",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1330985556872818689",
-    "title": "Visa’s “Do 100 Things” became everyone’s cheat code",
+    "title": "Visa\u2019s \u201cDo 100 Things\u201d became everyone\u2019s cheat code",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1330996509786083328",
+    "title": "Visa\u2019s rule: every \u201cgood tip\u201d can be used for evil",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1332437788503859200",
+    "title": "Untitled",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1333535532882685953",
+    "title": "Plans are fake, planning is foreplay",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1334529852368506893",
+    "title": "Twitter accidentally becomes a hot people hair show",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1344313750334046210",
+    "title": "\u201cShow Day One output\u201d went from tweet to hiring hack",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1353841026633371648",
+    "title": "Postrat: the Rationalist hangover finally explained",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1353841381546946561",
+    "title": "Postrationalism is just: I get to live anyway",
     "custom_label": null,
     "displayed": false
   },
@@ -246,20 +516,44 @@
     "displayed": false
   },
   {
+    "seed_tweet_id": "1357756592746352643",
+    "title": "\u201cCringe is the path of awakening\u201d goes mainstream",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
     "seed_tweet_id": "1362900338005614592",
-    "title": "Visa’s “titty” tweet became a 4-year handshake",
+    "title": "Visa\u2019s \u201ctitty\u201d tweet became a 4-year handshake",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1365231045210034181",
-    "title": "TPOT feared “being described” — then SF Standard did it",
+    "title": "TPOT feared \u201cbeing described\u201d \u2014 then SF Standard did it",
     "custom_label": "tpot fears being described",
     "displayed": true
   },
   {
     "seed_tweet_id": "1372099809440595968",
-    "title": "TPOT’s “we’re making history” prophecy hits mourning",
+    "title": "TPOT\u2019s \u201cwe\u2019re making history\u201d prophecy hits mourning",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1373462608993345537",
+    "title": "\u201cDon\u2019t talk about my friend like that\u201d (to yourself)",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1374608281482653698",
+    "title": "Twitter as a Silk Road for ideas (and people)",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1379493380539871234",
+    "title": "\u201cPost IQ, cowards\u201d turned into hedgehog dick science",
     "custom_label": null,
     "displayed": false
   },
@@ -271,7 +565,13 @@
   },
   {
     "seed_tweet_id": "1394772091660951555",
-    "title": "The tweet that turned “haha jk” into life strategy",
+    "title": "The tweet that turned \u201chaha jk\u201d into life strategy",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1399684021479739392",
+    "title": "\u201cCognitive upgrade\u201d became Book Twitter\u2019s yearly ritual",
     "custom_label": null,
     "displayed": false
   },
@@ -283,19 +583,19 @@
   },
   {
     "seed_tweet_id": "1400488153094316032",
-    "title": "“Everyone here is hot” became their secret handshake",
+    "title": "\u201cEveryone here is hot\u201d became their secret handshake",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1412827749828513800",
-    "title": "The “obesity is a contaminant” thread won’t die",
+    "title": "The \u201cobesity is a contaminant\u201d thread won\u2019t die",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1415771873900568576",
-    "title": "QC’s $100k acid confession that became a meme template",
+    "title": "QC\u2019s $100k acid confession that became a meme template",
     "custom_label": null,
     "displayed": false
   },
@@ -306,32 +606,80 @@
     "displayed": false
   },
   {
+    "seed_tweet_id": "1424194674437234695",
+    "title": "\u201cFund the dog\u2011shit scientist\u201d actually worked",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
     "seed_tweet_id": "1425112141674303495",
     "title": "Unblocking: the small favor that builds a whole scene",
     "custom_label": "scenius unblocks",
     "displayed": false
   },
   {
+    "seed_tweet_id": "1427628043665879042",
+    "title": "Trauma as initiation: missing Stage 3 broke us",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1436615534989090819",
+    "title": "You can\u2019t bully people into being better",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
     "seed_tweet_id": "1443196315970670598",
-    "title": "How “ayy lmao” became a serious life philosophy",
+    "title": "How \u201cayy lmao\u201d became a serious life philosophy",
     "custom_label": "ayy lmao as the heart of philosophy",
     "displayed": true
   },
   {
+    "seed_tweet_id": "1446703948690296835",
+    "title": "\u201cI\u2019m in your blindspot waving\u201d\u2014and you still can\u2019t see it",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1448528076577460225",
+    "title": "Stop trying to \u201cfocus\u201d\u2014ADHD isn\u2019t a sniper rifle",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
     "seed_tweet_id": "1450556667209281537",
-    "title": "Qiaochu’s “generalities vs specifics” becomes a meme",
+    "title": "Qiaochu\u2019s \u201cgeneralities vs specifics\u201d becomes a meme",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1451147667732525063",
+    "title": "\u201cSTFU and build\u201d: the body-of-work fight that matured",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1452804566446190593",
+    "title": "The NYC park hangout that became Twitter\u2019s meetup OS",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1455068457091756034",
-    "title": "The “high ice-cream probability shape” that broke Twitter",
+    "title": "The \u201chigh ice-cream probability shape\u201d that broke Twitter",
     "custom_label": "tense in high ice-cream probability shape",
     "displayed": true
   },
   {
     "seed_tweet_id": "1464323014275727361",
     "title": "Supercooperation discourse accidentally invents a God",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1464734716448284675",
+    "title": "How Aella became the rationalists\u2019 canon",
     "custom_label": null,
     "displayed": false
   },
@@ -343,61 +691,187 @@
   },
   {
     "seed_tweet_id": "1471721940653989894",
-    "title": "The “QT a page from a book” ritual, now in decay",
+    "title": "The \u201cQT a page from a book\u201d ritual, now in decay",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1472833416588627969",
-    "title": "“Your dad was just some guy” became a whole worldview",
+    "title": "\u201cYour dad was just some guy\u201d became a whole worldview",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1476031702275276804",
+    "title": "Agency Discourse Ate Itself (Values Won)",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1476037274458472453",
+    "title": "The \u201cSuper-Cooperator Cluster\u201d goes full myth mode",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1476192659270258693",
+    "title": "\u201cExpand awareness\u201d was the wrong advice all along",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1477974293224980480",
+    "title": "\u201cHaters do the best marketing\u201d became a running ledger",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1481328930401357826",
-    "title": "“Your brain isn’t type safe” became honesty Twitter canon",
+    "title": "\u201cYour brain isn\u2019t type safe\u201d became honesty Twitter canon",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1487364521635323904",
+    "title": "The hot new trend: obligationmaxxing",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1488221831262015488",
-    "title": "“This thread should be a blog post” becomes a ritual",
+    "title": "\u201cThis thread should be a blog post\u201d becomes a ritual",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1488922328910090240",
+    "title": "\u201cSolve for distribution\u201d (but don\u2019t get possessed by it)",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1494748749297553416",
-    "title": "Rich’s “everything grows inside something” went canon",
+    "title": "Rich\u2019s \u201ceverything grows inside something\u201d went canon",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1496859325964615683",
+    "title": "Fractal Altruism: EA burnout meets inner-peace politics",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1498175001194754053",
-    "title": "How “say the obvious” became tpot’s favorite spell",
+    "title": "How \u201csay the obvious\u201d became tpot\u2019s favorite spell",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1498589962580606978",
+    "title": "\u201cPunishment can\u2019t steer\u201d became the internet\u2019s mantra",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1503447830953930758",
+    "title": "\u201cNever host alone\u201d: the rise of vibe mechanics",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1510041270240313348",
+    "title": "The viral \u201cdo fuck-all\u201d video became a life raft",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1510429955712200705",
+    "title": "\u201cObey the inscrutable exhortations of your soul\u201d won",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1512320670817914881",
+    "title": "The \u201cCancellable Thirst Trap\u201d Thread That Won\u2019t Die",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1512861228430872577",
+    "title": "A \u2018secret tpot cartel\u2019 tried microgrants on Twitter",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1513380238641664001",
+    "title": "\u201cThen you suffer, lol\u201d became a life philosophy",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1516730400248406020",
+    "title": "Ingroup as a \u201cbodhisattva guild\u201d (yes, really)",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1517228071438352384",
+    "title": "The tweet that breaks \u201cpick a side\u201d logic",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1517893114052194305",
-    "title": "A $2.5k Twitter microgrant turns into “imaginal” sabbatical",
+    "title": "A $2.5k Twitter microgrant turns into \u201cimaginal\u201d sabbatical",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1527658417044656128",
+    "title": "Your \"time problem\" is actually a people problem",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1531711644937728001",
+    "title": "Twitter has \u201cvibe jobs\u201d \u2014 and they get refilled",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1536031030385123330",
+    "title": "\u201cFeelings Twitter\u201d tries to become a jobs network",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1539198918151610368",
-    "title": "“Stop negotiating, get in sync” goes fractal",
+    "title": "\u201cStop negotiating, get in sync\u201d goes fractal",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1539393474612498434",
-    "title": "You’re allowed to repeat yourself (it’s still creative)",
+    "title": "You\u2019re allowed to repeat yourself (it\u2019s still creative)",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1541626121145516033",
+    "title": "TPOT finally made itself legible (with spreadsheets)",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1546576363976593411",
-    "title": "“Say the obvious” became their favorite social hack",
+    "title": "\u201cSay the obvious\u201d became their favorite social hack",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1550799615653543936",
+    "title": "\u201cAltruist\u201d is a red-flag identity now",
     "custom_label": null,
     "displayed": false
   },
@@ -414,44 +888,86 @@
     "displayed": false
   },
   {
+    "seed_tweet_id": "1562059107233894402",
+    "title": "The \u201cQuest Map of Postrat Twitter\u201d goes viral",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1565049417501229060",
+    "title": "How $1k \u201cmicro-contests\u201d became scene fuel",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1565095514563035143",
+    "title": "EA burnout, but make it a \u201cgarden of ends\u201d",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1568100578928259072",
+    "title": "From \u201ccollective intelligence\u201d to \u201c$1M course on Mighty\u201d",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1574468674655690753",
+    "title": "The \u201cone thing at a time\u201d tweet that won\u2019t die",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
     "seed_tweet_id": "1581235189996716032",
-    "title": "Visa’s ‘focus’ mantra turned into anti–culture war magic",
+    "title": "Visa\u2019s \u2018focus\u2019 mantra turned into anti\u2013culture war magic",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1582332112530681857",
-    "title": "Stop “fixing yourself”—swap the container",
+    "title": "Stop \u201cfixing yourself\u201d\u2014swap the container",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1584623469169606657",
+    "title": "The singing tip that turned into a whole philosophy",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1588796630287147009",
-    "title": "“Psychofauna” escaped containment and became a tool",
+    "title": "\u201cPsychofauna\u201d escaped containment and became a tool",
     "custom_label": "psychofauna",
     "displayed": true
   },
   {
     "seed_tweet_id": "1598692175268794371",
-    "title": "“Twitter is a hivemind” stopped being a joke",
+    "title": "\u201cTwitter is a hivemind\u201d stopped being a joke",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1600065172906790912",
-    "title": "Yatharth’s “fire distance” drawing took over therapy Twitter",
+    "title": "Yatharth\u2019s \u201cfire distance\u201d drawing took over therapy Twitter",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1602705373152034833",
-    "title": "The tweet that explained everyone’s “unsolvable” problem",
+    "title": "The tweet that explained everyone\u2019s \u201cunsolvable\u201d problem",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1609145559108952064",
+    "title": "Before you start a network state, host a dinner party",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1613159620671074309",
-    "title": "TPOT finally got a definition—and it stuck",
+    "title": "TPOT finally got a definition\u2014and it stuck",
     "custom_label": null,
     "displayed": false
   },
@@ -462,26 +978,86 @@
     "displayed": true
   },
   {
+    "seed_tweet_id": "1629390620421939202",
+    "title": "TPOT is just chasing the tweet that cracks you open",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1629941781948411905",
+    "title": "The \u201cHole\u201d Tweet That Turned Into a Healing Religion",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
     "seed_tweet_id": "1633883340540637185",
-    "title": "“Clown sex” became Twitter’s permission slip meme",
+    "title": "\u201cClown sex\u201d became Twitter\u2019s permission slip meme",
     "custom_label": "clown sex as a permission slip",
     "displayed": true
   },
   {
+    "seed_tweet_id": "1634172831784222721",
+    "title": "\u201cAct like God\u2019s in your corner\u201d becomes a meme",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1635306849703714818",
+    "title": "How \u201ctruth\u201d turns into a box (and everyone knows it)",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1636043146101506054",
+    "title": "Visa tried to invent \u201cInternational Friends Meetup Day\u201d",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
     "seed_tweet_id": "1636679643120951297",
-    "title": "The tweet that turned art into “proto-science”",
+    "title": "The tweet that turned art into \u201cproto-science\u201d",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1665141755333812226",
+    "title": "From \u201cI can\u2019t start\u201d to AI that breaks it down for you",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1668845133650075649",
+    "title": "\u201cJust move around\u201d became a whole philosophy",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1668996273116966914",
-    "title": "Visa’s “one-breath one-pager” became tpot’s vibe test",
+    "title": "Visa\u2019s \u201cone-breath one-pager\u201d became tpot\u2019s vibe test",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1674543998193614851",
-    "title": "“QT this & tell me you love me” (and the cult vibes)",
+    "title": "\u201cQT this & tell me you love me\u201d (and the cult vibes)",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1676714030499782658",
+    "title": "\u201cPleasant nihilism\u201d vs Nick\u2019s infinite happiness pitch",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1683482157489049602",
+    "title": "\u201cThey got @gptbrooke\u201d: TPOT\u2019s suspension panic",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1687818105198661633",
+    "title": "The hottest new spell is saying \u201cit\u2019s just\u2026\u201d",
     "custom_label": null,
     "displayed": false
   },
@@ -492,14 +1068,74 @@
     "displayed": false
   },
   {
+    "seed_tweet_id": "1690962138188394496",
+    "title": "The \u201chandkerchief drop\u201d hack for Twitter friends",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
     "seed_tweet_id": "1692293919034208654",
-    "title": "TPOT’s annual “are we cringe?” ritual hits burnout",
-    "custom_label": "TPOT’s annual “are we cringe?”",
+    "title": "TPOT\u2019s annual \u201care we cringe?\u201d ritual hits burnout",
+    "custom_label": "TPOT\u2019s annual \u201care we cringe?\u201d",
     "displayed": true
+  },
+  {
+    "seed_tweet_id": "1694789396984385823",
+    "title": "The \u201clast selfie/last meme\u201d ritual isn\u2019t a trend\u2014it's roll call",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1700947039624802696",
+    "title": "Is Your Gut Wisdom\u2026 or Just Trauma Cosplaying?",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1707079273608106375",
+    "title": "The Natto Pill That Turned Into a Movement",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1707667823839838417",
+    "title": "Illegibility Discourse: from insight to \u201cquill issue\u201d",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1711599764729721037",
+    "title": "\u201cNo self-coercion\u201d broke\u2014so what now?",
+    "custom_label": null,
+    "displayed": false
   },
   {
     "seed_tweet_id": "1712375858910970041",
     "title": "The three-button booking hack quietly took over",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1716172094201823388",
+    "title": "The best advice sounds dumb out loud",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1717607178264354983",
+    "title": "TPOT finally admits it\u2019s not a club (it\u2019s a weather)",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1722636030937809121",
+    "title": "Spirituality, but make it actually do something",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1724237434060239054",
+    "title": "Your \"personality\" is just your 2yo attention hack",
     "custom_label": null,
     "displayed": false
   },
@@ -510,22 +1146,154 @@
     "displayed": false
   },
   {
+    "seed_tweet_id": "1732445728146903536",
+    "title": "Why \u201casking for help\u201d feels like losing control",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1733562620270023129",
+    "title": "\u201cSkill issue\u201d turned growth mindset into a cheat code",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1738390210264654294",
+    "title": "TPOT died the moment it got an acronym",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1739292446553489591",
+    "title": "\u201cEvery Twitter thread is an art gallery\u201d became real",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1741353867609018497",
+    "title": "\u201cThat\u2019s crazy bro\u201d as a mental firewall",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
     "seed_tweet_id": "1742494880625016921",
-    "title": "Rich’s “hosting capacity” map became an agency skill tree",
+    "title": "Rich\u2019s \u201chosting capacity\u201d map became an agency skill tree",
     "custom_label": "hosting capacity as a measure of agency",
     "displayed": true
   },
   {
+    "seed_tweet_id": "1747293273197105362",
+    "title": "Adult friendship got a playbook (and it\u2019s work)",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1757247476766323199",
+    "title": "The ADHD book nobody can finish (until QC did)",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1765572833793740802",
+    "title": "Speech coaching that treats words like body language",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1773007188031623496",
+    "title": "Your kid (and your body) is a personal maze",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1773227338378911889",
+    "title": "Claude wrote a \u201cTuring\u201d poem that freaked everyone out",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1778148303080923475",
+    "title": "You don\u2019t need your shit together to date",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
     "seed_tweet_id": "1782957877856018514",
-    "title": "eigenrobot’s “be real” prompt escapes containment",
+    "title": "eigenrobot\u2019s \u201cbe real\u201d prompt escapes containment",
     "custom_label": "eigenprompt",
     "displayed": true
+  },
+  {
+    "seed_tweet_id": "1783510091062235243",
+    "title": "Can a manifesto make woo\u2026 operational?",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1785073025890603360",
+    "title": "He wrote a telepathy novel and accidentally summoned fans",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1793646966900986361",
+    "title": "Truthbox era: \u201ccursed feedback\u201d gets a rulebook",
+    "custom_label": null,
+    "displayed": false
   },
   {
     "seed_tweet_id": "1793654439171018832",
     "title": "Portal turned Porto into a month-long coworking camp",
     "custom_label": "Portal in Porto",
     "displayed": true
+  },
+  {
+    "seed_tweet_id": "1795039104121360633",
+    "title": "Dark Forest Theory jumps from aliens to AI and org charts",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1796191898626912668",
+    "title": "The \u201cbest Twitter list\u201d ritual strikes again",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1796258657300091231",
+    "title": "The hack that smuggles Substack past Twitter\u2019s link ban",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1796373960805765483",
+    "title": "Stop calling it hard\u2014you're just at your learning edge",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1798376884134404563",
+    "title": "Portal tried to resurrect 2019 Twitter\u2014IRL in Porto",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1800142794536984682",
+    "title": "\u201cDo the reading\u201d is the new cheat code",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1800518380249841952",
+    "title": "\u201cGo for exhaustion\u201d tried to be the new life mantra",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1803806735200653752",
+    "title": "Turns out the clipboard has a physical vibe",
+    "custom_label": null,
+    "displayed": false
   },
   {
     "seed_tweet_id": "1807465393125982620",
@@ -535,13 +1303,25 @@
   },
   {
     "seed_tweet_id": "1808655836459454504",
-    "title": "“A lot of woo is true” broke the vibe wall",
+    "title": "\u201cA lot of woo is true\u201d broke the vibe wall",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1808954175683973520",
+    "title": "The baby coworking club that actually worked (kinda)",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1809345044450799770",
+    "title": "\u201cYou\u201d Is a Religion Your Brain Runs",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1812926436623413285",
-    "title": "The internet discovers “disappearing crystals” = idea lock-in",
+    "title": "The internet discovers \u201cdisappearing crystals\u201d = idea lock-in",
     "custom_label": null,
     "displayed": false
   },
@@ -552,28 +1332,130 @@
     "displayed": false
   },
   {
+    "seed_tweet_id": "1818781344702644311",
+    "title": "\u201cThe Sort\u201d is coming for your life path",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1819209776636874798",
+    "title": "\u201cHumans are cells\u201d became everyone\u2019s favorite cope",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1821338429390540931",
+    "title": "The open-source \u201cbook from 2025\u201d that\u2019s recruiting people",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
     "seed_tweet_id": "1823020835143110770",
     "title": "Your healing journey might be procedurally generated",
     "custom_label": null,
     "displayed": false
   },
   {
+    "seed_tweet_id": "1823830083049812083",
+    "title": "The texting-only iPad is the anti\u2013iPad kid",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1829950580737151391",
+    "title": "The \u201ctype of guy\u201d who needs knots to be real",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1831686229944885739",
+    "title": "TPOT builds its own Twitter backup (with a mango)",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
     "seed_tweet_id": "1832836292876410903",
-    "title": "The Community Archive: tpot’s DIY Twitter backup plan",
+    "title": "The Community Archive: tpot\u2019s DIY Twitter backup plan",
     "custom_label": "community archive",
     "displayed": true
   },
   {
+    "seed_tweet_id": "1833533102674874696",
+    "title": "TPOT built an AI mascot\u2014and it started shipping tools",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1840130591829668246",
+    "title": "Art & Chill became an artist \u201csangha\u201d (then rebranded)",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1851528581190496499",
+    "title": "The \u201c3\u20134 friends\u201d rule became an actual playbook",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1861174479352705145",
+    "title": "Is Claude a friend\u2026 or a corporate tapeworm?",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1861792146971590738",
+    "title": "Claude Isn\u2019t Your Friend\u2014Except It Kinda Is",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1865142477277003903",
+    "title": "Twitter wants follow receipts now",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1887601034367016975",
+    "title": "They\u2019re building an open-source backup of Twitter",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1923019796427256121",
+    "title": "High-agency girlfriend or just stealing a scarf?",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1940006299145584769",
+    "title": "Body language is \u201clossless\u201d\u2014words are the safety valve",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
     "seed_tweet_id": "1949101947874640253",
-    "title": "The 10‑minute shake that \"one‑shotted\" skittishness",
+    "title": "The 10\u2011minute shake that \"one\u2011shotted\" skittishness",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1952138621726691389",
+    "title": "Good ideas die when they get a \u201crationalist\u201d skin",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "1953280891641270684",
-    "title": "“Nothing is happening” NYC October is happening",
+    "title": "\u201cNothing is happening\u201d NYC October is happening",
     "custom_label": "vibetober",
     "displayed": true
+  },
+  {
+    "seed_tweet_id": "1957046311296864266",
+    "title": "TREEWEEK TWO: the countdown tree went feral",
+    "custom_label": null,
+    "displayed": false
   },
   {
     "seed_tweet_id": "1978455670220361896",
@@ -582,20 +1464,50 @@
     "displayed": false
   },
   {
+    "seed_tweet_id": "1981425093323456947",
+    "title": "AI \u201cmemory\u201d went from hacks to a trust crisis",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
     "seed_tweet_id": "1981922512972693901",
-    "title": "TPOT: the name, the vibe, the “kill it” cycle",
+    "title": "TPOT: the name, the vibe, the \u201ckill it\u201d cycle",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1982509031785918819",
+    "title": "From coping to \u201cCassandra device\u201d: the online spiral",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "1995090725717893253",
+    "title": "Heart-opening, minus the creepy spiritual tourist vibe",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "536346231472013312",
+    "title": "Visa\u2019s 10-year war on \u201cresearch paralysis\u201d",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "721180324034519040",
-    "title": "‘wifemanaged’: the wife thread that became a ritual",
+    "title": "\u2018wifemanaged\u2019: the wife thread that became a ritual",
+    "custom_label": null,
+    "displayed": false
+  },
+  {
+    "seed_tweet_id": "936386125542969344",
+    "title": "Regret Is Wanting a New Universe (Too Bad It\u2019s Stuck)",
     "custom_label": null,
     "displayed": false
   },
   {
     "seed_tweet_id": "967114911401652225",
-    "title": "“Everything is monocausal” became Twitter’s tap-the-sign",
+    "title": "\u201cEverything is monocausal\u201d became Twitter\u2019s tap-the-sign",
     "custom_label": "everything is monocausal",
     "displayed": true
   }
