@@ -2,8 +2,7 @@
 from typing import Optional
 
 
-def 
-count_quotes(tweets_df, valid_account_ids: Optional[set[str]] = None):
+def count_quotes(tweets_df, valid_account_ids: Optional[set[str]] = None):
     """
     Count how many times each tweet is quoted by others (excluding self-quotes).
     

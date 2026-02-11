@@ -13,7 +13,7 @@ from .conversation_explorer import (
     build_incomplete_conversation_trees,
 )
 
-SCRATCHPADS_DIR = Path(__file__).parent.parent
+SCRATCHPADS_DIR = Path.home() / 'data' / 'scratchpads'
 
 QUOTED_COUNTS_CACHE = SCRATCHPADS_DIR / 'quoted_counts_cache.parquet'
 TWEET_DICT_DISKCACHE = SCRATCHPADS_DIR / 'tweet_dict.diskcache'

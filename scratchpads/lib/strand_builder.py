@@ -13,7 +13,6 @@ from diskcache import Cache
 from .semantic_search import search_embeddings
 from .image_describer import get_image_cache, get_image_descriptions_batch
 from .parallel import parallel_map_to_dict
-from .semantic_backups import load_semantic_backup, save_semantic_backup, cleanup_old_backups
 
 
 class SemanticSearchFailedError(Exception):
