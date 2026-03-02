@@ -26,3 +26,19 @@ scratchpads/data/example_strands
 scratchpads/data/*_old
 cluster_reports.zip
 cluster_volume_evolution.png
+
+# Tooling artifacts
+.claude/
+.playwright-mcp/
+
+# Generated data (too large for git)
+bangers/public/bangers_tweets.json
+bangers/public/atlas_data.json
+bangers/public/umap_tweets.json
+
+# Debug / scratch
+Untitled
+scratchpads/data/debug_quote_counts.json
+
+# Screenshots in root
+/*.png
