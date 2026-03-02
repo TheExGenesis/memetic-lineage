@@ -4,6 +4,9 @@ import { fetchTweetDetails, getQuotes } from '@/lib/api';
 import { supabaseCa } from '@/lib/supabase';
 import { Tweet } from '@/lib/types';
 
+// Note: Supabase is optional - semantic search works without it
+// but won't filter out retweets when Supabase is unavailable
+
 export interface StrandSeed {
   tweetId: string;
   sourceType: 'root' | 'quote_of_root' | 'semantic_match' | 'quote_of_semantic_match';
@@ -136,20 +139,23 @@ export async function searchEmbeddings(searchTerm: string, baseTweetId?: string)
     if (baseTweetId) {
       tweetIds = tweetIds.filter((id) => id !== baseTweetId);
 
-      const { data: retweetRows, error: retweetError } = await supabaseCa
-        .from('retweets')
-        .select('tweet_id')
-        .eq('retweeted_tweet_id', baseTweetId);
+      // Only filter retweets if Supabase is available
+      if (supabaseCa) {
+        const { data: retweetRows, error: retweetError } = await supabaseCa
+          .from('retweets')
+          .select('tweet_id')
+          .eq('retweeted_tweet_id', baseTweetId);
 
-      if (retweetError) {
-        console.error('Error fetching retweets for semantic search:', retweetError);
-      } else {
-        retweetRows?.forEach((row) => {
-          if (row?.tweet_id) {
-            retweetIds.add(row.tweet_id);
-          }
-        });
-        tweetIds = tweetIds.filter((id) => !retweetIds.has(id));
+        if (retweetError) {
+          console.error('Error fetching retweets for semantic search:', retweetError);
+        } else {
+          retweetRows?.forEach((row) => {
+            if (row?.tweet_id) {
+              retweetIds.add(row.tweet_id);
+            }
+          });
+          tweetIds = tweetIds.filter((id) => !retweetIds.has(id));
+        }
       }
     }
 

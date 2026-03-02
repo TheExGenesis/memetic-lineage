@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef, useTransition } from 'react'
+import { useState, useCallback, useEffect, useRef, useTransition, useMemo } from 'react'
 import { TweetCard } from './TweetCard'
 import { TweetPane } from './TweetPane'
 import { VerticalSpine } from './VerticalSpine'
 import { Tweet } from '@/lib/types'
-import { useUrlSync, useTweetSelection, usePaneNavigation } from './hooks'
+import { useUrlSync, useTweetSelection, usePaneNavigation, prefetchAvatars, prefetchMedia, useBangersToggles } from './hooks'
+import type { RankingMode, TweetSource } from './hooks'
 import { fetchMoreTweetsByYear } from './actions/tweets'
 
 const INITIAL_VISIBLE = 15;
@@ -15,11 +16,15 @@ const LOAD_MORE_VISIBLE = 20;
 function LazyTweetColumn({
   column,
   initialTweets,
-  onTweetClick
+  onTweetClick,
+  rankingMode,
+  tweetSource,
 }: {
   column: string;
   initialTweets: Tweet[];
   onTweetClick: (tweet: Tweet) => void;
+  rankingMode?: RankingMode;
+  tweetSource?: TweetSource;
 }) {
   const [tweets, setTweets] = useState(initialTweets);
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
@@ -73,22 +78,38 @@ function LazyTweetColumn({
     return () => observer.disconnect();
   }, [visibleCount, tweets.length, hasMoreOnServer, isLoadingMore, isPending, column]);
 
-  const visibleTweets = tweets.slice(0, visibleCount);
-  const hasMore = visibleCount < tweets.length || hasMoreOnServer;
+  // Filter by source and re-sort when ranking/source changes
+  const displayTweets = useMemo(() => {
+    let filtered = tweetSource === 'archive'
+      ? tweets.filter(t => t.is_archive_user)
+      : tweets
+
+    if (rankingMode === 'archive_quotes') {
+      filtered = [...filtered].sort((a, b) => {
+        const aqc = (a.archive_quote_count ?? 0) - (b.archive_quote_count ?? 0)
+        if (aqc !== 0) return -aqc
+        return (b.favorite_count ?? 0) - (a.favorite_count ?? 0)
+      })
+    }
+    return filtered
+  }, [tweets, rankingMode, tweetSource])
+
+  const visibleTweets = displayTweets.slice(0, visibleCount);
+  const hasMore = visibleCount < displayTweets.length || hasMoreOnServer;
 
   return (
-    <section className="flex flex-col flex-shrink-0 w-[360px]">
+    <section className="flex flex-col flex-shrink-0 w-full sm:w-[360px]">
       <h2 className="text-2xl font-bold mb-6 border-b-2 border-black pb-2 flex-shrink-0">
         {column}
       </h2>
       <div className="flex flex-col gap-2 overflow-y-auto flex-1 scrollbar-hide pb-20">
-        {visibleTweets.map(tweet => (
+        {visibleTweets.map((tweet, idx) => (
           <div
-            key={tweet.tweet_id}
+            key={`${tweet.tweet_id}-${idx}`}
             onClick={() => onTweetClick(tweet)}
             className="cursor-pointer hover:opacity-80 transition-opacity"
           >
-            <TweetCard tweet={tweet} />
+            <TweetCard tweet={tweet} rankingMode={rankingMode} />
           </div>
         ))}
         {hasMore && (
@@ -101,17 +122,24 @@ function LazyTweetColumn({
   );
 }
 
-export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
+export const HomePageClient = ({ tweets, snapshotDate }: { tweets: Tweet[]; snapshotDate?: string }) => {
   const [showTip, setShowTip] = useState(false) // Start hidden to avoid flash
-  const [showDataNote, setShowDataNote] = useState(false) // Start hidden to avoid flash
+  const [searchQuery, setSearchQuery] = useState('')
+  const { tweetSource, rankingMode, setSource, setRanking, loaded: togglesLoaded } = useBangersToggles()
 
   // Load dismissed states from localStorage
   useEffect(() => {
     const tipDismissed = localStorage.getItem('homeTipDismissed');
-    const dataDismissed = localStorage.getItem('homeDataNoteDismissed');
     setShowTip(tipDismissed !== 'true');
-    setShowDataNote(dataDismissed !== 'true');
   }, []);
+
+  // Prefetch avatars and media for initial tweets
+  useEffect(() => {
+    const usernames = tweets.map(t => t.username).filter(Boolean);
+    if (usernames.length > 0) prefetchAvatars(usernames);
+    const tweetIds = tweets.map(t => t.tweet_id).filter(Boolean);
+    if (tweetIds.length > 0) prefetchMedia(tweetIds);
+  }, [tweets]);
 
   const {
     selectedTweets,
@@ -148,9 +176,20 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
     updateUrl(newStack)
   }, [selectedTweets, updateUrl])
 
+  // Filter tweets by search query (source filtering is handled inside LazyTweetColumn
+  // to keep server pagination offsets correct)
+  const filteredTweets = searchQuery.trim()
+    ? tweets.filter((tweet: Tweet) => {
+        const query = searchQuery.toLowerCase()
+        const text = tweet.full_text?.toLowerCase() || ''
+        const username = tweet.username?.toLowerCase() || ''
+        return text.includes(query) || username.includes(query)
+      })
+    : tweets
+
   // Group tweets by column
   const groups: Record<string, Tweet[]> = {}
-  tweets.forEach((tweet: Tweet) => {
+  filteredTweets.forEach((tweet: Tweet) => {
     const col = tweet.column || 'Unknown'
     if (!groups[col]) {
       groups[col] = []
@@ -176,7 +215,7 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
   }))
 
   return (
-    <div className="h-screen flex flex-col bg-white text-black overflow-hidden">
+    <div className="h-[100dvh] flex flex-col bg-white text-black overflow-hidden">
       
       <div 
         ref={scrollContainerRef}
@@ -189,14 +228,10 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
                 onClick={() => onSpineClick(-1)} 
             />
         ) : (
-            <div 
-                className={`flex flex-col flex-shrink-0 h-full border-r border-black transition-all duration-500 ease-in-out bg-gray-50`}
-                style={{ 
-                    width: '100vw',
-                    minWidth: '500px' 
-                }}
+            <div
+                className={`flex flex-col flex-shrink-0 h-full border-r border-black transition-all duration-500 ease-in-out bg-gray-50 w-screen min-w-0`}
             >
-                <div className="p-8 h-full flex flex-col overflow-hidden">
+                <div className="p-4 sm:p-8 h-full flex flex-col overflow-hidden">
                     <header className="mb-8 border-b-4 border-black pb-4 flex-shrink-0">
                         <div className="flex items-center justify-between mb-2">
                             <h1 className="text-4xl font-bold tracking-tighter">bangers</h1>
@@ -215,39 +250,91 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
                                 </a>
                             </div>
                         </div>
-                        <div className="text-sm italic mb-1">from the Community Archive</div>
-                        <div className="text-sm mb-3">
+                        <p className="text-sm text-gray-600 mb-1">
+                            The most-quoted tweets from the{' '}
+                            <a href="https://communityarchive.org" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70">Community Archive</a>
+                            {snapshotDate ? `, as of ${snapshotDate}` : ''}.
+                            Quote tweets are a signal for ideas that were load-bearing enough to build on.
+                        </p>
+                        <div className="text-sm text-gray-500 mb-3">
                             by{' '}
                             <a href="https://twitter.com/exgenesis" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70">@exgenesis</a>
                             {' '}& {' '}
                             <a href="https://twitter.com/A_Variengien" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70">@A_Variengien</a>
                         </div>
-                        {showTip && (
-                            <div className="text-sm bg-yellow-50 border-2 border-yellow-400 px-3 py-2 rounded flex items-center justify-between gap-3">
-                                <div>
-                                    💡 <span className="font-semibold">Tip:</span> Click any tweet to open an explorer with quotes, replies, and context
+                        <div className="flex items-center gap-2 mb-3">
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Search tweets..."
+                                className="flex-1 max-w-md px-3 py-2 border-2 border-black text-sm focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1"
+                            />
+                            {searchQuery && (
+                                <button
+                                    onClick={() => setSearchQuery('')}
+                                    className="px-3 py-2 border-2 border-black text-sm font-medium hover:bg-gray-100 transition-colors"
+                                >
+                                    Clear
+                                </button>
+                            )}
+                            {searchQuery && (
+                                <span className="text-sm text-gray-500">
+                                    {filteredTweets.length} result{filteredTweets.length !== 1 ? 's' : ''}
+                                </span>
+                            )}
+                        </div>
+                        {togglesLoaded && (
+                            <div className="flex flex-wrap items-center gap-3 mb-3">
+                                <div className="flex items-center gap-1 text-xs">
+                                    <span className="text-gray-500 mr-1">Show:</span>
+                                    <button
+                                        onClick={() => setSource('everyone')}
+                                        className={`px-2 py-1 border border-black text-xs font-medium transition-colors ${
+                                            tweetSource === 'everyone' ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-100'
+                                        }`}
+                                    >
+                                        Everyone
+                                    </button>
+                                    <button
+                                        onClick={() => setSource('archive')}
+                                        className={`px-2 py-1 border border-black text-xs font-medium transition-colors ${
+                                            tweetSource === 'archive' ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-100'
+                                        }`}
+                                    >
+                                        Archive users
+                                    </button>
                                 </div>
+                                <div className="flex items-center gap-1 text-xs">
+                                    <span className="text-gray-500 mr-1">Rank by:</span>
+                                    <button
+                                        onClick={() => setRanking('all_quotes')}
+                                        className={`px-2 py-1 border border-black text-xs font-medium transition-colors ${
+                                            rankingMode === 'all_quotes' ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-100'
+                                        }`}
+                                    >
+                                        All quotes
+                                    </button>
+                                    <button
+                                        onClick={() => setRanking('archive_quotes')}
+                                        className={`px-2 py-1 border border-black text-xs font-medium transition-colors ${
+                                            rankingMode === 'archive_quotes' ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-100'
+                                        }`}
+                                    >
+                                        Archive quotes
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                        {showTip && (
+                            <div className="text-xs text-gray-500 border-l-2 border-gray-300 pl-3 py-1 flex items-center justify-between gap-3">
+                                <span>Click any tweet to explore its quotes, replies, and thread context.</span>
                                 <button
                                     onClick={() => {
                                         setShowTip(false);
                                         localStorage.setItem('homeTipDismissed', 'true');
                                     }}
-                                    className="text-yellow-700 hover:text-yellow-900 font-bold text-lg leading-none"
-                                    aria-label="Close tip"
-                                >
-                                    ×
-                                </button>
-                            </div>
-                        )}
-                        {showDataNote && (
-                            <div className="text-xs bg-blue-50 border border-blue-200 px-3 py-2 rounded mt-2 text-blue-700 flex items-center justify-between gap-2">
-                                <span>ℹ️ Data snapshot from early December 2025</span>
-                                <button
-                                    onClick={() => {
-                                        setShowDataNote(false);
-                                        localStorage.setItem('homeDataNoteDismissed', 'true');
-                                    }}
-                                    className="text-blue-600 hover:text-blue-800 font-bold text-lg leading-none"
+                                    className="text-gray-400 hover:text-gray-600 font-bold text-sm leading-none flex-shrink-0"
                                     aria-label="Dismiss"
                                 >
                                     ×
@@ -256,17 +343,19 @@ export const HomePageClient = ({ tweets }: { tweets: Tweet[] }) => {
                         )}
                     </header>
                     
-                    <main className="flex gap-8 overflow-x-auto flex-1 scrollbar-hide">
+                    <main className="flex flex-col sm:flex-row gap-8 overflow-y-auto sm:overflow-y-hidden sm:overflow-x-auto flex-1 scrollbar-hide">
                         {tweetsByColumn.map(({ column, tweets: columnTweets }) => (
                           <LazyTweetColumn
                             key={column}
                             column={column}
                             initialTweets={columnTweets}
                             onTweetClick={(tweet) => onTweetClick(tweet, -1)}
+                            rankingMode={rankingMode}
+                            tweetSource={tweetSource}
                           />
                         ))}
                         
-                        <section className="flex flex-col flex-shrink-0 w-[360px]">
+                        <section className="flex flex-col flex-shrink-0 w-full sm:w-[360px]">
                             <h2 className="text-2xl font-bold mb-6 border-b-2 border-black pb-2 flex-shrink-0">
                                 About
                             </h2>

@@ -6,6 +6,8 @@ export interface Tweet {
   favorite_count: number;
   retweet_count: number;
   quote_count?: number; // Optional as it might not be in all DB responses
+  archive_quote_count?: number;
+  is_archive_user?: boolean;
   reply_to_tweet_id?: string;
   reply_to_user_id?: string;
   reply_to_username?: string;

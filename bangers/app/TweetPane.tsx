@@ -236,10 +236,10 @@ export const TweetPane = ({ tweet, onClose, onSelectTweet, onHorizontalScroll }:
         </div>
       </div>
 
-      {/* Three columns */}
-      <div className="flex-1 flex min-h-0 overflow-hidden">
+      {/* Three columns - stack vertically on mobile */}
+      <div className="flex-1 flex flex-col sm:flex-row min-h-0 overflow-y-auto sm:overflow-y-hidden sm:overflow-hidden">
         {/* Thread Column */}
-        <div className="flex-1 flex flex-col border-r border-gray-200 min-w-0">
+        <div className="sm:flex-1 flex flex-col border-b sm:border-b-0 sm:border-r border-gray-200 min-w-0 min-h-[300px] sm:min-h-0">
           <div className="p-3 border-b border-gray-200 bg-gray-50 flex-shrink-0">
             <h3 className="font-bold text-sm uppercase tracking-wide">Thread</h3>
             <p className="text-xs text-gray-500">{threadLoading ? 'Loading...' : `${threadTweets.length} tweets`}</p>
@@ -274,7 +274,7 @@ export const TweetPane = ({ tweet, onClose, onSelectTweet, onHorizontalScroll }:
         </div>
 
         {/* Quotes Column */}
-        <div className="flex-1 flex flex-col border-r border-gray-200 min-w-0">
+        <div className="sm:flex-1 flex flex-col border-b sm:border-b-0 sm:border-r border-gray-200 min-w-0 min-h-[300px] sm:min-h-0">
           <div className="p-3 border-b border-gray-200 bg-gray-50 flex-shrink-0">
             <div className="flex items-center justify-between">
               <div>
@@ -315,7 +315,7 @@ export const TweetPane = ({ tweet, onClose, onSelectTweet, onHorizontalScroll }:
         </div>
 
         {/* Vector Search Column */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="sm:flex-1 flex flex-col min-w-0 min-h-[300px] sm:min-h-0">
           <div className="p-3 border-b border-gray-200 bg-gray-50 flex-shrink-0">
             <h3 className="font-bold text-sm uppercase tracking-wide">Similar Tweets</h3>
             <p className="text-xs text-gray-500">{searchLoading ? 'Loading...' : `${searchResults.length} results`}</p>

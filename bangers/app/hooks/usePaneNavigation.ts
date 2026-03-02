@@ -19,9 +19,9 @@ export function usePaneNavigation(selectedCount: number) {
   const isHomeCollapsed = selectedCount > 0
   const collapsedWidth = isHomeCollapsed ? (selectedCount * SPINE_WIDTH_PX) : 0
 
-  const activePaneStyle = useMemo(() => 
-    isHomeCollapsed 
-      ? { width: `calc(100vw - ${collapsedWidth}px)`, minWidth: '500px' }
+  const activePaneStyle = useMemo(() =>
+    isHomeCollapsed
+      ? { width: `calc(100vw - ${collapsedWidth}px)`, minWidth: '320px' }
       : { width: '500px' },
     [isHomeCollapsed, collapsedWidth]
   )

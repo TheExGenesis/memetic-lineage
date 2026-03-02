@@ -4,15 +4,23 @@ import { useState, memo } from 'react'
 import Image from 'next/image'
 import { decode } from 'he'
 import { Tweet } from '@/lib/types'
+import { useAvatar } from './hooks/useAvatars'
+import { useMediaUrls } from './hooks/useMediaUrls'
+import type { RankingMode } from './hooks/useBangersToggles'
 
 type TweetCardProps = {
   tweet: Tweet;
   onQuotedTweetClick?: (quotedTweetId: string) => void;
   annotation?: string;
+  rankingMode?: RankingMode;
 };
 
-export const TweetCard = memo(function TweetCard({ tweet, onQuotedTweetClick, annotation }: TweetCardProps) {
+export const TweetCard = memo(function TweetCard({ tweet, onQuotedTweetClick, annotation, rankingMode }: TweetCardProps) {
   const [expanded, setExpanded] = useState(false)
+  const avatarUrl = useAvatar(tweet.username) || tweet.avatar_media_url
+  const quotedAvatarUrl = useAvatar(tweet.quoted_tweet?.username || '') || tweet.quoted_tweet?.avatar_media_url
+  const fetchedMedia = useMediaUrls(tweet.tweet_id)
+  const mediaUrls = tweet.media_urls?.length ? tweet.media_urls : (fetchedMedia?.length ? fetchedMedia : undefined)
   const tweetUrl = `https://twitter.com/${tweet.username}/status/${tweet.tweet_id}`
   // Only truncate if significantly longer to avoid close calls
   const TRUNCATE_LENGTH = 280
@@ -40,9 +48,9 @@ export const TweetCard = memo(function TweetCard({ tweet, onQuotedTweetClick, an
     <div className="border-b border-black pb-4 mb-4 last:border-b-0 break-inside-avoid">
       <div className="flex items-start gap-3 mb-2">
         <div className="w-8 h-8 bg-gray-200 rounded-full overflow-hidden flex-shrink-0 border border-black relative">
-          {tweet.avatar_media_url && (
+          {avatarUrl && (
             <Image
-              src={tweet.avatar_media_url}
+              src={avatarUrl}
               alt={tweet.username}
               fill
               sizes="32px"
@@ -102,8 +110,8 @@ export const TweetCard = memo(function TweetCard({ tweet, onQuotedTweetClick, an
       )}
 
       {/* Render Images */}
-      {tweet.media_urls && tweet.media_urls.length > 0 && (() => {
-        const uniqueUrls = Array.from(new Set(tweet.media_urls))
+      {mediaUrls && mediaUrls.length > 0 && (() => {
+        const uniqueUrls = Array.from(new Set(mediaUrls))
         return (
           <div
             className={`grid gap-2 mb-3 ${uniqueUrls.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}
@@ -138,9 +146,9 @@ export const TweetCard = memo(function TweetCard({ tweet, onQuotedTweetClick, an
         >
           <div className="flex items-center gap-2 mb-1">
             <div className="w-5 h-5 bg-gray-200 rounded-full overflow-hidden flex-shrink-0 relative">
-              {tweet.quoted_tweet.avatar_media_url && (
+              {quotedAvatarUrl && (
                 <Image
-                  src={tweet.quoted_tweet.avatar_media_url}
+                  src={quotedAvatarUrl}
                   alt={tweet.quoted_tweet.username}
                   fill
                   sizes="20px"
@@ -176,7 +184,9 @@ export const TweetCard = memo(function TweetCard({ tweet, onQuotedTweetClick, an
       <div className="flex gap-4 text-xs text-gray-500 font-mono">
         <span>♥ {tweet.favorite_count}</span>
         <span>↻ {tweet.retweet_count}</span>
-        {tweet.quote_count !== undefined && <span>❝ {tweet.quote_count}</span>}
+        {tweet.quote_count !== undefined && (
+          <span>❝ {rankingMode === 'archive_quotes' ? (tweet.archive_quote_count ?? tweet.quote_count) : tweet.quote_count}</span>
+        )}
       </div>
 
       {/* Annotation section */}

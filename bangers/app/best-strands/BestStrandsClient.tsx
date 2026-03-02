@@ -11,6 +11,7 @@ import { TweetPane } from '../TweetPane';
 import { VerticalSpine } from '../VerticalSpine';
 import { BackButton } from '../components/BackButton';
 import { fetchTweetDetails } from '@/lib/api';
+import { useAvatar } from '../hooks/useAvatars';
 import { StrandHistogram, HistogramData } from './StrandHistogram';
 import { StrandSemanticMap } from './StrandSemanticMap';
 
@@ -121,6 +122,7 @@ interface StrandCardProps {
 
 const StrandCard = memo(function StrandCard({ strand, histogramData, onSelect }: StrandCardProps) {
   const seedTweet = strand.seedTweet;
+  const avatarUrl = useAvatar(seedTweet?.username || '') || seedTweet?.avatar_media_url;
   const strandHistogram = histogramData?.strands[strand.seed_tweet_id];
 
   return (
@@ -134,9 +136,9 @@ const StrandCard = memo(function StrandCard({ strand, histogramData, onSelect }:
           {seedTweet ? (
             <>
               <div className="flex items-center gap-2 mb-2">
-                {seedTweet.avatar_media_url && (
+                {avatarUrl && (
                   <img
-                    src={seedTweet.avatar_media_url}
+                    src={avatarUrl}
                     alt={seedTweet.username}
                     className="w-8 h-8 rounded-full"
                   />
@@ -269,6 +271,7 @@ export function BestStrandsClient({ strands }: BestStrandsClientProps) {
   const [visibleStrandsCount, setVisibleStrandsCount] = useState(INITIAL_STRANDS);
   const [sortMode, setSortMode] = useState<SortMode>('topic');
   const [seriationOrder, setSeriationOrder] = useState<SeriationOrder | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const tweetCacheRef = useRef<Map<string, Tweet>>(new Map());
@@ -314,6 +317,26 @@ export function BestStrandsClient({ strands }: BestStrandsClientProps) {
     loadSeriationOrder();
   }, []);
 
+  // Filter strands by search query
+  const filteredStrands = useMemo(() => {
+    if (!searchQuery.trim()) return strands;
+    const query = searchQuery.toLowerCase();
+    return strands.filter((strand) => {
+      const title = strand.title?.toLowerCase() || '';
+      const summary = strand.summary?.toLowerCase() || '';
+      const reasoning = strand.rating?.reasoning_summary?.toLowerCase() || '';
+      const tweetText = strand.seedTweet?.full_text?.toLowerCase() || '';
+      const username = strand.seedTweet?.username?.toLowerCase() || '';
+      return (
+        title.includes(query) ||
+        summary.includes(query) ||
+        reasoning.includes(query) ||
+        tweetText.includes(query) ||
+        username.includes(query)
+      );
+    });
+  }, [strands, searchQuery]);
+
   // Sort strands based on current mode
   const sortedStrands = useMemo(() => {
     if (sortMode === 'topic' && seriationOrder) {
@@ -324,22 +347,22 @@ export function BestStrandsClient({ strands }: BestStrandsClientProps) {
       });
 
       // Sort strands by their position in seriation order
-      return [...strands].sort((a, b) => {
+      return [...filteredStrands].sort((a, b) => {
         const posA = positionMap.get(a.seed_tweet_id) ?? Infinity;
         const posB = positionMap.get(b.seed_tweet_id) ?? Infinity;
         return posA - posB;
       });
     } else if (sortMode === 'rating') {
-      return [...strands].sort((a, b) => b.rating.rating - a.rating.rating);
+      return [...filteredStrands].sort((a, b) => b.rating.rating - a.rating.rating);
     } else if (sortMode === 'date') {
-      return [...strands].sort((a, b) => {
+      return [...filteredStrands].sort((a, b) => {
         const dateA = a.seedTweet?.created_at || '';
         const dateB = b.seedTweet?.created_at || '';
         return dateB.localeCompare(dateA); // Newest first
       });
     }
-    return strands;
-  }, [strands, sortMode, seriationOrder]);
+    return filteredStrands;
+  }, [filteredStrands, sortMode, seriationOrder]);
 
   // Lazy load more strands on scroll
   useEffect(() => {
@@ -358,10 +381,10 @@ export function BestStrandsClient({ strands }: BestStrandsClientProps) {
     return () => observer.disconnect();
   }, [visibleStrandsCount, sortedStrands.length]);
 
-  // Reset visible count when sort mode changes
+  // Reset visible count when sort mode or search changes
   useEffect(() => {
     setVisibleStrandsCount(INITIAL_STRANDS);
-  }, [sortMode]);
+  }, [sortMode, searchQuery]);
 
   // Calculate pane width based on selected tweets
   const collapsedWidth = selectedTweets.length > 0 ? selectedTweets.length * SPINE_WIDTH_PX : 0;
@@ -652,40 +675,61 @@ export function BestStrandsClient({ strands }: BestStrandsClientProps) {
 
           {/* Right column: Strand cards */}
           <div className="lg:w-[58%] flex-1 min-w-0">
-            {/* Sort selector */}
-            <div className="flex items-center gap-2 mb-4 text-sm">
-              <span className="text-gray-500">Sort by:</span>
-              <div className="flex gap-1">
-                <button
-                  onClick={() => setSortMode('topic')}
-                  className={`px-2.5 py-1 rounded transition-colors ${
-                    sortMode === 'topic'
-                      ? 'bg-black text-white'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                  }`}
-                >
-                  Topic
-                </button>
-                <button
-                  onClick={() => setSortMode('rating')}
-                  className={`px-2.5 py-1 rounded transition-colors ${
-                    sortMode === 'rating'
-                      ? 'bg-black text-white'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                  }`}
-                >
-                  Rating
-                </button>
-                <button
-                  onClick={() => setSortMode('date')}
-                  className={`px-2.5 py-1 rounded transition-colors ${
-                    sortMode === 'date'
-                      ? 'bg-black text-white'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                  }`}
-                >
-                  Date
-                </button>
+            {/* Search and Sort controls */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+              {/* Search input */}
+              <div className="flex items-center gap-2 flex-1">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search strands..."
+                  className="flex-1 px-3 py-1.5 border-2 border-black text-sm focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="px-2 py-1.5 border-2 border-black text-sm font-medium hover:bg-gray-100 transition-colors"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              {/* Sort selector */}
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-gray-500">Sort:</span>
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => setSortMode('topic')}
+                    className={`px-2.5 py-1 rounded transition-colors ${
+                      sortMode === 'topic'
+                        ? 'bg-black text-white'
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                    }`}
+                  >
+                    Topic
+                  </button>
+                  <button
+                    onClick={() => setSortMode('rating')}
+                    className={`px-2.5 py-1 rounded transition-colors ${
+                      sortMode === 'rating'
+                        ? 'bg-black text-white'
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                    }`}
+                  >
+                    Rating
+                  </button>
+                  <button
+                    onClick={() => setSortMode('date')}
+                    className={`px-2.5 py-1 rounded transition-colors ${
+                      sortMode === 'date'
+                        ? 'bg-black text-white'
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                    }`}
+                  >
+                    Date
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -707,6 +751,9 @@ export function BestStrandsClient({ strands }: BestStrandsClientProps) {
 
             <div className="mt-8 text-center text-sm text-gray-500">
               Showing {Math.min(visibleStrandsCount, sortedStrands.length)} of {sortedStrands.length} strands
+              {searchQuery && sortedStrands.length !== strands.length && (
+                <span> (filtered from {strands.length})</span>
+              )}
             </div>
           </div>
         </div>

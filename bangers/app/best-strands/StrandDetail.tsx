@@ -8,6 +8,7 @@ import { TweetCard } from '../TweetCard';
 import { ThreadView } from '../ThreadView';
 import { BackButton } from '../components/BackButton';
 import { fetchTweetDetails, getConversationIds, getThreadsBatch } from '@/lib/api';
+import { useAvatar } from '../hooks/useAvatars';
 import { StrandHistogram, HistogramData } from './StrandHistogram';
 
 interface StrandDetailProps {
@@ -75,6 +76,7 @@ const formatSourceType = (sourceType: string) => {
 };
 
 export function StrandDetail({ strand, onBack, onSelectTweet, onHorizontalScroll }: StrandDetailProps) {
+  const seedAvatarUrl = useAvatar(strand.seedTweet?.username || '') || strand.seedTweet?.avatar_media_url;
   const [essentialTweetsData, setEssentialTweetsData] = useState<EssentialTweetWithData[]>([]);
   const [loading, setLoading] = useState(true);
   const [columnWidth, setColumnWidth] = useState(380);
@@ -255,8 +257,8 @@ export function StrandDetail({ strand, onBack, onSelectTweet, onHorizontalScroll
                   onClick={() => strand.seedTweet && onSelectTweet?.(strand.seedTweet)}
                 >
                   <div className="flex items-start gap-2 mb-1.5">
-                    {strand.seedTweet.avatar_media_url && (
-                      <img src={strand.seedTweet.avatar_media_url} alt="" className="w-8 h-8 rounded-full flex-shrink-0 border border-gray-200" />
+                    {seedAvatarUrl && (
+                      <img src={seedAvatarUrl} alt="" className="w-8 h-8 rounded-full flex-shrink-0 border border-gray-200" />
                     )}
                     <div className="min-w-0">
                       <div className="text-xs font-bold">@{strand.seedTweet.username}</div>
