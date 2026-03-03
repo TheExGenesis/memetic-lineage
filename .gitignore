@@ -36,6 +36,9 @@ bangers/public/bangers_tweets.json
 bangers/public/atlas_data.json
 bangers/public/umap_tweets.json
 
+# Strands exploration workspace (research notes, not for git)
+strands-exploration/
+
 # Debug / scratch
 Untitled
 scratchpads/data/debug_quote_counts.json
