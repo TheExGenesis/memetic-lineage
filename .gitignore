@@ -31,10 +31,7 @@ cluster_volume_evolution.png
 .claude/
 .playwright-mcp/
 
-# Generated data (too large for git)
-bangers/public/bangers_tweets.json
-bangers/public/atlas_data.json
-bangers/public/umap_tweets.json
+# Note: bangers/public/*.json data files ARE committed for Vercel deployment
 
 # Strands exploration workspace (research notes, not for git)
 strands-exploration/
