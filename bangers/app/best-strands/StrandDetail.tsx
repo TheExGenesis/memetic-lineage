@@ -377,7 +377,7 @@ export function StrandDetail({ strand, onBack, onSelectTweet, onHorizontalScroll
 
       {/* Histogram Section */}
       <div className="p-4 bg-white border-b-2 border-black">
-        <div className="max-w-full mx-auto">
+        <div className="max-w-4xl mx-auto">
           {histogramData && (
             <StrandHistogram
               strandData={histogramData.strands[strand.seed_tweet_id] || null}

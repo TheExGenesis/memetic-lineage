@@ -30,6 +30,12 @@ function flushBatch() {
       }
     }
     resolvers.forEach((r) => r())
+  }).catch(() => {
+    // On error, remove from requestedIds so they can be retried
+    for (const id of ids) {
+      requestedIds.delete(id)
+    }
+    resolvers.forEach((r) => r())
   })
 }
 
@@ -82,6 +88,15 @@ export function useMediaUrls(tweetId: string): string[] | undefined {
  * Prefetch media for a list of tweet IDs.
  */
 export function prefetchMedia(tweetIds: string[]) {
+  // On re-mount (e.g. back navigation), requestedIds may contain IDs
+  // whose fetch completed but the component wasn't mounted to receive them.
+  // Clear stale entries so they get re-queued.
+  for (const id of tweetIds) {
+    if (requestedIds.has(id) && !mediaCache.has(id)) {
+      requestedIds.delete(id)
+    }
+  }
+
   const uncached = tweetIds.filter(
     (id) => !mediaCache.has(id) && !requestedIds.has(id)
   )
