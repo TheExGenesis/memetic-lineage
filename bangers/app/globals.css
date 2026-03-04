@@ -24,3 +24,48 @@ body {
   -ms-overflow-style: none; /* IE/Edge */
   scrollbar-width: none;    /* Firefox */
 }
+
+/* Dual-handle time range slider (used by atlas + minimap) */
+.time-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: none;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  margin: 0;
+  padding: 0;
+  top: 0;
+  left: 0;
+}
+.time-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  background: transparent;
+}
+.time-slider::-moz-range-track {
+  height: 4px;
+  background: transparent;
+}
+.time-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  pointer-events: all;
+  height: 18px;
+  width: 18px;
+  border-radius: 50%;
+  background: #4f46e5;
+  cursor: pointer;
+  margin-top: -7px;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.time-slider::-moz-range-thumb {
+  pointer-events: all;
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: #4f46e5;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}

@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 
 interface StrandPoint {
@@ -41,6 +42,13 @@ export function StrandSemanticMap() {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const router = useRouter();
 
+  // Time filter state
+  const [timeFilterEnabled, setTimeFilterEnabled] = useState(true);
+  const [timeRange, setTimeRange] = useState<[number, number]>([0, 0]);
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const sliderDragRef = useRef<{ startX: number; startRange: [number, number] } | null>(null);
+  const [isDraggingSlider, setIsDraggingSlider] = useState(false);
+
   // Pan and zoom state
   const [zoom, setZoom] = useState(1);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
@@ -56,6 +64,26 @@ export function StrandSemanticMap() {
       .then(setData)
       .catch(console.error);
   }, []);
+
+  // Compute timestamps from seed_tweet_ids (Twitter snowflake formula)
+  const pointTimestamps = useMemo(() => {
+    if (!data) return { timestamps: [] as number[], minTs: 0, maxTs: 0 };
+    const TWITTER_EPOCH = BigInt(1288834974657);
+    const timestamps = data.points.map(p => {
+      const id = BigInt(p.seed_tweet_id);
+      return Number((id >> BigInt(22)) + TWITTER_EPOCH) / 1000;
+    });
+    const minTs = Math.min(...timestamps);
+    const maxTs = Math.max(...timestamps);
+    return { timestamps, minTs, maxTs };
+  }, [data]);
+
+  // Initialize time range when data loads
+  useEffect(() => {
+    if (pointTimestamps.minTs > 0) {
+      setTimeRange([pointTimestamps.minTs, pointTimestamps.maxTs]);
+    }
+  }, [pointTimestamps]);
 
   // Calculate scale factors to fit data in container
   const getScaleFactors = useCallback(() => {
@@ -139,6 +167,23 @@ export function StrandSemanticMap() {
       const isLabeled = labeledSet.has(i);
       const isHovered = hoveredIndex === i;
 
+      // Check if point is in time range
+      const inRange = !timeFilterEnabled || (
+        pointTimestamps.timestamps[i] >= timeRange[0] &&
+        pointTimestamps.timestamps[i] <= timeRange[1]
+      );
+
+      if (!inRange && !isHovered) {
+        // Dimmed point
+        ctx.beginPath();
+        ctx.arc(cx, cy, isLabeled ? 4 : 3, 0, Math.PI * 2);
+        ctx.fillStyle = point.color;
+        ctx.globalAlpha = 0.08;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        return;
+      }
+
       // Draw circle
       ctx.beginPath();
       ctx.arc(cx, cy, isHovered ? 8 : (isLabeled ? 7 : 5), 0, Math.PI * 2);
@@ -171,27 +216,34 @@ export function StrandSemanticMap() {
       likes: number;
     }
 
-    const labelBoxes: LabelBox[] = data.labeled_indices.map(i => {
-      const point = data.points[i];
-      const { cx, cy } = toCanvasCoords(point.x, point.y);
-      const text = point.label || point.title;
-      const metrics = ctx.measureText(text);
-      const textWidth = metrics.width + 8; // padding
-      const textHeight = 18;
-      const labelY = cy - 22 - textHeight;
+    const labelBoxes: LabelBox[] = data.labeled_indices
+      .filter(i => {
+        // Skip labels for out-of-range points
+        if (!timeFilterEnabled) return true;
+        return pointTimestamps.timestamps[i] >= timeRange[0] &&
+               pointTimestamps.timestamps[i] <= timeRange[1];
+      })
+      .map(i => {
+        const point = data.points[i];
+        const { cx, cy } = toCanvasCoords(point.x, point.y);
+        const text = point.label || point.title;
+        const metrics = ctx.measureText(text);
+        const textWidth = metrics.width + 8; // padding
+        const textHeight = 18;
+        const labelY = cy - 22 - textHeight;
 
-      return {
-        index: i,
-        text,
-        cx,
-        cy,
-        x: cx - textWidth / 2,
-        y: labelY,
-        width: textWidth,
-        height: textHeight,
-        likes: point.likes,
-      };
-    });
+        return {
+          index: i,
+          text,
+          cx,
+          cy,
+          x: cx - textWidth / 2,
+          y: labelY,
+          width: textWidth,
+          height: textHeight,
+          likes: point.likes,
+        };
+      });
 
     // Sort by likes (highest first) to prioritize popular strands
     labelBoxes.sort((a, b) => b.likes - a.likes);
@@ -253,7 +305,7 @@ export function StrandSemanticMap() {
       ctx.fillText(box.text, box.x + box.width / 2, box.y + box.height - 4);
     }
 
-  }, [data, hoveredIndex, toCanvasCoords, zoom, panOffset]);
+  }, [data, hoveredIndex, toCanvasCoords, zoom, panOffset, timeFilterEnabled, timeRange, pointTimestamps]);
 
   // Store zoom in ref for wheel handler (avoids stale closure)
   const zoomRef = useRef(zoom);
@@ -403,6 +455,45 @@ export function StrandSemanticMap() {
     }
   }, [data, toCanvasCoords, router, zoom]);
 
+  // Drag the slider interior to scrub the time window
+  const handleSliderDragStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!sliderRef.current) return;
+    sliderDragRef.current = { startX: e.clientX, startRange: [timeRange[0], timeRange[1]] };
+    setIsDraggingSlider(true);
+
+    const handleMouseMove = (ev: MouseEvent) => {
+      if (!sliderDragRef.current || !sliderRef.current) return;
+      const sliderWidth = sliderRef.current.clientWidth;
+      const totalRange = pointTimestamps.maxTs - pointTimestamps.minTs;
+      if (totalRange === 0 || sliderWidth === 0) return;
+      const pxDelta = ev.clientX - sliderDragRef.current.startX;
+      const timeDelta = (pxDelta / sliderWidth) * totalRange;
+      const windowSize = sliderDragRef.current.startRange[1] - sliderDragRef.current.startRange[0];
+      let newStart = sliderDragRef.current.startRange[0] + timeDelta;
+      let newEnd = newStart + windowSize;
+      if (newStart < pointTimestamps.minTs) {
+        newStart = pointTimestamps.minTs;
+        newEnd = newStart + windowSize;
+      }
+      if (newEnd > pointTimestamps.maxTs) {
+        newEnd = pointTimestamps.maxTs;
+        newStart = newEnd - windowSize;
+      }
+      setTimeRange([newStart, newEnd]);
+    };
+
+    const handleMouseUp = () => {
+      sliderDragRef.current = null;
+      setIsDraggingSlider(false);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  }, [timeRange, pointTimestamps]);
+
   // Reset view handler
   const handleResetView = useCallback(() => {
     setZoom(1);
@@ -416,6 +507,41 @@ export function StrandSemanticMap() {
       </div>
     );
   }
+
+  // Format unix timestamp to human-readable date
+  const formatTimestamp = (ts: number): string => {
+    const d = new Date(ts * 1000);
+    return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  };
+
+  const tooltipEl = tooltip.visible && tooltip.point ? (
+    <div
+      className="fixed z-[9999] pointer-events-none bg-white border border-gray-200 shadow-lg rounded-lg p-3 max-w-sm"
+      style={{
+        left: tooltip.x + 15,
+        top: tooltip.y + 15,
+        transform: tooltip.x > window.innerWidth / 2 ? 'translateX(-100%)' : undefined,
+      }}
+    >
+      <div className="font-semibold text-sm mb-1">{tooltip.point.title}</div>
+      <div className="text-xs text-gray-600 mb-2">
+        @{tooltip.point.username} · ❤️ {tooltip.point.likes.toLocaleString()} · 🔄 {tooltip.point.retweets.toLocaleString()}
+      </div>
+      {tooltip.point.full_text && (
+        <div className="text-xs text-gray-700 mb-2 leading-relaxed">
+          {tooltip.point.full_text}
+        </div>
+      )}
+      {tooltip.point.summary && (
+        <div className="text-xs text-gray-500 italic leading-relaxed">
+          {tooltip.point.summary}
+        </div>
+      )}
+      <div className="text-xs text-gray-400 mt-2">
+        {tooltip.point.seeds_count} seeds · {tooltip.point.tweets_count} tweets
+      </div>
+    </div>
+  ) : null;
 
   return (
     <div className="relative w-full">
@@ -444,35 +570,63 @@ export function StrandSemanticMap() {
         </button>
       )}
 
-      {/* Tooltip */}
-      {tooltip.visible && tooltip.point && (
-        <div
-          className="fixed z-50 pointer-events-none bg-white border border-gray-200 shadow-lg rounded-lg p-3 max-w-sm"
-          style={{
-            left: tooltip.x + 15,
-            top: tooltip.y + 15,
-            transform: tooltip.x > window.innerWidth / 2 ? 'translateX(-100%)' : undefined,
-          }}
-        >
-          <div className="font-semibold text-sm mb-1">{tooltip.point.title}</div>
-          <div className="text-xs text-gray-600 mb-2">
-            @{tooltip.point.username} · ❤️ {tooltip.point.likes.toLocaleString()} · 🔄 {tooltip.point.retweets.toLocaleString()}
-          </div>
-          {tooltip.point.full_text && (
-            <div className="text-xs text-gray-700 mb-2 leading-relaxed">
-              {tooltip.point.full_text}
+      {/* Time filter slider */}
+      {pointTimestamps.minTs > 0 && (
+        <div className="mt-2">
+          <div className="flex items-center gap-3 text-sm">
+              <span className="text-xs font-medium text-gray-600 w-20 text-right shrink-0">
+                {formatTimestamp(timeRange[0])}
+              </span>
+              <div ref={sliderRef} className="relative flex-1 h-6" style={{ minWidth: '120px' }}>
+                <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-1 bg-gray-200 rounded" />
+                <div
+                  className="absolute top-1/2 -translate-y-1/2 h-4"
+                  style={{
+                    left: `${((timeRange[0] - pointTimestamps.minTs) / (pointTimestamps.maxTs - pointTimestamps.minTs || 1)) * 100}%`,
+                    right: `${100 - ((timeRange[1] - pointTimestamps.minTs) / (pointTimestamps.maxTs - pointTimestamps.minTs || 1)) * 100}%`,
+                    cursor: isDraggingSlider ? 'grabbing' : 'grab',
+                    zIndex: 2,
+                  }}
+                  onMouseDown={handleSliderDragStart}
+                >
+                  <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1 bg-indigo-400 rounded" />
+                </div>
+                <input
+                  type="range"
+                  className="time-slider"
+                  min={pointTimestamps.minTs}
+                  max={pointTimestamps.maxTs}
+                  step={2592000}
+                  value={timeRange[0]}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    setTimeRange([Math.min(v, timeRange[1] - 2592000), timeRange[1]]);
+                  }}
+                  style={{ zIndex: timeRange[0] > pointTimestamps.minTs + (pointTimestamps.maxTs - pointTimestamps.minTs) * 0.9 ? 5 : 3 }}
+                />
+                <input
+                  type="range"
+                  className="time-slider"
+                  min={pointTimestamps.minTs}
+                  max={pointTimestamps.maxTs}
+                  step={2592000}
+                  value={timeRange[1]}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    setTimeRange([timeRange[0], Math.max(v, timeRange[0] + 2592000)]);
+                  }}
+                  style={{ zIndex: 4 }}
+                />
+              </div>
+              <span className="text-xs font-medium text-gray-600 w-20 shrink-0">
+                {formatTimestamp(timeRange[1])}
+              </span>
             </div>
-          )}
-          {tooltip.point.summary && (
-            <div className="text-xs text-gray-500 italic leading-relaxed">
-              {tooltip.point.summary}
-            </div>
-          )}
-          <div className="text-xs text-gray-400 mt-2">
-            {tooltip.point.seeds_count} seeds · {tooltip.point.tweets_count} tweets
-          </div>
         </div>
       )}
+
+      {/* Tooltip via portal to escape stacking context */}
+      {typeof document !== 'undefined' && tooltipEl && createPortal(tooltipEl, document.body)}
     </div>
   );
 }

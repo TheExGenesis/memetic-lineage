@@ -321,16 +321,71 @@ function formatHoverText(tweet: Tweet, strands: Record<string, StrandMeta>): str
   return hover;
 }
 
+// Format unix timestamp to human-readable date
+function formatTimestamp(ts: number): string {
+  const d = new Date(ts * 1000);
+  return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+}
+
 // Control panel component
 function ControlPanel({
   params,
   setParams,
+  timeRange,
+  onTimeRangeChange,
+  globalTimeRange,
 }: {
   params: Parameters;
   setParams: (p: Parameters) => void;
+  timeRange: [number, number] | null;
+  onTimeRangeChange: (range: [number, number]) => void;
+  globalTimeRange: { minTs: number; maxTs: number };
 }) {
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const sliderDragRef = useRef<{ startX: number; startRange: [number, number] } | null>(null);
+  const [isDraggingSlider, setIsDraggingSlider] = useState(false);
+
+  const handleSliderDragStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!sliderRef.current || !timeRange) return;
+    sliderDragRef.current = { startX: e.clientX, startRange: [timeRange[0], timeRange[1]] };
+    setIsDraggingSlider(true);
+
+    const handleMouseMove = (ev: MouseEvent) => {
+      if (!sliderDragRef.current || !sliderRef.current) return;
+      const sliderWidth = sliderRef.current.clientWidth;
+      const totalRange = globalTimeRange.maxTs - globalTimeRange.minTs;
+      if (totalRange === 0 || sliderWidth === 0) return;
+      const pxDelta = ev.clientX - sliderDragRef.current.startX;
+      const timeDelta = (pxDelta / sliderWidth) * totalRange;
+      const windowSize = sliderDragRef.current.startRange[1] - sliderDragRef.current.startRange[0];
+      let newStart = sliderDragRef.current.startRange[0] + timeDelta;
+      let newEnd = newStart + windowSize;
+      if (newStart < globalTimeRange.minTs) {
+        newStart = globalTimeRange.minTs;
+        newEnd = newStart + windowSize;
+      }
+      if (newEnd > globalTimeRange.maxTs) {
+        newEnd = globalTimeRange.maxTs;
+        newStart = newEnd - windowSize;
+      }
+      onTimeRangeChange([newStart, newEnd]);
+    };
+
+    const handleMouseUp = () => {
+      sliderDragRef.current = null;
+      setIsDraggingSlider(false);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  }, [timeRange, globalTimeRange, onTimeRangeChange]);
+
   return (
-    <div className="bg-white border-b border-gray-200 p-4 flex flex-wrap gap-6 items-center text-sm">
+    <div className="bg-white border-b border-gray-200">
+      <div className="p-4 flex flex-wrap gap-6 items-center text-sm">
       <BackButton fallbackHref="/best-strands" />
       {/* Edges */}
       <div className="flex items-center gap-2">
@@ -445,6 +500,71 @@ function ControlPanel({
         />
         <span className="text-xs text-gray-500 w-8">{params.envelopeFillOpacity.toFixed(2)}</span>
       </div>
+
+      {/* Time Filter */}
+      <label className="flex items-center gap-1 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={params.timeFilterEnabled}
+          onChange={(e) => setParams({ ...params, timeFilterEnabled: e.target.checked })}
+          className="rounded"
+        />
+        <span className="font-medium text-gray-700">Time Filter</span>
+      </label>
+      </div>
+
+      {/* Time range slider */}
+      {params.timeFilterEnabled && timeRange && globalTimeRange.minTs > 0 && (
+        <div className="px-4 pb-3 flex items-center gap-3 text-sm">
+          <span className="text-xs font-medium text-gray-600 w-20 text-right shrink-0">
+            {formatTimestamp(timeRange[0])}
+          </span>
+          <div ref={sliderRef} className="relative flex-1 h-6" style={{ minWidth: '200px' }}>
+            <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-1 bg-gray-200 rounded" />
+            <div
+              className="absolute top-1/2 -translate-y-1/2 h-4"
+              style={{
+                left: `${((timeRange[0] - globalTimeRange.minTs) / (globalTimeRange.maxTs - globalTimeRange.minTs || 1)) * 100}%`,
+                right: `${100 - ((timeRange[1] - globalTimeRange.minTs) / (globalTimeRange.maxTs - globalTimeRange.minTs || 1)) * 100}%`,
+                cursor: isDraggingSlider ? 'grabbing' : 'grab',
+                zIndex: 2,
+              }}
+              onMouseDown={handleSliderDragStart}
+            >
+              <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1 bg-indigo-400 rounded" />
+            </div>
+            <input
+              type="range"
+              className="time-slider"
+              min={globalTimeRange.minTs}
+              max={globalTimeRange.maxTs}
+              step={2592000}
+              value={timeRange[0]}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                onTimeRangeChange([Math.min(v, timeRange[1] - 2592000), timeRange[1]]);
+              }}
+              style={{ zIndex: timeRange[0] > globalTimeRange.minTs + (globalTimeRange.maxTs - globalTimeRange.minTs) * 0.9 ? 5 : 3 }}
+            />
+            <input
+              type="range"
+              className="time-slider"
+              min={globalTimeRange.minTs}
+              max={globalTimeRange.maxTs}
+              step={2592000}
+              value={timeRange[1]}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                onTimeRangeChange([timeRange[0], Math.max(v, timeRange[0] + 2592000)]);
+              }}
+              style={{ zIndex: 4 }}
+            />
+          </div>
+          <span className="text-xs font-medium text-gray-600 w-20 shrink-0">
+            {formatTimestamp(timeRange[1])}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
@@ -458,6 +578,7 @@ interface Parameters {
   edgeOpacity: number;
   envelopeFillOpacity: number;
   labelPercentile: number;
+  timeFilterEnabled: boolean;
 }
 
 export function AtlasClient() {
@@ -474,6 +595,7 @@ export function AtlasClient() {
     edgeOpacity: 0.25,
     envelopeFillOpacity: 0.15,
     labelPercentile: 80,
+    timeFilterEnabled: false,
   });
 
   // Load data
@@ -537,6 +659,30 @@ export function AtlasClient() {
       Math.max(...ys) - Math.min(...ys)
     );
   }, [data]);
+
+  // Precompute tweet timestamps for time filtering
+  const tweetTimestamps = useMemo(() => {
+    if (!data) return { timestamps: new Map<string, number>(), minTs: 0, maxTs: 0 };
+    const timestamps = new Map<string, number>();
+    let minTs = Infinity;
+    let maxTs = -Infinity;
+    for (const t of data.tweets) {
+      const ts = getTimestampFromTweetId(t.id);
+      timestamps.set(t.id, ts);
+      if (ts < minTs) minTs = ts;
+      if (ts > maxTs) maxTs = ts;
+    }
+    return { timestamps, minTs, maxTs };
+  }, [data]);
+
+  // Time range filter state
+  const [timeRange, setTimeRange] = useState<[number, number] | null>(null);
+  useEffect(() => {
+    if (tweetTimestamps.minTs > 0 && tweetTimestamps.minTs < Infinity) {
+      setTimeRange([tweetTimestamps.minTs, tweetTimestamps.maxTs]);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tweetTimestamps]);
 
   // Compute envelopes using max edge distance constraint
   // Returns multiple polygons per strand (for disconnected clusters)
@@ -647,39 +793,66 @@ export function AtlasClient() {
 
     // Helper for opacity based on selection
     const sel = selectedStrandId;
+    const tf = params.timeFilterEnabled && timeRange !== null;
+    const inRange = (id: string) => {
+      if (!tf || !timeRange) return true;
+      const ts = tweetTimestamps.timestamps.get(id);
+      return ts !== undefined && ts >= timeRange[0] && ts <= timeRange[1];
+    };
 
     // 1. Envelopes - split into selected and non-selected for efficiency
     // Each strand can have multiple polygons (for disconnected clusters)
     if (params.showEnvelopes && params.envelopeFillOpacity > 0) {
+      // Compute per-strand in-range fraction for time filtering envelopes
+      const strandInRangeFraction = new Map<string, number>();
+      if (tf) {
+        const strandImportantCounts = new Map<string, { total: number; inRange: number }>();
+        for (const t of tweets) {
+          if (!t.e && !t.r) continue;
+          const counts = strandImportantCounts.get(t.sid) || { total: 0, inRange: 0 };
+          counts.total++;
+          if (inRange(t.id)) counts.inRange++;
+          strandImportantCounts.set(t.sid, counts);
+        }
+        for (const [sid, counts] of strandImportantCounts) {
+          strandInRangeFraction.set(sid, counts.total > 0 ? counts.inRange / counts.total : 0);
+        }
+      }
+
       // If selection active, render selected envelope separately for highlighting
       if (sel && strandEnvelopes.has(sel)) {
-        const polygons = strandEnvelopes.get(sel)!;
-        const color = getStrandColor(sel);
-        const rgbMatch = color.match(/rgb\((\d+),(\d+),(\d+)\)/);
-        if (rgbMatch) {
-          const [, r, g, b] = rgbMatch;
-          for (const polygon of polygons) {
-            traces.push({
-              type: 'scatter',
-              x: polygon.map((c) => c[0]),
-              y: polygon.map((c) => c[1]),
-              mode: 'lines',
-              fill: 'toself',
-              fillcolor: `rgba(${r},${g},${b},${params.envelopeFillOpacity * 2})`,
-              line: { color: `rgba(${r},${g},${b},0.8)`, width: 2 },
-              showlegend: false,
-              hoverinfo: 'skip',
-              customdata: polygon.map(() => sel),
-            } as PlotlyTrace);
+        const frac = tf ? (strandInRangeFraction.get(sel) ?? 0) : 1;
+        if (frac > 0) {
+          const polygons = strandEnvelopes.get(sel)!;
+          const color = getStrandColor(sel);
+          const rgbMatch = color.match(/rgb\((\d+),(\d+),(\d+)\)/);
+          if (rgbMatch) {
+            const [, r, g, b] = rgbMatch;
+            for (const polygon of polygons) {
+              traces.push({
+                type: 'scatter',
+                x: polygon.map((c) => c[0]),
+                y: polygon.map((c) => c[1]),
+                mode: 'lines',
+                fill: 'toself',
+                fillcolor: `rgba(${r},${g},${b},${params.envelopeFillOpacity * 2 * frac})`,
+                line: { color: `rgba(${r},${g},${b},${0.8 * frac})`, width: 2 },
+                showlegend: false,
+                hoverinfo: 'skip',
+                customdata: polygon.map(() => sel),
+              } as PlotlyTrace);
+            }
           }
         }
       }
 
       // All other envelopes (dimmed if selection active)
-      const dimmedOpacity = sel ? params.envelopeFillOpacity * 0.2 : params.envelopeFillOpacity;
-      const borderOpacity = sel ? 0.15 : 0.5;
       for (const [strandId, polygons] of strandEnvelopes) {
         if (sel === strandId) continue; // Already rendered above
+        const frac = tf ? (strandInRangeFraction.get(strandId) ?? 0) : 1;
+        if (frac === 0) continue; // Skip entirely if no tweets in range
+        const fillOpacity = (sel ? params.envelopeFillOpacity * 0.2 : params.envelopeFillOpacity) * frac;
+        const borderOp = (sel ? 0.15 : 0.5) * frac;
         const color = getStrandColor(strandId);
         const rgbMatch = color.match(/rgb\((\d+),(\d+),(\d+)\)/);
         if (!rgbMatch) continue;
@@ -692,8 +865,8 @@ export function AtlasClient() {
             y: polygon.map((c) => c[1]),
             mode: 'lines',
             fill: 'toself',
-            fillcolor: `rgba(${r},${g},${b},${dimmedOpacity})`,
-            line: { color: `rgba(${r},${g},${b},${borderOpacity})`, width: 1 },
+            fillcolor: `rgba(${r},${g},${b},${fillOpacity})`,
+            line: { color: `rgba(${r},${g},${b},${borderOp})`, width: 1 },
             showlegend: false,
             hoverinfo: 'skip',
             customdata: polygon.map(() => strandId),
@@ -733,7 +906,7 @@ export function AtlasClient() {
           const t2 = sorted[i + 1];
           const dist = Math.sqrt((t2.x - t1.x) ** 2 + (t2.y - t1.y) ** 2);
 
-          if (dist <= params.edgeThreshold) {
+          if (dist <= params.edgeThreshold && (!tf || (inRange(t1.id) && inRange(t2.id)))) {
             if (isSelected) {
               selectedEdgeX.push(t1.x, t2.x, null);
               selectedEdgeY.push(t1.y, t2.y, null);
@@ -792,7 +965,10 @@ export function AtlasClient() {
         marker: {
           size: 5,
           color: regular.map(getColor),
-          opacity: sel ? regular.map(t => t.sid === sel ? 0.6 : 0.05) : 0.3,
+          opacity: (sel || tf) ? regular.map(t => {
+            if (tf && !inRange(t.id)) return 0.03;
+            return sel ? (t.sid === sel ? 0.6 : 0.05) : 0.3;
+          }) : 0.3,
         },
       } as PlotlyTrace);
     }
@@ -820,7 +996,10 @@ export function AtlasClient() {
         marker: {
           size: sel ? essential.map(t => t.sid === sel ? 14 : 6) : 10,
           color: colors,
-          opacity: sel ? essential.map(t => t.sid === sel ? 1.0 : 0.15) : 0.9,
+          opacity: (sel || tf) ? essential.map(t => {
+            if (tf && !inRange(t.id)) return 0.03;
+            return sel ? (t.sid === sel ? 1.0 : 0.15) : 0.9;
+          }) : 0.9,
           line: { color: 'rgba(0,0,0,0.3)', width: 1 },
         },
       } as PlotlyTrace);
@@ -841,19 +1020,30 @@ export function AtlasClient() {
           size: sel ? root.map(t => t.sid === sel ? 20 : 10) : 14,
           symbol: 'diamond',
           color: root.map(getColor),
-          opacity: sel ? root.map(t => t.sid === sel ? 1.0 : 0.15) : 1.0,
+          opacity: (sel || tf) ? root.map(t => {
+            if (tf && !inRange(t.id)) return 0.03;
+            return sel ? (t.sid === sel ? 1.0 : 0.15) : 1.0;
+          }) : 1.0,
           line: { color: 'rgba(0,0,0,0.5)', width: 2 },
         },
       } as PlotlyTrace);
     }
 
     return traces;
-  }, [data, getColor, getStrandColor, params, strandEnvelopes, selectedStrandId]);
+  }, [data, getColor, getStrandColor, params, strandEnvelopes, selectedStrandId, tweetTimestamps, timeRange]);
 
   const layout: Partial<PlotlyLayout> = useMemo(() => {
     const rootTweets = data?.tweets.filter(t => t.r) || [];
     const scoreThreshold = strandScores.threshold(params.labelPercentile);
-    const annotationTweets = rootTweets.filter(t => (strandScores.scores.get(t.sid) || 0) >= scoreThreshold);
+    const tf = params.timeFilterEnabled && timeRange !== null;
+    const annotationTweets = rootTweets.filter(t => {
+      if ((strandScores.scores.get(t.sid) || 0) < scoreThreshold) return false;
+      if (tf && timeRange) {
+        const ts = tweetTimestamps.timestamps.get(t.id);
+        if (ts === undefined || ts < timeRange[0] || ts > timeRange[1]) return false;
+      }
+      return true;
+    });
 
     return {
       title: {
@@ -909,7 +1099,7 @@ export function AtlasClient() {
         };
       }) : [],
     };
-  }, [params.showRootLabels, params.labelPercentile, data, strandScores]);
+  }, [params.showRootLabels, params.labelPercentile, params.timeFilterEnabled, data, strandScores, tweetTimestamps, timeRange]);
 
   const config: Partial<PlotlyConfig> = useMemo(() => ({
     scrollZoom: true,
@@ -974,7 +1164,13 @@ export function AtlasClient() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <ControlPanel params={params} setParams={setParams} />
+      <ControlPanel
+        params={params}
+        setParams={setParams}
+        timeRange={timeRange}
+        onTimeRangeChange={setTimeRange}
+        globalTimeRange={tweetTimestamps}
+      />
       {stats && (
         <div className="bg-gray-100 border-b border-gray-200 px-4 py-2 flex flex-wrap gap-4 text-xs text-gray-600">
           <span><strong>{stats.totalTweets.toLocaleString()}</strong> tweets</span>

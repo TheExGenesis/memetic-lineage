@@ -1,9 +1,11 @@
 import { Suspense } from 'react';
 import { BestStrandsClient } from './BestStrandsClient';
 import { loadAllStrands } from './loadStrands';
+import { getSnapshotDate } from '@/lib/localData';
 
 export default async function BestStrandsPage() {
   const strands = await loadAllStrands();
+  const snapshotDate = await getSnapshotDate();
 
   if (strands.length === 0) {
     return (
@@ -15,7 +17,7 @@ export default async function BestStrandsPage() {
 
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading strands...</div>}>
-      <BestStrandsClient strands={strands} />
+      <BestStrandsClient strands={strands} snapshotDate={snapshotDate} />
     </Suspense>
   );
 }

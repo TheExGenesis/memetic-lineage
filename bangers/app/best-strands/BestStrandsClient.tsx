@@ -18,6 +18,7 @@ import { StrandSemanticMap } from './StrandSemanticMap';
 
 interface BestStrandsClientProps {
   strands: StrandWithTweet[];
+  snapshotDate?: string;
 }
 
 const SPINE_WIDTH_PX = 48;
@@ -266,10 +267,9 @@ interface SeriationOrder {
   count: number;
 }
 
-export function BestStrandsClient({ strands }: BestStrandsClientProps) {
+export function BestStrandsClient({ strands, snapshotDate }: BestStrandsClientProps) {
   const [selectedStrand, setSelectedStrand] = useState<StrandWithTweet | null>(null);
   const [selectedTweets, setSelectedTweets] = useState<Tweet[]>([]);
-  const [noteDismissed, setNoteDismissed] = useState(true); // Start hidden to avoid flash
   const [histogramData, setHistogramData] = useState<HistogramData | null>(null);
   const [visibleStrandsCount, setVisibleStrandsCount] = useState(INITIAL_STRANDS);
   const [sortMode, setSortMode] = useState<SortMode>('topic');
@@ -281,12 +281,6 @@ export function BestStrandsClient({ strands }: BestStrandsClientProps) {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
-
-  // Check localStorage for dismissed note on mount
-  useEffect(() => {
-    const dismissed = localStorage.getItem('bestStrandsNoteDismissed');
-    setNoteDismissed(dismissed === 'true');
-  }, []);
 
   // Fetch histogram data once for all strands
   useEffect(() => {
@@ -320,36 +314,52 @@ export function BestStrandsClient({ strands }: BestStrandsClientProps) {
     loadSeriationOrder();
   }, []);
 
-  // Filter strands by search query
+  // Filter and score strands by search query
+  // Ranking: title (4) > username (3) > tweet text (2) > summary/reasoning (1)
+  // Tiebreaker: number of fields that match
   const filteredStrands = useMemo(() => {
     if (!searchQuery.trim()) return strands;
     const query = searchQuery.toLowerCase();
-    return strands.filter((strand) => {
-      const title = strand.title?.toLowerCase() || '';
-      const summary = strand.summary?.toLowerCase() || '';
-      const reasoning = strand.rating?.reasoning_summary?.toLowerCase() || '';
-      const tweetText = strand.seedTweet?.full_text?.toLowerCase() || '';
-      const username = strand.seedTweet?.username?.toLowerCase() || '';
-      return (
-        title.includes(query) ||
-        summary.includes(query) ||
-        reasoning.includes(query) ||
-        tweetText.includes(query) ||
-        username.includes(query)
-      );
-    });
+    const scored: { strand: StrandWithTweet; bestField: number; matchCount: number }[] = [];
+
+    for (const strand of strands) {
+      const fields = [
+        { text: strand.title?.toLowerCase() || '', weight: 4 },
+        { text: strand.seedTweet?.username?.toLowerCase() || '', weight: 3 },
+        { text: strand.seedTweet?.full_text?.toLowerCase() || '', weight: 2 },
+        { text: strand.summary?.toLowerCase() || '', weight: 1 },
+        { text: strand.rating?.reasoning_summary?.toLowerCase() || '', weight: 1 },
+      ];
+
+      let bestField = 0;
+      let matchCount = 0;
+      for (const f of fields) {
+        if (f.text.includes(query)) {
+          bestField = Math.max(bestField, f.weight);
+          matchCount++;
+        }
+      }
+
+      if (matchCount > 0) {
+        scored.push({ strand, bestField, matchCount });
+      }
+    }
+
+    // Sort by best matching field (desc), then by match count (desc)
+    scored.sort((a, b) => b.bestField - a.bestField || b.matchCount - a.matchCount);
+    return scored.map(s => s.strand);
   }, [strands, searchQuery]);
 
-  // Sort strands based on current mode
+  // Sort strands based on current mode (only when not searching — search has its own ranking)
   const sortedStrands = useMemo(() => {
+    if (searchQuery.trim()) return filteredStrands;
+
     if (sortMode === 'topic' && seriationOrder) {
-      // Create a map of id -> position for O(1) lookup
       const positionMap = new Map<string, number>();
       seriationOrder.order.forEach((item, index) => {
         positionMap.set(item.id, index);
       });
 
-      // Sort strands by their position in seriation order
       return [...filteredStrands].sort((a, b) => {
         const posA = positionMap.get(a.seed_tweet_id) ?? Infinity;
         const posB = positionMap.get(b.seed_tweet_id) ?? Infinity;
@@ -361,11 +371,11 @@ export function BestStrandsClient({ strands }: BestStrandsClientProps) {
       return [...filteredStrands].sort((a, b) => {
         const dateA = a.seedTweet?.created_at || '';
         const dateB = b.seedTweet?.created_at || '';
-        return dateB.localeCompare(dateA); // Newest first
+        return dateB.localeCompare(dateA);
       });
     }
     return filteredStrands;
-  }, [filteredStrands, sortMode, seriationOrder]);
+  }, [filteredStrands, sortMode, seriationOrder, searchQuery]);
 
   // Lazy load more strands on scroll
   useEffect(() => {
@@ -605,6 +615,9 @@ export function BestStrandsClient({ strands }: BestStrandsClientProps) {
                   <strong className="text-gray-900">A strand is a unit of narrative</strong>—a story worth telling that exists{' '}
                   <em>one level above</em> individual tweets or threads, connecting multiple conversations into a coherent arc.
                 </p>
+                <p className="text-xs text-gray-400 mt-2">
+                  Data from the <a href="https://www.community-archive.org/" target="_blank" rel="noopener noreferrer" className="hover:underline">Community Archive</a>{snapshotDate ? `, as of ${snapshotDate}` : ''}. Strand ratings are AI-generated.
+                </p>
                 <details className="mt-3">
                   <summary className="cursor-pointer text-gray-500 hover:text-gray-700 text-xs font-medium">How strands are built</summary>
                   <div className="mt-2 space-y-1.5 pl-2 border-l-2 border-gray-200">
@@ -630,28 +643,6 @@ export function BestStrandsClient({ strands }: BestStrandsClientProps) {
             </div>
           </div>
         </header>
-
-        {!noteDismissed && (
-          <div className="mb-4 bg-blue-50 border border-blue-200 rounded px-4 py-2 text-sm text-blue-800 flex items-start justify-between gap-2">
-            <p>
-              <span className="font-semibold">Note:</span> Data is from a static snapshot taken in early December 2025.
-              Strand ratings are generated by AI analysis of conversation threads.
-            </p>
-            <button
-              onClick={() => {
-                setNoteDismissed(true);
-                localStorage.setItem('bestStrandsNoteDismissed', 'true');
-              }}
-              className="text-blue-600 hover:text-blue-800 p-1 -mr-1 -mt-0.5"
-              title="Dismiss"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 6L6 18" />
-                <path d="M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        )}
 
         {/* Two-column layout on desktop, stacked on mobile */}
         <div className="flex flex-col lg:flex-row lg:gap-6">
