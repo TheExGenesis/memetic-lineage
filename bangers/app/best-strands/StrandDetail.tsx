@@ -9,6 +9,7 @@ import { ThreadView } from '../ThreadView';
 import { BackButton } from '../components/BackButton';
 import { fetchTweetDetails, getConversationIds, getThreadsBatch } from '@/lib/api';
 import { useAvatar } from '../hooks/useAvatars';
+import { useMediaUrls } from '../hooks/useMediaUrls';
 import { StrandHistogram, HistogramData } from './StrandHistogram';
 
 interface StrandDetailProps {
@@ -77,6 +78,8 @@ const formatSourceType = (sourceType: string) => {
 
 export function StrandDetail({ strand, onBack, onSelectTweet, onHorizontalScroll }: StrandDetailProps) {
   const seedAvatarUrl = useAvatar(strand.seedTweet?.username || '') || strand.seedTweet?.avatar_media_url;
+  const fetchedSeedMedia = useMediaUrls(strand.seedTweet?.tweet_id || '');
+  const seedMediaUrls = strand.seedTweet?.media_urls?.length ? strand.seedTweet.media_urls : (fetchedSeedMedia?.length ? fetchedSeedMedia : undefined);
   const [essentialTweetsData, setEssentialTweetsData] = useState<EssentialTweetWithData[]>([]);
   const [loading, setLoading] = useState(true);
   const [columnWidth, setColumnWidth] = useState(380);
@@ -276,10 +279,10 @@ export function StrandDetail({ strand, onBack, onSelectTweet, onHorizontalScroll
                   <div className="text-xs text-gray-700 whitespace-pre-line leading-relaxed">
                     {decode(strand.seedTweet.full_text)}
                   </div>
-                  {strand.seedTweet.media_urls && strand.seedTweet.media_urls.length > 0 && (
+                  {seedMediaUrls && seedMediaUrls.length > 0 && (
                     <div className="mt-2 rounded overflow-hidden border border-gray-200">
                       <img
-                        src={strand.seedTweet.media_urls[0]}
+                        src={seedMediaUrls[0]}
                         alt=""
                         className="w-full h-24 object-cover"
                       />

@@ -202,6 +202,50 @@ export async function getTweetsByYear(
 }
 
 /**
+ * Get top tweets for a year sorted by archive_quote_count.
+ * Used to supplement the default byYear ordering (which sorts by total quote_count)
+ * so the client has enough data for the archive-quotes view.
+ */
+export async function getTopArchiveQuoteTweets(
+  year: string,
+  limit: number = 30
+): Promise<Tweet[]> {
+  const data = await loadBangersData();
+  const tweetIds = data.byYear[year] || [];
+
+  // Sort by archive_quote_count descending
+  const sorted = [...tweetIds].sort((a, b) => {
+    const recA = data.tweets[a];
+    const recB = data.tweets[b];
+    return (recB?.archive_quote_count ?? 0) - (recA?.archive_quote_count ?? 0);
+  });
+
+  const topIds = sorted.slice(0, limit);
+  const tweets: Tweet[] = [];
+
+  for (const id of topIds) {
+    const record = data.tweets[id];
+    if (!record) continue;
+
+    const quotedId = data.quoteRelationships.quotedBy[id];
+    let quotedTweet: Tweet | undefined;
+    if (quotedId) {
+      const quotedRecord = data.tweets[quotedId];
+      if (quotedRecord) {
+        quotedTweet = recordToTweet(quotedRecord);
+      }
+    }
+
+    const tweet = recordToTweet(record, quotedTweet);
+    tweet.quoted_tweet_id = quotedId;
+    tweet.column = year;
+    tweets.push(tweet);
+  }
+
+  return tweets;
+}
+
+/**
  * Get available years sorted descending.
  */
 export async function getAvailableYears(): Promise<string[]> {
@@ -218,6 +262,46 @@ export async function hasMoreTweets(year: string, offset: number): Promise<boole
   const data = await loadBangersData();
   const tweetIds = data.byYear[year] || [];
   return offset < tweetIds.length;
+}
+
+/**
+ * Search all tweets by text content or username.
+ * Scans the full dataset server-side and returns matches grouped by year.
+ */
+export async function searchTweets(query: string, limit: number = 50): Promise<Tweet[]> {
+  const data = await loadBangersData();
+  const lowerQuery = query.toLowerCase();
+  const results: Tweet[] = [];
+
+  for (const [id, record] of Object.entries(data.tweets)) {
+    const text = record.full_text?.toLowerCase() || '';
+    const username = record.username?.toLowerCase() || '';
+    if (text.includes(lowerQuery) || username.includes(lowerQuery)) {
+      const quotedId = data.quoteRelationships.quotedBy[id];
+      let quotedTweet: Tweet | undefined;
+      if (quotedId) {
+        const quotedRecord = data.tweets[quotedId];
+        if (quotedRecord) {
+          quotedTweet = recordToTweet(quotedRecord);
+        }
+      }
+      const tweet = recordToTweet(record, quotedTweet);
+      tweet.quoted_tweet_id = quotedId;
+
+      // Determine year for column grouping
+      if (tweet.year) {
+        tweet.column = String(tweet.year);
+      }
+
+      results.push(tweet);
+      if (results.length >= limit) break;
+    }
+  }
+
+  // Sort by quote_count descending within results
+  results.sort((a, b) => (b.quote_count ?? 0) - (a.quote_count ?? 0));
+
+  return results;
 }
 
 /**

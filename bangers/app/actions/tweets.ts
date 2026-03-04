@@ -1,6 +1,6 @@
 'use server';
 
-import { getTweetsByYear, hasMoreTweets } from '@/lib/localData';
+import { getTweetsByYear, hasMoreTweets, searchTweets } from '@/lib/localData';
 import { Tweet } from '@/lib/types';
 
 const TWEETS_PER_PAGE = 30;
@@ -34,5 +34,21 @@ export async function checkHasMoreTweets(
   } catch (error) {
     console.error(`Error checking more tweets for year ${year}:`, error);
     return false;
+  }
+}
+
+/**
+ * Search all tweets by text or username.
+ * Returns up to `limit` matching tweets grouped by year.
+ */
+export async function searchAllTweets(
+  query: string,
+  limit: number = 50
+): Promise<Tweet[]> {
+  try {
+    return await searchTweets(query, limit);
+  } catch (error) {
+    console.error(`Error searching tweets for "${query}":`, error);
+    return [];
   }
 }

@@ -12,6 +12,7 @@ import { VerticalSpine } from '../VerticalSpine';
 import { BackButton } from '../components/BackButton';
 import { fetchTweetDetails } from '@/lib/api';
 import { useAvatar } from '../hooks/useAvatars';
+import { useMediaUrls } from '../hooks/useMediaUrls';
 import { StrandHistogram, HistogramData } from './StrandHistogram';
 import { StrandSemanticMap } from './StrandSemanticMap';
 
@@ -123,6 +124,8 @@ interface StrandCardProps {
 const StrandCard = memo(function StrandCard({ strand, histogramData, onSelect }: StrandCardProps) {
   const seedTweet = strand.seedTweet;
   const avatarUrl = useAvatar(seedTweet?.username || '') || seedTweet?.avatar_media_url;
+  const fetchedMedia = useMediaUrls(seedTweet?.tweet_id || '');
+  const mediaUrls = seedTweet?.media_urls?.length ? seedTweet.media_urls : (fetchedMedia?.length ? fetchedMedia : undefined);
   const strandHistogram = histogramData?.strands[strand.seed_tweet_id];
 
   return (
@@ -158,8 +161,8 @@ const StrandCard = memo(function StrandCard({ strand, histogramData, onSelect }:
               </div>
               <TweetText text={seedTweet.full_text} />
               {/* Tweet images */}
-              {seedTweet.media_urls && seedTweet.media_urls.length > 0 && (() => {
-                const uniqueUrls = Array.from(new Set(seedTweet.media_urls))
+              {mediaUrls && mediaUrls.length > 0 && (() => {
+                const uniqueUrls = Array.from(new Set(mediaUrls))
                 return (
                   <div
                     className={`grid gap-2 mt-3 ${uniqueUrls.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}

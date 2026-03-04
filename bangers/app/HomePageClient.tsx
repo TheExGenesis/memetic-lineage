@@ -7,7 +7,7 @@ import { VerticalSpine } from './VerticalSpine'
 import { Tweet } from '@/lib/types'
 import { useUrlSync, useTweetSelection, usePaneNavigation, prefetchAvatars, prefetchMedia, useBangersToggles } from './hooks'
 import type { RankingMode, TweetSource } from './hooks'
-import { fetchMoreTweetsByYear } from './actions/tweets'
+import { fetchMoreTweetsByYear, searchAllTweets } from './actions/tweets'
 
 const INITIAL_VISIBLE = 15;
 const LOAD_MORE_VISIBLE = 20;
@@ -32,6 +32,9 @@ function LazyTweetColumn({
   const [hasMoreOnServer, setHasMoreOnServer] = useState(true);
   const [isPending, startTransition] = useTransition();
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  // Track server pagination offset separately from tweets.length,
+  // since initial tweets may include archive-quote tweets not in the byYear ordering
+  const serverOffset = useRef(30);
 
   // Update tweets when initialTweets changes (e.g., on navigation)
   useEffect(() => {
@@ -58,11 +61,16 @@ function LazyTweetColumn({
           setIsLoadingMore(true);
           startTransition(async () => {
             try {
-              const moreTweets = await fetchMoreTweetsByYear(column, tweets.length);
+              const moreTweets = await fetchMoreTweetsByYear(column, serverOffset.current);
               if (moreTweets.length === 0) {
                 setHasMoreOnServer(false);
               } else {
-                setTweets(prev => [...prev, ...moreTweets]);
+                serverOffset.current += moreTweets.length;
+                setTweets(prev => {
+                  const existingIds = new Set(prev.map(t => t.tweet_id));
+                  const newTweets = moreTweets.filter(t => !existingIds.has(t.tweet_id));
+                  return [...prev, ...newTweets];
+                });
                 setVisibleCount(prev => prev + moreTweets.length);
               }
             } finally {
@@ -176,16 +184,33 @@ export const HomePageClient = ({ tweets, snapshotDate }: { tweets: Tweet[]; snap
     updateUrl(newStack)
   }, [selectedTweets, updateUrl])
 
-  // Filter tweets by search query (source filtering is handled inside LazyTweetColumn
-  // to keep server pagination offsets correct)
-  const filteredTweets = searchQuery.trim()
-    ? tweets.filter((tweet: Tweet) => {
-        const query = searchQuery.toLowerCase()
-        const text = tweet.full_text?.toLowerCase() || ''
-        const username = tweet.username?.toLowerCase() || ''
-        return text.includes(query) || username.includes(query)
-      })
-    : tweets
+  // Server-side search across all tweets (not just initial batch)
+  const [searchResults, setSearchResults] = useState<Tweet[] | null>(null)
+  const [isSearching, setIsSearching] = useState(false)
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    const query = searchQuery.trim()
+    if (!query) {
+      setSearchResults(null)
+      return
+    }
+
+    // Debounce search requests
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+    setIsSearching(true)
+    searchTimerRef.current = setTimeout(async () => {
+      const results = await searchAllTweets(query, 200)
+      setSearchResults(results)
+      setIsSearching(false)
+    }, 300)
+
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+    }
+  }, [searchQuery])
+
+  const filteredTweets = searchResults !== null ? searchResults : tweets
 
   // Group tweets by column
   const groups: Record<string, Tweet[]> = {}
@@ -280,7 +305,7 @@ export const HomePageClient = ({ tweets, snapshotDate }: { tweets: Tweet[]; snap
                             )}
                             {searchQuery && (
                                 <span className="text-sm text-gray-500">
-                                    {filteredTweets.length} result{filteredTweets.length !== 1 ? 's' : ''}
+                                    {isSearching ? 'Searching...' : `${filteredTweets.length} result${filteredTweets.length !== 1 ? 's' : ''}`}
                                 </span>
                             )}
                         </div>
