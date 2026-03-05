@@ -120,9 +120,11 @@ interface StrandCardProps {
   strand: StrandWithTweet;
   histogramData: HistogramData | null;
   onSelect: () => void;
+  onHover?: () => void;
+  onLeave?: () => void;
 }
 
-const StrandCard = memo(function StrandCard({ strand, histogramData, onSelect }: StrandCardProps) {
+const StrandCard = memo(function StrandCard({ strand, histogramData, onSelect, onHover, onLeave }: StrandCardProps) {
   const seedTweet = strand.seedTweet;
   const avatarUrl = useAvatar(seedTweet?.username || '') || seedTweet?.avatar_media_url;
   const fetchedMedia = useMediaUrls(seedTweet?.tweet_id || '');
@@ -132,6 +134,8 @@ const StrandCard = memo(function StrandCard({ strand, histogramData, onSelect }:
   return (
     <div
       onClick={onSelect}
+      onMouseEnter={onHover}
+      onMouseLeave={onLeave}
       className="bg-white border-2 border-black shadow-[4px_4px_0_0_#000] cursor-pointer transition-[box-shadow,transform] duration-150 will-change-transform hover:shadow-[6px_6px_0_0_#000] hover:-translate-y-0.5"
     >
       <div className="flex items-stretch">
@@ -270,6 +274,7 @@ interface SeriationOrder {
 export function BestStrandsClient({ strands, snapshotDate }: BestStrandsClientProps) {
   const [selectedStrand, setSelectedStrand] = useState<StrandWithTweet | null>(null);
   const [selectedTweets, setSelectedTweets] = useState<Tweet[]>([]);
+  const [hoveredStrandId, setHoveredStrandId] = useState<string | null>(null);
   const [histogramData, setHistogramData] = useState<HistogramData | null>(null);
   const [visibleStrandsCount, setVisibleStrandsCount] = useState(INITIAL_STRANDS);
   const [sortMode, setSortMode] = useState<SortMode>('topic');
@@ -649,7 +654,7 @@ export function BestStrandsClient({ strands, snapshotDate }: BestStrandsClientPr
           {/* Left column: Semantic Map (sticky on desktop) */}
           <div className="lg:w-[42%] lg:flex-shrink-0 mb-6 lg:mb-0">
             <div className="lg:sticky lg:top-8">
-              <StrandSemanticMap />
+              <StrandSemanticMap highlightedSeedId={hoveredStrandId} />
               <div className="flex items-center justify-between mt-2">
                 <a
                   href="/detailed-strand-atlas"
@@ -734,6 +739,8 @@ export function BestStrandsClient({ strands, snapshotDate }: BestStrandsClientPr
                   strand={strand}
                   histogramData={histogramData}
                   onSelect={() => selectStrand(strand)}
+                  onHover={() => setHoveredStrandId(strand.seed_tweet_id)}
+                  onLeave={() => setHoveredStrandId(null)}
                 />
               ))}
               {visibleStrandsCount < sortedStrands.length && (

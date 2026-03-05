@@ -34,7 +34,7 @@ interface TooltipState {
   point: StrandPoint | null;
 }
 
-export function StrandSemanticMap() {
+export function StrandSemanticMap({ highlightedSeedId }: { highlightedSeedId?: string | null }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [data, setData] = useState<SemanticMapData | null>(null);
@@ -162,10 +162,12 @@ export function StrandSemanticMap() {
     const labeledSet = new Set(data.labeled_indices);
 
     // Draw all points
+    const hasHighlight = !!highlightedSeedId;
     data.points.forEach((point, i) => {
       const { cx, cy } = toCanvasCoords(point.x, point.y);
       const isLabeled = labeledSet.has(i);
       const isHovered = hoveredIndex === i;
+      const isHighlighted = hasHighlight && point.seed_tweet_id === highlightedSeedId;
 
       // Check if point is in time range
       const inRange = !timeFilterEnabled || (
@@ -173,7 +175,7 @@ export function StrandSemanticMap() {
         pointTimestamps.timestamps[i] <= timeRange[1]
       );
 
-      if (!inRange && !isHovered) {
+      if (!inRange && !isHovered && !isHighlighted) {
         // Dimmed point
         ctx.beginPath();
         ctx.arc(cx, cy, isLabeled ? 4 : 3, 0, Math.PI * 2);
@@ -184,16 +186,28 @@ export function StrandSemanticMap() {
         return;
       }
 
+      // Dim non-highlighted points when a card is hovered
+      if (hasHighlight && !isHighlighted && !isHovered) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, isLabeled ? 5 : 4, 0, Math.PI * 2);
+        ctx.fillStyle = point.color;
+        ctx.globalAlpha = 0.15;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        return;
+      }
+
       // Draw circle
+      const highlighted = isHighlighted || isHovered;
       ctx.beginPath();
-      ctx.arc(cx, cy, isHovered ? 8 : (isLabeled ? 7 : 5), 0, Math.PI * 2);
+      ctx.arc(cx, cy, highlighted ? 10 : (isLabeled ? 7 : 5), 0, Math.PI * 2);
       ctx.fillStyle = point.color;
-      ctx.globalAlpha = isHovered ? 1 : (isLabeled ? 0.95 : 0.8);
+      ctx.globalAlpha = highlighted ? 1 : (isLabeled ? 0.95 : 0.8);
       ctx.fill();
 
       // Border
-      ctx.strokeStyle = isHovered ? '#000' : (isLabeled ? '#1a1a1a' : 'rgba(255,255,255,0.6)');
-      ctx.lineWidth = isHovered ? 2.5 : (isLabeled ? 2 : 1);
+      ctx.strokeStyle = highlighted ? '#000' : (isLabeled ? '#1a1a1a' : 'rgba(255,255,255,0.6)');
+      ctx.lineWidth = highlighted ? 2.5 : (isLabeled ? 2 : 1);
       ctx.stroke();
       ctx.globalAlpha = 1;
     });
@@ -305,7 +319,7 @@ export function StrandSemanticMap() {
       ctx.fillText(box.text, box.x + box.width / 2, box.y + box.height - 4);
     }
 
-  }, [data, hoveredIndex, toCanvasCoords, zoom, panOffset, timeFilterEnabled, timeRange, pointTimestamps]);
+  }, [data, hoveredIndex, highlightedSeedId, toCanvasCoords, zoom, panOffset, timeFilterEnabled, timeRange, pointTimestamps]);
 
   // Store zoom in ref for wheel handler (avoids stale closure)
   const zoomRef = useRef(zoom);
