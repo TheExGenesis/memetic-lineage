@@ -19,12 +19,14 @@ function LazyTweetColumn({
   onTweetClick,
   rankingMode,
   tweetSource,
+  isSearchResult,
 }: {
   column: string;
   initialTweets: Tweet[];
   onTweetClick: (tweet: Tweet) => void;
   rankingMode?: RankingMode;
   tweetSource?: TweetSource;
+  isSearchResult?: boolean;
 }) {
   const [tweets, setTweets] = useState(initialTweets);
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
@@ -56,8 +58,8 @@ function LazyTweetColumn({
           return;
         }
 
-        // Then, fetch more from server if available
-        if (hasMoreOnServer && !isLoadingMore && !isPending) {
+        // Then, fetch more from server if available (but not for search results)
+        if (hasMoreOnServer && !isLoadingMore && !isPending && !isSearchResult) {
           setIsLoadingMore(true);
           startTransition(async () => {
             try {
@@ -371,12 +373,13 @@ export const HomePageClient = ({ tweets, snapshotDate }: { tweets: Tweet[]; snap
                     <main className="flex flex-col sm:flex-row gap-8 overflow-y-auto sm:overflow-y-hidden sm:overflow-x-auto flex-1 scrollbar-hide">
                         {tweetsByColumn.map(({ column, tweets: columnTweets }) => (
                           <LazyTweetColumn
-                            key={column}
+                            key={searchResults !== null ? `search-${column}` : column}
                             column={column}
                             initialTweets={columnTweets}
                             onTweetClick={(tweet) => onTweetClick(tweet, -1)}
                             rankingMode={rankingMode}
                             tweetSource={tweetSource}
+                            isSearchResult={searchResults !== null}
                           />
                         ))}
                         
